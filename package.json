@@ -1,34 +1,27 @@
 {
-  "name": "mini-jira",
+  "name": "gwmt",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.29.7",
-    "@eslint/js": "^10.0.1",
-    "@rolldown/plugin-babel": "^0.3.0",
-    "@types/babel__core": "^7.20.5",
-    "@types/node": "^24.19.2",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "babel-plugin-react-compiler": "^1.0.0",
-    "eslint": "^10.14.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.7",
-    "globals": "^17.13.0",
-    "typescript": "~6.0.3",
-    "typescript-eslint": "^8.72.1",
-    "vite": "^8.3.6"
+    "build:contracts": "npm run build -w @gwmt/contracts",
+    "build": "npm run build:contracts && npm run build -w mini-jira",
+    "dev:contracts": "npm run dev -w @gwmt/contracts",
+    "dev:api": "npm run build:contracts && npm run dev -w @gwmt/api",
+    "dev:web": "npm run dev -w mini-jira",
+    "docs": "npm run build:contracts && npm run docs -w @gwmt/api",
+    "openapi": "npm run build:contracts && npm run openapi -w @gwmt/api",
+    "salt": "npm run salt -w @gwmt/api --",
+    "db:generate": "npm run db:generate -w @gwmt/api",
+    "db:migrate": "npm run db:migrate -w @gwmt/api",
+    "db:seed": "npm run build:contracts && npm run db:seed -w @gwmt/api",
+    "typecheck": "npm run build:contracts && npm run typecheck -w @gwmt/contracts -w @gwmt/api",
+    "test": "npm run build:contracts && npm run test -w @gwmt/contracts -w @gwmt/api"
   }
 }

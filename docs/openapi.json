@@ -1,0 +1,4898 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "goodWebManTasks API",
+    "version": "1.0.0",
+    "description": "REST API мини-Jira. Схемы, типы, подписи и правила доступа есть в пакете `@gwmt/contracts`, этот документ собран из них же.\n\n## Общие правила\n\n- Всё, кроме `/auth/*`, `/health`, `/openapi.json` и `/docs`, требует `Authorization: Bearer <access>`.\n- Успешный ответ это сам объект без обёртки, списки это `{ items, ... }`. Пустой успех: `204` без тела.\n- `ISODateTime` это UTC-строка `2026-11-08T09:03:41.078Z`, `ISODate` это `2026-11-02`.\n- На всех ответах есть `Cache-Control: no-store` и `X-Request-Id`.\n- Порядок проверок: токен (401), членство (404), роль (403), данные (422), состояние (409).\n- Не участник получает 404 на всех ручках доски и задачи: существование ресурса не раскрывается.\n- Статус 401 означает только проблему авторизации запроса. Неверный текущий пароль в профиле это 422.\n\n## Ошибки\n\nЛюбая ошибка имеет формат `ApiError`. `message` это готовый текст для тоста, `fields` это тексты под полями формы. Любая ручка может ответить `500 INTERNAL_ERROR`.\n\n## Токены\n\nAccess живёт 15 минут, отдаётся в теле ответа и хранится только в памяти. Refresh лежит в cookie `gwmt_refresh` с `HttpOnly`, его фронт не видит.\n\nПри запуске приложения фронт вызывает `POST /auth/refresh`: 200 значит, что пользователь вошёл, 401 значит показать экран входа.\n\nРучки `/auth/*` перехватчик не обрабатывает. На остальных при 401 с кодом `ACCESS_TOKEN_MISSING`, `ACCESS_TOKEN_EXPIRED` или `ACCESS_TOKEN_INVALID`:\n\n1. Сделать один `POST /auth/refresh` на все параллельные запросы.\n2. При успехе повторить запрос с новым токеном.\n3. При неудаче сбросить кэш и уйти на экран входа.\n\n## Роли на доске\n\n| Действие | admin | worker | guest |\n|---|---|---|---|\n| Читать доску, задачи, спринты, KPI | да | да | да |\n| Избранное | да | да | да |\n| Создать задачу | в любом статусе | только `todo` | нет |\n| Двигать статус | куда угодно | вперёд, назад только со своего этапа | нет |\n| Менять остальные поля задачи | да | нет | нет |\n| Запретить брать в работу | да | нет | нет |\n| Пауза | да | да | нет |\n| Комментировать | да | да | нет |\n| Связывать задачи | да | да | нет |\n| Участники и роли | да | нет | нет |\n\nПравила живут в `permissions.ts` из `@gwmt/contracts`: `can`, `statusMoveError`, `allowedStatuses`, `createStatusError`. Роль читается из базы на каждый запрос.\n\n## Движение статуса\n\nПорядок: `todo`, `work`, `review`, `test`, `done`. Вперёд это любой статус правее текущего, этапы можно перепрыгивать.\n\nНазад рабочий двигает только со своего этапа: ревьювер этой задачи из `review` в `work`, тестировщик этой задачи из `test` в `review` или `work`. Автор и дизайнер назад не двигают, из `done` возвращает только администратор.\n\n## Что обновить на фронте после мутации\n\n| Мутация | Обновить |\n|---|---|\n| `POST /boards` | список досок, nav-summary |\n| favorite | список досок и деталь доски, оптимистично |\n| members | деталь доски |\n| создание задачи | задачи доски, nav-summary, мои задачи, task-stats, KPI активного спринта |\n| `PATCH /tasks/:key` | карточку в кэше, nav-summary, мои задачи, task-stats, KPI активного спринта |\n| pause, resume, take-lock | карточку в кэше ответом `TaskCard` |\n| links | деталь задачи, задачи досок обеих задач |\n| comments | добавить ответ в деталь задачи |\n| `PATCH /me` | me |"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Тот же домен, с которого открыт фронт или документация"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Авторизация",
+      "description": "Вход по паролю, через GitHub и Google, регистрация, ротация refresh"
+    },
+    {
+      "name": "Профиль",
+      "description": "Текущий пользователь и его сводки"
+    },
+    {
+      "name": "Люди",
+      "description": "Поиск людей"
+    },
+    {
+      "name": "Доски",
+      "description": "Доски и избранное"
+    },
+    {
+      "name": "Участники",
+      "description": "Участники доски и их роли"
+    },
+    {
+      "name": "Спринты и KPI",
+      "description": "Спринты меняются сами, вручную управлять ими нельзя"
+    },
+    {
+      "name": "Задачи",
+      "description": "Задачи, статусы, запрет брать в работу, пауза"
+    },
+    {
+      "name": "Связи и комментарии",
+      "description": "Связи между задачами и комментарии"
+    },
+    {
+      "name": "Служебные",
+      "description": "Проверка работоспособности"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access-токен из AuthResponse"
+      },
+      "refreshCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "gwmt_refresh",
+        "description": "Браузер отправляет сам, фронту значение недоступно"
+      }
+    },
+    "schemas": {
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT на 15 минут. Хранить только в памяти"
+          },
+          "accessTokenExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "user": {
+            "$ref": "#/components/schemas/Me"
+          }
+        },
+        "required": [
+          "accessToken",
+          "accessTokenExpiresAt",
+          "user"
+        ]
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "job": {
+            "type": "string"
+          },
+          "timezone": {
+            "$ref": "#/components/schemas/Timezone"
+          },
+          "colorIndex": {
+            "type": "integer"
+          },
+          "hasPassword": {
+            "type": "boolean",
+            "description": "false значит, что currentPassword при смене пароля не нужен"
+          },
+          "hasGithub": {
+            "type": "boolean"
+          },
+          "hasGoogle": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "job",
+          "timezone",
+          "colorIndex",
+          "hasPassword",
+          "hasGithub",
+          "hasGoogle"
+        ]
+      },
+      "Timezone": {
+        "type": "string",
+        "enum": [
+          "Europe/Moscow",
+          "Asia/Yekaterinburg",
+          "Asia/Novosibirsk"
+        ]
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              "message": {
+                "type": "string",
+                "description": "Готовый русский текст для тоста"
+              },
+              "fields": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Ключ это имя поля запроса, значение это текст под полем"
+              },
+              "requestId": {
+                "type": "string",
+                "description": "Совпадает с заголовком X-Request-Id"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "requestId"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "description": "Формат любой ошибки API"
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "BAD_REQUEST",
+          "ACCESS_TOKEN_MISSING",
+          "ACCESS_TOKEN_EXPIRED",
+          "ACCESS_TOKEN_INVALID",
+          "INVALID_CREDENTIALS",
+          "REFRESH_MISSING",
+          "REFRESH_INVALID",
+          "REFRESH_EXPIRED",
+          "REFRESH_REUSED",
+          "FORBIDDEN_ORIGIN",
+          "SALT_INVALID",
+          "ROLE_FORBIDDEN",
+          "STATUS_MOVE_FORBIDDEN",
+          "TASK_TAKE_LOCKED",
+          "BOARD_NOT_FOUND",
+          "TASK_NOT_FOUND",
+          "SPRINT_NOT_FOUND",
+          "USER_NOT_FOUND",
+          "EMAIL_TAKEN",
+          "BOARD_KEY_TAKEN",
+          "ALREADY_MEMBER",
+          "TASK_LINK_EXISTS",
+          "TASK_NOT_PAUSABLE",
+          "TASK_NOT_LOCKABLE",
+          "VALIDATION_ERROR",
+          "WRONG_PASSWORD",
+          "CANNOT_REMOVE_SELF",
+          "CANNOT_CHANGE_OWN_ROLE",
+          "NOT_BOARD_MEMBER",
+          "ASSIGNEE_IS_GUEST",
+          "TASK_LINK_SELF",
+          "TOO_MANY_ATTEMPTS",
+          "INTERNAL_ERROR"
+        ],
+        "description": "Машинный код ошибки. Какие коды возможны на ручке, указано в её ответах."
+      },
+      "RegisterBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "acceptedTerms": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "password",
+          "acceptedTerms"
+        ]
+      },
+      "LoginBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1
+          },
+          "remember": {
+            "type": "boolean",
+            "description": "true: сессия на 30 дней. false: на 1 день и сессионная cookie"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "remember"
+        ]
+      },
+      "UpdateMeBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "job": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "timezone": {
+            "$ref": "#/components/schemas/Timezone"
+          }
+        }
+      },
+      "ChangePasswordBody": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "description": "Не нужен, если hasPassword равен false"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "newPassword"
+        ]
+      },
+      "NavSummary": {
+        "type": "object",
+        "properties": {
+          "boardsTotal": {
+            "type": "integer"
+          },
+          "board": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "sprintNumber": {
+                "type": "integer"
+              },
+              "statusCounts": {
+                "$ref": "#/components/schemas/StatusValues"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "sprintNumber",
+              "statusCounts"
+            ],
+            "description": "null, если у пользователя нет досок"
+          },
+          "myTasks": {
+            "type": "object",
+            "properties": {
+              "openCount": {
+                "type": "integer"
+              },
+              "openSp": {
+                "type": "number"
+              },
+              "next": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "title"
+                  ]
+                },
+                "description": "До 3 задач"
+              }
+            },
+            "required": [
+              "openCount",
+              "openSp",
+              "next"
+            ]
+          },
+          "kpi": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "sprintNumber": {
+                "type": "integer"
+              },
+              "donePct": {
+                "type": "number"
+              },
+              "remaining": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "description": "remainingSp по дням от 0 до todayIndex"
+              }
+            },
+            "required": [
+              "sprintNumber",
+              "donePct",
+              "remaining"
+            ],
+            "description": "null, если у пользователя нет досок"
+          }
+        },
+        "required": [
+          "boardsTotal",
+          "board",
+          "myTasks",
+          "kpi"
+        ]
+      },
+      "StatusValues": {
+        "type": "object",
+        "properties": {
+          "todo": {
+            "type": "number"
+          },
+          "work": {
+            "type": "number"
+          },
+          "review": {
+            "type": "number"
+          },
+          "test": {
+            "type": "number"
+          },
+          "done": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "todo",
+          "work",
+          "review",
+          "test",
+          "done"
+        ],
+        "description": "Значение по каждому статусу задачи"
+      },
+      "MyTaskStats": {
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": "integer"
+          },
+          "closed": {
+            "type": "integer"
+          },
+          "totalSp": {
+            "type": "number"
+          },
+          "nextOpen": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "priority": {
+                  "$ref": "#/components/schemas/TaskPriority"
+                }
+              },
+              "required": [
+                "key",
+                "title",
+                "priority"
+              ]
+            },
+            "description": "До 4 задач"
+          }
+        },
+        "required": [
+          "open",
+          "closed",
+          "totalSp",
+          "nextOpen"
+        ]
+      },
+      "TaskPriority": {
+        "type": "string",
+        "enum": [
+          "crit",
+          "high",
+          "med",
+          "low"
+        ],
+        "description": "Приоритет: критичный, высокий, средний, низкий."
+      },
+      "MyTasksResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskRow"
+            }
+          },
+          "page": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer",
+            "description": "С учётом фильтров"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalCount": {
+                "type": "integer"
+              },
+              "totalSp": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "totalCount",
+              "totalSp"
+            ],
+            "description": "Без учёта фильтров"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total",
+          "summary",
+          "serverTime"
+        ]
+      },
+      "TaskRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "board": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskRole"
+            }
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority"
+          },
+          "sp": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "timer": {
+            "$ref": "#/components/schemas/TaskTimer"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "title",
+          "board",
+          "roles",
+          "status",
+          "priority",
+          "sp",
+          "createdAt",
+          "timer"
+        ]
+      },
+      "TaskRole": {
+        "type": "string",
+        "enum": [
+          "author",
+          "reviewer",
+          "tester",
+          "designer"
+        ],
+        "description": "Роль человека в задаче."
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": [
+          "todo",
+          "work",
+          "review",
+          "test",
+          "done"
+        ],
+        "description": "Статус задачи. Порядок слева направо определяет, что такое «вперёд»."
+      },
+      "TaskTimer": {
+        "type": "object",
+        "properties": {
+          "statusEnteredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "pausedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Не null значит, что задача на паузе",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "pausedTotalSec": {
+            "type": "integer",
+            "description": "Накопленная пауза в текущем статусе"
+          },
+          "canPause": {
+            "type": "boolean",
+            "description": "Статус work, review или test"
+          },
+          "completedInDays": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Только для done"
+          }
+        },
+        "required": [
+          "statusEnteredAt",
+          "pausedAt",
+          "pausedTotalSec",
+          "canPause",
+          "completedInDays"
+        ],
+        "description": "Подписи считает фронт. X = serverNow - statusEnteredAt - pausedTotalSec. На паузе X = serverNow - pausedAt. serverTime из ответа нужен, чтобы компенсировать разницу часов."
+      },
+      "UserSearchResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBrief"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "UserBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "job": {
+            "type": "string"
+          },
+          "colorIndex": {
+            "type": "integer",
+            "description": "Цвет аватара, 0..5. Инициалы и цвет считает фронт"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "job",
+          "colorIndex"
+        ]
+      },
+      "BoardListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardListItem"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ]
+      },
+      "BoardListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "colorIndex": {
+            "type": "integer"
+          },
+          "isFavorite": {
+            "type": "boolean"
+          },
+          "memberCount": {
+            "type": "integer"
+          },
+          "myRole": {
+            "$ref": "#/components/schemas/BoardRole"
+          },
+          "membersPreview": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBrief"
+            },
+            "description": "До 4 человек"
+          },
+          "currentSprintNumber": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "colorIndex",
+          "isFavorite",
+          "memberCount",
+          "myRole",
+          "membersPreview",
+          "currentSprintNumber"
+        ]
+      },
+      "BoardRole": {
+        "type": "string",
+        "enum": [
+          "admin",
+          "worker",
+          "guest"
+        ],
+        "description": "Роль участника на доске. На другой доске у того же человека может быть другая роль."
+      },
+      "BoardDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "colorIndex": {
+            "type": "integer"
+          },
+          "timezone": {
+            "$ref": "#/components/schemas/Timezone"
+          },
+          "isFavorite": {
+            "type": "boolean"
+          },
+          "myRole": {
+            "$ref": "#/components/schemas/BoardRole"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardMember"
+            },
+            "description": "По addedAt. Источник для чипов, селектов и экрана участников. Гостей в чипы и селекты фронт не выводит"
+          },
+          "currentSprint": {
+            "$ref": "#/components/schemas/SprintBrief"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "description",
+          "colorIndex",
+          "timezone",
+          "isFavorite",
+          "myRole",
+          "members",
+          "currentSprint"
+        ]
+      },
+      "BoardMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "job": {
+            "type": "string"
+          },
+          "colorIndex": {
+            "type": "integer",
+            "description": "Цвет аватара, 0..5. Инициалы и цвет считает фронт"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/BoardRole"
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "job",
+          "colorIndex",
+          "email",
+          "role",
+          "addedAt"
+        ]
+      },
+      "SprintBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SprintState"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-02"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-02"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "state",
+          "startDate",
+          "endDate"
+        ]
+      },
+      "SprintState": {
+        "type": "string",
+        "enum": [
+          "active",
+          "closed"
+        ]
+      },
+      "CreateBoardBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "key": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{1,6}$",
+            "description": "Ключ доски, неизменяемый",
+            "example": "GWT"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "memberIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Эти люди получат роль worker. Создатель всегда admin"
+          }
+        },
+        "required": [
+          "name",
+          "key",
+          "memberIds"
+        ]
+      },
+      "AddMemberBody": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "worker",
+              "guest"
+            ],
+            "description": "По умолчанию worker"
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "UpdateMemberBody": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/BoardRole"
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "SprintListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintListItem"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "SprintListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SprintState"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-02"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-02"
+          },
+          "doneSp": {
+            "type": "number"
+          },
+          "scopeSp": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "state",
+          "startDate",
+          "endDate",
+          "doneSp",
+          "scopeSp"
+        ]
+      },
+      "SprintKpi": {
+        "type": "object",
+        "properties": {
+          "serverTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "board": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "colorIndex": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "key",
+              "name",
+              "colorIndex"
+            ]
+          },
+          "sprint": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "number": {
+                "type": "integer"
+              },
+              "state": {
+                "$ref": "#/components/schemas/SprintState"
+              },
+              "startDate": {
+                "type": "string",
+                "format": "date",
+                "example": "2026-11-02"
+              },
+              "endDate": {
+                "type": "string",
+                "format": "date",
+                "example": "2026-11-02"
+              },
+              "todayIndex": {
+                "type": "integer",
+                "description": "Наибольший день, который уже начался. В субботу это индекс пятницы"
+              },
+              "dayNumber": {
+                "type": "integer",
+                "description": "todayIndex + 1"
+              },
+              "totalDays": {
+                "type": "number",
+                "enum": [
+                  10
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "number",
+              "state",
+              "startDate",
+              "endDate",
+              "todayIndex",
+              "dayNumber",
+              "totalDays"
+            ]
+          },
+          "isEmpty": {
+            "type": "boolean",
+            "description": "В спринте нет ни одной задачи"
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "scopeSp": {
+                "type": "number"
+              },
+              "doneSp": {
+                "type": "number"
+              },
+              "donePct": {
+                "type": "number"
+              },
+              "committedSp": {
+                "type": "number",
+                "description": "Объём на конец первого дня"
+              },
+              "addedSp": {
+                "type": "number"
+              },
+              "addedCount": {
+                "type": "integer"
+              },
+              "paceSpPerDay": {
+                "type": "number"
+              },
+              "forecastDoneSp": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Только активный спринт"
+              },
+              "forecastRemainingSp": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Только активный спринт, конец пунктира"
+              },
+              "medianCycleDays": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "scopeSp",
+              "doneSp",
+              "donePct",
+              "committedSp",
+              "addedSp",
+              "addedCount",
+              "paceSpPerDay",
+              "forecastDoneSp",
+              "forecastRemainingSp",
+              "medianCycleDays"
+            ]
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SprintKpiDay"
+            },
+            "description": "Всегда 10"
+          },
+          "byStatus": {
+            "$ref": "#/components/schemas/StatusValues"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "$ref": "#/components/schemas/StageStatus"
+                },
+                "avgDays": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "status",
+                "avgDays"
+              ]
+            },
+            "description": "Порядок work, review, test"
+          },
+          "slowestStage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null, если все этапы по нулям"
+          },
+          "velocity": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "number": {
+                      "type": "integer"
+                    },
+                    "startDate": {
+                      "type": "string",
+                      "format": "date",
+                      "example": "2026-11-02"
+                    },
+                    "endDate": {
+                      "type": "string",
+                      "format": "date",
+                      "example": "2026-11-02"
+                    },
+                    "plannedSp": {
+                      "type": "number"
+                    },
+                    "doneSp": {
+                      "type": "number"
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "number",
+                    "startDate",
+                    "endDate",
+                    "plannedSp",
+                    "doneSp",
+                    "isActive"
+                  ]
+                },
+                "description": "До 6 спринтов, заканчивая выбранным"
+              },
+              "averageDoneSp": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Только по закрытым"
+              }
+            },
+            "required": [
+              "items",
+              "averageDoneSp"
+            ]
+          },
+          "team": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "$ref": "#/components/schemas/UserBrief"
+                },
+                "doneSp": {
+                  "type": "number"
+                },
+                "reviewsCount": {
+                  "type": "integer"
+                },
+                "testsCount": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "user",
+                "doneSp",
+                "reviewsCount",
+                "testsCount"
+              ]
+            },
+            "description": "По doneSp, по убыванию"
+          }
+        },
+        "required": [
+          "serverTime",
+          "board",
+          "sprint",
+          "isEmpty",
+          "summary",
+          "days",
+          "byStatus",
+          "stages",
+          "slowestStage",
+          "velocity",
+          "team"
+        ]
+      },
+      "SprintKpiDay": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "0..9, рабочие дни спринта"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-02"
+          },
+          "isPast": {
+            "type": "boolean",
+            "description": "index <= todayIndex"
+          },
+          "idealRemainingSp": {
+            "type": "number",
+            "description": "Считается для всех 10 дней"
+          },
+          "scopeSp": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "null для будущих дней, как и поля ниже"
+          },
+          "doneSp": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "remainingSp": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "addedSp": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "closedSp": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "flow": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "todo": {
+                "type": "number"
+              },
+              "work": {
+                "type": "number"
+              },
+              "review": {
+                "type": "number"
+              },
+              "test": {
+                "type": "number"
+              },
+              "done": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "todo",
+              "work",
+              "review",
+              "test",
+              "done"
+            ],
+            "description": "Сумма SP в объёме по статусам"
+          }
+        },
+        "required": [
+          "index",
+          "date",
+          "isPast",
+          "idealRemainingSp",
+          "scopeSp",
+          "doneSp",
+          "remainingSp",
+          "addedSp",
+          "closedSp",
+          "flow"
+        ]
+      },
+      "StageStatus": {
+        "type": "string",
+        "enum": [
+          "work",
+          "review",
+          "test"
+        ]
+      },
+      "BoardTasksResponse": {
+        "type": "object",
+        "properties": {
+          "sprint": {
+            "$ref": "#/components/schemas/SprintBrief"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskCard"
+            }
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          }
+        },
+        "required": [
+          "sprint",
+          "items",
+          "serverTime"
+        ]
+      },
+      "TaskCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "example": "GWT-101"
+          },
+          "boardId": {
+            "type": "integer"
+          },
+          "sprintId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority"
+          },
+          "sp": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "timer": {
+            "$ref": "#/components/schemas/TaskTimer"
+          },
+          "linkCount": {
+            "type": "integer"
+          },
+          "isBlocked": {
+            "type": "boolean",
+            "description": "Задача не в done и есть связь blockedBy с задачей не в done"
+          },
+          "isTakeLocked": {
+            "type": "boolean",
+            "description": "Администратор запретил брать задачу в работу"
+          },
+          "people": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "$ref": "#/components/schemas/UserBrief"
+              },
+              "reviewer": {
+                "$ref": "#/components/schemas/UserBrief"
+              },
+              "tester": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/UserBrief"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "designer": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/UserBrief"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "author",
+              "reviewer",
+              "tester",
+              "designer"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "boardId",
+          "sprintId",
+          "title",
+          "status",
+          "priority",
+          "sp",
+          "createdAt",
+          "timer",
+          "linkCount",
+          "isBlocked",
+          "isTakeLocked",
+          "people"
+        ]
+      },
+      "CreateTaskBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "todo",
+              "work",
+              "review",
+              "test",
+              "done"
+            ],
+            "description": "По умолчанию todo. Рабочий создаёт только в todo"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "crit",
+              "high",
+              "med",
+              "low"
+            ],
+            "description": "По умолчанию med"
+          },
+          "sp": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 999,
+            "multipleOf": 0.1,
+            "description": "Оценка: больше 0, не больше 999, один знак после запятой"
+          },
+          "authorId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Кто ведёт задачу. Ему идёт вклад в KPI"
+          },
+          "reviewerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "testerId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "designerId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "title",
+          "sp",
+          "authorId",
+          "reviewerId"
+        ]
+      },
+      "TaskSearchResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskSearchItem"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "TaskSearchItem": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "board": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "status",
+          "board"
+        ]
+      },
+      "TaskDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "example": "GWT-101"
+          },
+          "boardId": {
+            "type": "integer"
+          },
+          "sprintId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority"
+          },
+          "sp": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "timer": {
+            "$ref": "#/components/schemas/TaskTimer"
+          },
+          "linkCount": {
+            "type": "integer"
+          },
+          "isBlocked": {
+            "type": "boolean",
+            "description": "Задача не в done и есть связь blockedBy с задачей не в done"
+          },
+          "isTakeLocked": {
+            "type": "boolean",
+            "description": "Администратор запретил брать задачу в работу"
+          },
+          "people": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "$ref": "#/components/schemas/UserBrief"
+              },
+              "reviewer": {
+                "$ref": "#/components/schemas/UserBrief"
+              },
+              "tester": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/UserBrief"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "designer": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/UserBrief"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "author",
+              "reviewer",
+              "tester",
+              "designer"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "board": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "key",
+              "name"
+            ]
+          },
+          "sprint": {
+            "$ref": "#/components/schemas/SprintBrief"
+          },
+          "myRole": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "worker",
+              "guest"
+            ],
+            "description": "На экран можно попасть по ссылке, минуя доску"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskLinkItem"
+            }
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskComment"
+            },
+            "description": "От старых к новым"
+          },
+          "assigneeOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserBrief"
+            },
+            "description": "Участники доски без гостей плюс нынешние роли задачи, даже удалённые с доски"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "boardId",
+          "sprintId",
+          "title",
+          "status",
+          "priority",
+          "sp",
+          "createdAt",
+          "timer",
+          "linkCount",
+          "isBlocked",
+          "isTakeLocked",
+          "people",
+          "description",
+          "board",
+          "sprint",
+          "myRole",
+          "links",
+          "comments",
+          "assigneeOptions",
+          "serverTime"
+        ]
+      },
+      "TaskLinkItem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/TaskLinkType"
+          },
+          "task": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/components/schemas/TaskStatus"
+              },
+              "boardName": {
+                "type": "string"
+              },
+              "canOpen": {
+                "type": "boolean",
+                "description": "Состоит ли смотрящий в доске связанной задачи"
+              }
+            },
+            "required": [
+              "key",
+              "title",
+              "status",
+              "boardName",
+              "canOpen"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "task"
+        ]
+      },
+      "TaskLinkType": {
+        "type": "string",
+        "enum": [
+          "rel",
+          "blocks",
+          "blockedBy",
+          "dup"
+        ],
+        "description": "Тип связи со стороны текущей задачи. Обратная сторона: rel и rel, blocks и blockedBy, dup и dup."
+      },
+      "TaskComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "text": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          }
+        },
+        "required": [
+          "id",
+          "author",
+          "text",
+          "createdAt"
+        ]
+      },
+      "UpdateTaskBody": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 20000
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority"
+          },
+          "sp": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 999,
+            "multipleOf": 0.1,
+            "description": "Оценка: больше 0, не больше 999, один знак после запятой"
+          },
+          "authorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "testerId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "designerId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "Рабочий может прислать только status, иначе весь запрос отклоняется с 403"
+      },
+      "CreateLinkBody": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/TaskLinkType"
+          },
+          "targetKey": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+            "example": "GWT-101"
+          }
+        },
+        "required": [
+          "type",
+          "targetKey"
+        ]
+      },
+      "CreateCommentBody": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          }
+        },
+        "required": [
+          "status",
+          "time"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register",
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Регистрация",
+        "description": "Создаёт аккаунт и сразу открывает сессию на 30 дней.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Версия приложения, по ней сервер восстанавливает соль",
+              "example": "1.0.0"
+            },
+            "required": true,
+            "description": "Версия приложения, по ней сервер восстанавливает соль",
+            "name": "fastify-version",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Date.now() клиента строкой. Допустимое расхождение с сервером 5 минут",
+              "example": "1700000000000"
+            },
+            "required": true,
+            "description": "Date.now() клиента строкой. Допустимое расхождение с сервером 5 минут",
+            "name": "fastify-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "SHA256(salt + email + timestamp), email как в теле запроса"
+            },
+            "required": true,
+            "description": "SHA256(salt + email + timestamp), email как в теле запроса",
+            "name": "fastify-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Аккаунт создан",
+            "headers": {
+              "Set-Cookie": {
+                "description": "gwmt_refresh=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `SALT_INVALID`: Не удалось проверить запрос. Обновите страницу и проверьте время на устройстве",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "- `EMAIL_TAKEN`: Этот email уже зарегистрирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Вход по email и паролю",
+        "description": "Для неизвестного email и аккаунта без пароля ответ такой же, как для неверного пароля. После 10 неудач на email за 15 минут вход блокируется, в ответе 429 есть заголовок `Retry-After`.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Версия приложения, по ней сервер восстанавливает соль",
+              "example": "1.0.0"
+            },
+            "required": true,
+            "description": "Версия приложения, по ней сервер восстанавливает соль",
+            "name": "fastify-version",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Date.now() клиента строкой. Допустимое расхождение с сервером 5 минут",
+              "example": "1700000000000"
+            },
+            "required": true,
+            "description": "Date.now() клиента строкой. Допустимое расхождение с сервером 5 минут",
+            "name": "fastify-timestamp",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "SHA256(salt + email + timestamp), email как в теле запроса"
+            },
+            "required": true,
+            "description": "SHA256(salt + email + timestamp), email как в теле запроса",
+            "name": "fastify-token",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Вход выполнен",
+            "headers": {
+              "Set-Cookie": {
+                "description": "gwmt_refresh=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `INVALID_CREDENTIALS`: Неверный email или пароль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `SALT_INVALID`: Не удалось проверить запрос. Обновите страницу и проверьте время на устройстве",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "- `TOO_MANY_ATTEMPTS`: Слишком много попыток входа, попробуйте позже",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "refreshSession",
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Новый access-токен по cookie",
+        "description": "Вызывается при запуске приложения и когда истёк access. Токен в cookie одноразовый: при успехе приходит новая cookie. Параллельный запрос из соседней вкладки в течение 30 секунд получает 200 с новым access, но без `Set-Cookie`. Повтор старой cookie позже 30 секунд считается кражей: сессия отзывается целиком.",
+        "security": [
+          {
+            "refreshCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Новый access-токен",
+            "headers": {
+              "Set-Cookie": {
+                "description": "gwmt_refresh=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `REFRESH_MISSING`: Нужно войти в систему\n- `REFRESH_INVALID`: Нужно войти заново\n- `REFRESH_EXPIRED`: Сессия истекла, войдите заново\n- `REFRESH_REUSED`: Сессия завершена из соображений безопасности, войдите заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `FORBIDDEN_ORIGIN`: Запрос с чужого сайта отклонён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Выход",
+        "description": "Всегда 204 при верном `Origin`, даже без cookie. Cookie очищается.",
+        "security": [
+          {
+            "refreshCookie": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Сессия завершена"
+          },
+          "403": {
+            "description": "- `FORBIDDEN_ORIGIN`: Запрос с чужого сайта отклонён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/github/start": {
+      "get": {
+        "operationId": "startGithubLogin",
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Начать вход через GitHub",
+        "description": "Открывается переходом браузера, не через fetch.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Куда вернуть после входа. Только относительный путь, иначе `/boards`",
+              "example": "/boards"
+            },
+            "required": false,
+            "description": "Куда вернуть после входа. Только относительный путь, иначе `/boards`",
+            "name": "next",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Редирект на GitHub"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/github/callback": {
+      "get": {
+        "operationId": "finishGithubLogin",
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Возврат с GitHub",
+        "description": "Вызывает GitHub, не фронт. Токены в URL не передаются: после редиректа фронт получает access обычным `POST /auth/refresh`.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "code",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "state",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "error",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Успех: `APP_URL + next` и refresh-cookie. Ошибка: `/login?authError=` со значением `github_denied`, `github_state_mismatch`, `github_no_verified_email`, `github_failed`."
+          }
+        }
+      }
+    },
+    "/api/v1/auth/google/start": {
+      "get": {
+        "operationId": "startGoogleLogin",
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Начать вход через Google",
+        "description": "Открывается переходом браузера, не через fetch.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Куда вернуть после входа. Только относительный путь, иначе `/boards`",
+              "example": "/boards"
+            },
+            "required": false,
+            "description": "Куда вернуть после входа. Только относительный путь, иначе `/boards`",
+            "name": "next",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Редирект на Google"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/google/callback": {
+      "get": {
+        "operationId": "finishGoogleLogin",
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Возврат с Google",
+        "description": "Вызывает Google, не фронт. Токены в URL не передаются: после редиректа фронт получает access обычным `POST /auth/refresh`.",
+        "security": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "code",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "state",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "error",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Успех: `APP_URL + next` и refresh-cookie. Ошибка: `/login?authError=` со значением `google_denied`, `google_state_mismatch`, `google_no_verified_email`, `google_failed`, `google_email_not_trusted`. `google_email_not_trusted` значит, что аккаунт с таким email уже есть, а Google не отвечает за этот адрес (это не Gmail и не Workspace). Нужно войти другим способом."
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "getMe",
+        "tags": [
+          "Профиль"
+        ],
+        "summary": "Текущий пользователь",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Профиль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateMe",
+        "tags": [
+          "Профиль"
+        ],
+        "summary": "Изменить профиль",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMeBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Обновлённый профиль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "- `EMAIL_TAKEN`: Этот email уже зарегистрирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/password": {
+      "post": {
+        "operationId": "changePassword",
+        "tags": [
+          "Профиль"
+        ],
+        "summary": "Сменить пароль",
+        "description": "Отзывает все сессии, кроме текущей. Неверный текущий пароль это 422, а не 401: перехватчик токенов не должен срабатывать.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Пароль изменён"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей\n- `WRONG_PASSWORD`: Неверный пароль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/nav-summary": {
+      "get": {
+        "operationId": "getNavSummary",
+        "tags": [
+          "Профиль"
+        ],
+        "summary": "Данные боковых плиток",
+        "description": "Всё для бокового меню одним запросом. Без досок `board` и `kpi` равны `null`. Запускает ленивую смену спринта.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Без него берётся доска, куда пользователь добавлен последним"
+            },
+            "required": false,
+            "description": "Без него берётся доска, куда пользователь добавлен последним",
+            "name": "boardId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Сводка",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/task-stats": {
+      "get": {
+        "operationId": "getMyTaskStats",
+        "tags": [
+          "Профиль"
+        ],
+        "summary": "Статистика задач для профиля",
+        "description": "Учитываются только задачи с досок, где пользователь участник.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статистика",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTaskStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/tasks": {
+      "get": {
+        "operationId": "listMyTasks",
+        "tags": [
+          "Профиль"
+        ],
+        "summary": "Мои задачи",
+        "description": "Задачи, где пользователь занимает любую роль, только с досок, где он участник. Сортировка: `work`, `review`, `test`, `todo`, `done`, затем ключ доски, затем номер как число. `total` учитывает фильтры, `summary` нет.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Поиск по названию и ключу"
+            },
+            "required": false,
+            "description": "Поиск по названию и ключу",
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/TaskStatus"
+            },
+            "required": false,
+            "description": "Статус задачи. Порядок слева направо определяет, что такое «вперёд».",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "author",
+                "reviewer",
+                "tester",
+                "designer"
+              ],
+              "description": "Роль пользователя в задаче"
+            },
+            "required": false,
+            "description": "Роль пользователя в задаче",
+            "name": "role",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Страница задач",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyTasksResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/search": {
+      "get": {
+        "operationId": "searchUsers",
+        "tags": [
+          "Люди"
+        ],
+        "summary": "Поиск людей",
+        "description": "До 20 человек, себя в выдаче нет, email не отдаётся. При пустом `q` возвращаются люди с других досок текущего пользователя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Вхождение в имя или точный email. Пусто: люди с других моих досок. Иначе минимум 2 символа"
+            },
+            "required": false,
+            "description": "Вхождение в имя или точный email. Пусто: люди с других моих досок. Иначе минимум 2 символа",
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Убрать участников этой доски. Нужна роль admin на ней"
+            },
+            "required": false,
+            "description": "Убрать участников этой доски. Нужна роль admin на ней",
+            "name": "excludeBoardId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Найденные люди",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards": {
+      "get": {
+        "operationId": "listBoards",
+        "tags": [
+          "Доски"
+        ],
+        "summary": "Доски пользователя",
+        "description": "Без пагинации, по названию. Видны только доски, где пользователь участник.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Поиск по названию и ключу"
+            },
+            "required": false,
+            "description": "Поиск по названию и ключу",
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "favorite"
+              ]
+            },
+            "required": false,
+            "name": "filter",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список досок",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createBoard",
+        "tags": [
+          "Доски"
+        ],
+        "summary": "Создать доску",
+        "description": "Создатель становится `admin`, остальные из `memberIds` получают `worker`. Ключ неизменяем, часовой пояс берётся из профиля создателя. Сразу создаётся спринт 1.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBoardBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Доска создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `USER_NOT_FOUND`: Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "- `BOARD_KEY_TAKEN`: Такой ключ уже есть",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{boardId}": {
+      "get": {
+        "operationId": "getBoard",
+        "tags": [
+          "Доски"
+        ],
+        "summary": "Деталь доски",
+        "description": "Источник участников для чипов, селектов и экрана участников.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Доска",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{boardId}/favorite": {
+      "put": {
+        "operationId": "addBoardToFavorites",
+        "tags": [
+          "Доски"
+        ],
+        "summary": "Добавить в избранное",
+        "description": "Идемпотентно. Доступно и гостю.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeBoardFromFavorites",
+        "tags": [
+          "Доски"
+        ],
+        "summary": "Убрать из избранного",
+        "description": "Идемпотентно. Доступно и гостю.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{boardId}/members": {
+      "post": {
+        "operationId": "addBoardMember",
+        "tags": [
+          "Участники"
+        ],
+        "summary": "Добавить участника",
+        "description": "Только `admin`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMemberBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Участник добавлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardMember"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена\n- `USER_NOT_FOUND`: Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "- `ALREADY_MEMBER`: Этот человек уже на доске",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{boardId}/members/{userId}": {
+      "patch": {
+        "operationId": "updateBoardMember",
+        "tags": [
+          "Участники"
+        ],
+        "summary": "Поменять роль участника",
+        "description": "Только `admin`. Свою роль поменять нельзя, поэтому на доске всегда остаётся администратор. Новая роль действует сразу, в том числе для уже выданных токенов.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Id участника"
+            },
+            "required": true,
+            "description": "Id участника",
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Роль изменена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardMember"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена\n- `USER_NOT_FOUND`: Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей\n- `CANNOT_CHANGE_OWN_ROLE`: Нельзя поменять свою роль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeBoardMember",
+        "tags": [
+          "Участники"
+        ],
+        "summary": "Убрать участника",
+        "description": "Только `admin`. Себя убрать нельзя. Роли человека в задачах сохраняются, но в его «Моих задачах» и статистике задачи этой доски больше не показываются.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Id участника"
+            },
+            "required": true,
+            "description": "Id участника",
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Участник убран"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена\n- `USER_NOT_FOUND`: Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `CANNOT_REMOVE_SELF`: Нельзя убрать себя с доски",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{boardId}/sprints": {
+      "get": {
+        "operationId": "listBoardSprints",
+        "tags": [
+          "Спринты и KPI"
+        ],
+        "summary": "Спринты доски",
+        "description": "От новых к старым.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 8
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список спринтов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{boardId}/sprints/{number}/kpi": {
+      "get": {
+        "operationId": "getSprintKpi",
+        "tags": [
+          "Спринты и KPI"
+        ],
+        "summary": "KPI спринта",
+        "description": "Для активного спринта считается по текущим данным, для закрытого читается из снимка и после закрытия не меняется. В массиве `days` всегда 10 дней, у будущих поля факта равны `null`.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Номер спринта на доске",
+              "example": 14
+            },
+            "required": true,
+            "description": "Номер спринта на доске",
+            "name": "number",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "KPI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SprintKpi"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена\n- `SPRINT_NOT_FOUND`: Спринт не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{boardId}/tasks": {
+      "get": {
+        "operationId": "listBoardTasks",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Задачи активного спринта",
+        "description": "Весь активный спринт одним списком, фильтров на сервере нет: поиск, приоритет и фильтр по людям работают на клиенте. Порядок: `createdAt` по возрастанию, затем номер.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Спринт и задачи",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardTasksResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTask",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Создать задачу",
+        "description": "Задача попадает в активный спринт. Рабочий создаёт только в `todo`, администратор в любом статусе. Человек с задачи должен быть участником доски и не гостем.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 2147483647,
+              "description": "Числовой id доски",
+              "example": 9
+            },
+            "required": true,
+            "description": "Числовой id доски",
+            "name": "boardId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Задача создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие\n- `STATUS_MOVE_FORBIDDEN`: Нельзя перевести задачу в этот статус",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `BOARD_NOT_FOUND`: Доска не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей\n- `NOT_BOARD_MEMBER`: Этот человек не состоит в доске\n- `ASSIGNEE_IS_GUEST`: Гостя нельзя назначить на задачу",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/search": {
+      "get": {
+        "operationId": "searchTasks",
+        "tags": [
+          "Связи и комментарии"
+        ],
+        "summary": "Поиск задач для связывания",
+        "description": "Только задачи с досок, где у пользователя роль `admin` или `worker`. Сортировка по `updated_at`, новые сверху.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Поиск по названию и ключу"
+            },
+            "required": false,
+            "description": "Поиск по названию и ключу",
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Убрать саму эту задачу и уже связанные с ней"
+            },
+            "required": false,
+            "description": "Убрать саму эту задачу и уже связанные с ней",
+            "name": "excludeLinkedTo",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 6
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Найденные задачи",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{key}": {
+      "get": {
+        "operationId": "getTask",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Деталь задачи",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Задача",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateTask",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Изменить задачу или её статус",
+        "description": "Рабочий может прислать только `status`, иначе весь запрос отклоняется. Смена статуса сбрасывает паузу. Тот же статус ничего не меняет. Нынешнего человека можно оставить в роли, даже если его убрали с доски или понизили до гостя.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Карточка задачи",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие\n- `STATUS_MOVE_FORBIDDEN`: Нельзя перевести задачу в этот статус\n- `TASK_TAKE_LOCKED`: Администратор запретил брать эту задачу в работу",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей\n- `NOT_BOARD_MEMBER`: Этот человек не состоит в доске\n- `ASSIGNEE_IS_GUEST`: Гостя нельзя назначить на задачу",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{key}/take-lock": {
+      "put": {
+        "operationId": "setTaskTakeLock",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Запретить брать в работу",
+        "description": "Только `admin` и только в `todo`. Рабочий не сможет вывести задачу из `todo`. Повторная установка возвращает 200 без изменений. При переносе в следующий спринт запрет сохраняется.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Карточка задачи",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "- `TASK_NOT_LOCKABLE`: Запретить брать в работу можно только задачу в статусе «К работе»",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "clearTaskTakeLock",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Снять запрет брать в работу",
+        "description": "Только `admin`. Повторное снятие возвращает 200 без изменений.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Карточка задачи",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{key}/pause": {
+      "post": {
+        "operationId": "pauseTask",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Поставить на паузу",
+        "description": "Только в `work`, `review`, `test`. Повторная пауза возвращает 200 без изменений.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Карточка задачи",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "- `TASK_NOT_PAUSABLE`: Поставить на паузу можно только задачу в работе, на ревью или в тесте",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{key}/resume": {
+      "post": {
+        "operationId": "resumeTask",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Снять с паузы",
+        "description": "Без паузы возвращает 200 без изменений.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Карточка задачи",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{key}/links": {
+      "post": {
+        "operationId": "createTaskLink",
+        "tags": [
+          "Связи и комментарии"
+        ],
+        "summary": "Связать задачи",
+        "description": "Обратная сторона создаётся сама. На пару задач только одна связь любого типа. Можно связывать задачи разных досок, нужна роль `admin` или `worker` на обеих.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLinkBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Связь создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskLinkItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "- `TASK_LINK_EXISTS`: Эти задачи уже связаны",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей\n- `TASK_LINK_SELF`: Нельзя связать задачу с самой собой",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{key}/links/{targetKey}": {
+      "delete": {
+        "operationId": "deleteTaskLink",
+        "tags": [
+          "Связи и комментарии"
+        ],
+        "summary": "Удалить связь",
+        "description": "Удаляет обе стороны. Нужна роль `admin` или `worker` на обеих досках.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ связанной задачи"
+            },
+            "required": true,
+            "description": "Ключ связанной задачи",
+            "name": "targetKey",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Связь удалена с обеих сторон"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{key}/comments": {
+      "post": {
+        "operationId": "createTaskComment",
+        "tags": [
+          "Связи и комментарии"
+        ],
+        "summary": "Добавить комментарий",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Комментарий добавлен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskComment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "tags": [
+          "Служебные"
+        ],
+        "summary": "Проверка сервиса и базы",
+        "description": "Делает запрос в базу. Токен не нужен.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Сервис и база доступны",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "- `INTERNAL_ERROR`: Что-то пошло не так, попробуйте ещё раз",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}
