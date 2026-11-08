@@ -1,0 +1,258 @@
+/* ============================================================
+   Дизайн-токены goodWebManTasks — источник правды для всего кита.
+
+   Как устроено:
+   1. Здесь — «сырые» CSS-переменные. Значения меняются по брейкпоинтам.
+   2. theme.css биндит их в Tailwind (`bg-primary`, `text-body`, `h-control`…).
+   3. Компоненты и экраны пишут только Tailwind-классы, хексов в коде нет.
+
+   Имена тут НЕ должны совпадать с именами в @theme (`--color-*`, `--text-*`,
+   `--radius-*`, `--spacing-*`, `--shadow-*`): `--radius-x: var(--radius-x)` —
+   циклическая ссылка, браузер выкинет значение.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* ---- Поверхности ---- */
+  --background: #f6f6f7;
+  --foreground: #18181b;
+  --surface: #ffffff;
+  --column: #ececef;
+  --muted: #f0f0f2;
+  --muted-foreground: #5f5f68;
+  --subtle-foreground: #3f3f46;
+  --disabled-foreground: #71717a;
+  --inverse: #18181b;
+  --inverse-foreground: #ffffff;
+
+  /* ---- Линии ---- */
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --input: #8e8e98;
+  --ring: #256abf;
+
+  /* ---- Акцент ---- */
+  --primary: #256abf;
+  --primary-hover: #1d5499;
+  --primary-tint: #e8f0fb;
+  --primary-tint-strong: #dbe7f7;
+  --primary-foreground: #ffffff;
+  --brand-panel: #174a8c;
+
+  /* ---- Семантика ---- */
+  --destructive: #c81e1e;
+  --destructive-foreground: #ffffff;
+  --destructive-tint: #fdecec;
+  --warning: #a85a00;
+  --warning-tint: #fdf1e3;
+  --warning-emphasis: #8a4a00;
+  --success: #147a4b;
+  --success-tint: #e3f5ec;
+
+  /* ---- Статусы задач: точка / подложка / текст на подложке ---- */
+  --status-todo: #a1a1aa;
+  --status-todo-tint: #f0f0f2;
+  --status-todo-emphasis: #3f3f46;
+  --status-work: #256abf;
+  --status-work-tint: #e8f0fb;
+  --status-work-emphasis: #1d5499;
+  --status-review: #eb6834;
+  --status-review-tint: #fdeee6;
+  --status-review-emphasis: #a8460f;
+  --status-test: #6250d6;
+  --status-test-tint: #efecfb;
+  --status-test-emphasis: #4a3ab0;
+  --status-done: #199e70;
+  --status-done-tint: #e3f5ec;
+  --status-done-emphasis: #147a4b;
+
+  /* ---- Тинты: аватары и иконки досок ---- */
+  --tint-blue: #e8f0fb;
+  --tint-blue-foreground: #1d5499;
+  --tint-orange: #fdeee6;
+  --tint-orange-foreground: #a8460f;
+  --tint-green: #e3f5ec;
+  --tint-green-foreground: #147a4b;
+  --tint-violet: #efecfb;
+  --tint-violet-foreground: #4a3ab0;
+  --tint-gray: #f0f0f2;
+  --tint-gray-foreground: #3f3f46;
+  --tint-pink: #fbe9f1;
+  --tint-pink-foreground: #a12a63;
+
+  /* ---- Меню-плитки: активная / покой / текст / визуализация / подложка ---- */
+  --tile-blue-solid: #1d5499;
+  --tile-blue-tint: #e8f0fb;
+  --tile-blue-ink: #174478;
+  --tile-blue-viz: #256abf;
+  --tile-blue-soft: #cfe0f5;
+  --tile-violet-solid: #4a3ab0;
+  --tile-violet-tint: #efecfb;
+  --tile-violet-ink: #3a2d8f;
+  --tile-violet-viz: #6250d6;
+  --tile-violet-soft: #ddd7f6;
+  --tile-green-solid: #147a4b;
+  --tile-green-tint: #e3f5ec;
+  --tile-green-ink: #0f5c39;
+  --tile-green-viz: #199e70;
+  --tile-green-soft: #c3ead6;
+
+  /* ---- Графики: выдавать по порядку, не перемешивая ---- */
+  --chart-1: #256abf;
+  --chart-2: #eb6834;
+  --chart-3: #199e70;
+  --chart-4: #6250d6;
+  --chart-neutral: #8e8e98;
+  --chart-plan: #c4c4cc;
+  --chart-soft: #8fb2de;
+  --chart-band: #f0f0f2;
+
+  /* ---- Оверлеи и тени ---- */
+  --overlay: rgb(24 24 27 / 0.45);
+  --overlay-soft: rgb(24 24 27 / 0.35);
+  --sh-popover: 0 4px 12px rgb(24 24 27 / 0.12);
+  --sh-toast: 0 8px 24px rgb(24 24 27 / 0.3);
+  --sh-modal: 0 16px 48px rgb(24 24 27 / 0.25);
+  --sh-drawer: 8px 0 32px rgb(24 24 27 / 0.18);
+
+  /* ---- Типографика (десктоп 800–1799) ---- */
+  --fs-micro: 10px;
+  --fs-caption: 12px;
+  --fs-small: 13px;
+  --fs-body: 14px;
+  --fs-lead: 16px;
+  --fs-title: 18px;
+  --fs-heading: 20px;
+  --fs-display: 24px;
+  --fs-metric: 28px;
+  --fs-field: 14px;
+
+  /* ---- Отступы: шаг 4 px, на 1920 растут ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* ---- Скругления ---- */
+  --r-tag: 6px;
+  --r-control: 8px; /* кнопка, поле */
+  --r-card: 10px; /* карточка задачи */
+  --r-block: 12px; /* блок, колонка */
+  --r-modal: 16px; /* модалка, плитка */
+
+  /* ---- Размеры ---- */
+  --control-sm: 32px;
+  --control-md: 40px;
+  --control-lg: 44px;
+  --chip: 32px;
+  --icon-button: 26px;
+  --icon-sm: 16px;
+  --icon-md: 18px;
+  --icon-lg: 20px;
+  --avatar-xs: 24px;
+  --avatar-sm: 28px;
+  --avatar-md: 32px;
+  --avatar-lg: 40px;
+  --avatar-xl: 72px;
+  --donut: 176px;
+  --table-row: 44px;
+  --textarea-min: 80px;
+  --textarea-max: 320px;
+
+  /* Плитка меню не бывает ниже обязательного содержимого: отступы, шапка
+     (иконка или две строки названия, что выше), зазоры и подпись */
+  --tile-min: calc(
+    var(--space-4) * 2 + max(var(--avatar-lg), var(--fs-title) * 2.4) + var(--space-3) + var(--space-2) +
+      var(--fs-caption) * 1.34
+  );
+
+  /* ---- Каркас ---- */
+  --header: 64px;
+  --page-padding: 24px;
+  --block-gap: 16px;
+  --sidebar: 260px;
+}
+
+/* 800–1279: меню сжимается до узких плиток */
+@media (width < 1280px) {
+  :root {
+    --sidebar: 96px;
+    /* Узкая плитка: иконка и число. Подпись показывается, если останется место */
+    --tile-min: calc(var(--space-3) * 2 + var(--avatar-lg) + var(--space-2) * 2 + var(--fs-lead) * 1.5);
+  }
+}
+
+/* < 800: крупные контролы под палец, меню уходит из сайдбара */
+@media (width < 800px) {
+  :root {
+    --control-md: 44px;
+    --icon-button: 36px;
+    --page-padding: 16px;
+    --block-gap: 12px;
+    --sidebar: 0px;
+  }
+}
+
+/* < 520: телефон. Поля 16 px, иначе iOS зумит экран при фокусе */
+@media (width < 520px) {
+  :root {
+    --fs-body: 15px;
+    --fs-field: 16px;
+    --chip: 44px;
+  }
+}
+
+/* >= 1800: на больших экранах растут шрифт, контролы и отступы */
+@media (width >= 1800px) {
+  :root {
+    --fs-micro: 12px;
+    --fs-caption: 14px;
+    --fs-small: 15px;
+    --fs-body: 16px;
+    --fs-lead: 18px;
+    --fs-title: 22px;
+    --fs-heading: 26px;
+    --fs-display: 30px;
+    --fs-metric: 36px;
+    --fs-field: 16px;
+
+    --space-1: 6px;
+    --space-2: 10px;
+    --space-3: 14px;
+    --space-4: 20px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --r-control: 10px;
+    --r-card: 12px;
+    --r-block: 14px;
+    --r-modal: 20px;
+
+    --control-md: 48px;
+    --control-lg: 52px;
+    --chip: 42px;
+    --icon-button: 32px;
+    --icon-sm: 20px;
+    --icon-md: 22px;
+    --icon-lg: 24px;
+    --avatar-xs: 30px;
+    --avatar-sm: 34px;
+    --avatar-md: 40px;
+    --avatar-lg: 48px;
+    --avatar-xl: 88px;
+    --donut: 216px;
+    --table-row: 56px;
+    --textarea-min: 96px;
+    --textarea-max: 400px;
+
+    --header: 80px;
+    --page-padding: 32px;
+    --block-gap: 20px;
+    --sidebar: 320px;
+  }
+}

@@ -1,0 +1,213 @@
+/* ============================================================
+   Бинд токенов к Tailwind-утилитам.
+
+   Стандартные палитра, шрифтовая шкала, скругления, тени и брейкпоинты
+   намеренно сброшены: `bg-red-500` или `text-lg` просто не соберутся,
+   поэтому мимо дизайн-системы случайно не написать.
+
+   Добавил токен сюда — добавь его имя в lib/cn/cn.ts. Иначе tailwind-merge
+   не поймёт класс и молча склеит не то (cn.test.ts это проверяет).
+   ============================================================ */
+
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --breakpoint-*: initial;
+
+  /* 640 → sm, 960 → md, 1440 → lg, 1920 → xl */
+  --breakpoint-sm: 520px;
+  --breakpoint-md: 800px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1800px;
+
+  --tracking-title: -0.01em;
+  --tracking-display: -0.02em;
+
+  --animate-fade-in: ui-fade-in 150ms ease-out;
+  --animate-dialog-in: ui-dialog-in 180ms ease-out;
+  --animate-toast-in: ui-toast-in 200ms ease-out;
+  --animate-shimmer: ui-shimmer 1.8s linear infinite;
+
+  @keyframes ui-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ui-dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes ui-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes ui-shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/* inline = утилита ссылается на var(), поэтому значения живут по брейкпоинтам */
+@theme inline {
+  --font-sans: var(--font);
+
+  /* ---- Цвета ---- */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-column: var(--column);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-disabled-foreground: var(--disabled-foreground);
+  --color-inverse: var(--inverse);
+  --color-inverse-foreground: var(--inverse-foreground);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-tint: var(--primary-tint);
+  --color-primary-tint-strong: var(--primary-tint-strong);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-brand-panel: var(--brand-panel);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-tint: var(--destructive-tint);
+  --color-warning: var(--warning);
+  --color-warning-tint: var(--warning-tint);
+  --color-warning-emphasis: var(--warning-emphasis);
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+
+  --color-status-todo: var(--status-todo);
+  --color-status-todo-tint: var(--status-todo-tint);
+  --color-status-todo-emphasis: var(--status-todo-emphasis);
+  --color-status-work: var(--status-work);
+  --color-status-work-tint: var(--status-work-tint);
+  --color-status-work-emphasis: var(--status-work-emphasis);
+  --color-status-review: var(--status-review);
+  --color-status-review-tint: var(--status-review-tint);
+  --color-status-review-emphasis: var(--status-review-emphasis);
+  --color-status-test: var(--status-test);
+  --color-status-test-tint: var(--status-test-tint);
+  --color-status-test-emphasis: var(--status-test-emphasis);
+  --color-status-done: var(--status-done);
+  --color-status-done-tint: var(--status-done-tint);
+  --color-status-done-emphasis: var(--status-done-emphasis);
+
+  --color-tint-blue: var(--tint-blue);
+  --color-tint-blue-foreground: var(--tint-blue-foreground);
+  --color-tint-orange: var(--tint-orange);
+  --color-tint-orange-foreground: var(--tint-orange-foreground);
+  --color-tint-green: var(--tint-green);
+  --color-tint-green-foreground: var(--tint-green-foreground);
+  --color-tint-violet: var(--tint-violet);
+  --color-tint-violet-foreground: var(--tint-violet-foreground);
+  --color-tint-gray: var(--tint-gray);
+  --color-tint-gray-foreground: var(--tint-gray-foreground);
+  --color-tint-pink: var(--tint-pink);
+  --color-tint-pink-foreground: var(--tint-pink-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-neutral: var(--chart-neutral);
+  --color-chart-plan: var(--chart-plan);
+  --color-chart-soft: var(--chart-soft);
+  --color-chart-band: var(--chart-band);
+
+  --color-overlay: var(--overlay);
+  --color-overlay-soft: var(--overlay-soft);
+
+  /* ---- Шрифтовая шкала ---- */
+  --text-micro: var(--fs-micro);
+  --text-micro--line-height: 1.2;
+  --text-caption: var(--fs-caption);
+  --text-caption--line-height: 1.33;
+  --text-small: var(--fs-small);
+  --text-small--line-height: 1.35;
+  --text-body: var(--fs-body);
+  --text-body--line-height: 1.43;
+  --text-lead: var(--fs-lead);
+  --text-lead--line-height: 1.5;
+  --text-title: var(--fs-title);
+  --text-title--line-height: 1.33;
+  --text-heading: var(--fs-heading);
+  --text-heading--line-height: 1.3;
+  --text-display: var(--fs-display);
+  --text-display--line-height: 1.3;
+  --text-metric: var(--fs-metric);
+  --text-metric--line-height: 1.2;
+  --text-hero: 32px;
+  --text-hero--line-height: 1.25;
+  --text-field: var(--fs-field);
+  --text-field--line-height: 1.43;
+
+  /* ---- Отступы ----
+     Числовые 1–6 перекрыты адаптивной шкалой: `p-4` = 16 px, на 1920 — 20 px.
+     Для жёстких размеров, которые расти не должны, — `size-[18px]`. */
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+
+  /* ---- Именованные размеры ----
+     Имя не должно совпадать со значением статической утилиты: `--spacing-block`
+     превратил бы каждый `inline-block` ещё и в `inline-size: var(--spacing-block)`. */
+  --spacing-control-sm: var(--control-sm);
+  --spacing-control: var(--control-md);
+  --spacing-control-lg: var(--control-lg);
+  --spacing-chip: var(--chip);
+  --spacing-icon-button: var(--icon-button);
+  --spacing-icon-sm: var(--icon-sm);
+  --spacing-icon: var(--icon-md);
+  --spacing-icon-lg: var(--icon-lg);
+  --spacing-avatar-xs: var(--avatar-xs);
+  --spacing-avatar-sm: var(--avatar-sm);
+  --spacing-avatar-md: var(--avatar-md);
+  --spacing-avatar-lg: var(--avatar-lg);
+  --spacing-avatar-xl: var(--avatar-xl);
+  --spacing-donut: var(--donut);
+  --spacing-table-row: var(--table-row);
+  --spacing-textarea-min: var(--textarea-min);
+  --spacing-textarea-max: var(--textarea-max);
+  --spacing-tile: var(--tile-min);
+  --spacing-header: var(--header);
+  --spacing-page: var(--page-padding);
+  --spacing-section: var(--block-gap);
+  --spacing-sidebar: var(--sidebar);
+
+  /* ---- Скругления ---- */
+  --radius-tag: var(--r-tag);
+  --radius-control: var(--r-control);
+  --radius-card: var(--r-card);
+  --radius-block: var(--r-block);
+  --radius-modal: var(--r-modal);
+
+  /* ---- Тени ---- */
+  --shadow-popover: var(--sh-popover);
+  --shadow-toast: var(--sh-toast);
+  --shadow-modal: var(--sh-modal);
+  --shadow-drawer: var(--sh-drawer);
+}

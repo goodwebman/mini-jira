@@ -1,0 +1,49 @@
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font);
+    font-size: var(--fs-body);
+    line-height: 1.43;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Единый фокус интерактивов. Цвет меняется через --focus-color (у опасной кнопки — красный). */
+@utility focus-ring {
+  /* Цвет задан заранее: иначе transition-colors проявляет рамку из цвета текста */
+  outline-color: var(--focus-color, var(--ring));
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-color, var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+}
+
+/* Уважаем системную настройку «уменьшить движение» */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

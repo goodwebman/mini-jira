@@ -1,0 +1,5 @@
+/* Публичный вход стилей кита: импортируется один раз в корне приложения. */
+@import 'tailwindcss';
+@import './tokens.css';
+@import './theme.css';
+@import './base.css';
