@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomInt } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto';
 import type { AuthResponse, LoginBody, Me, RegisterBody } from '@gwmt/contracts';
 import type { Db } from '../../db/client.js';
 import type { UserRow } from '../../db/schema.js';
@@ -72,7 +72,6 @@ async function authResponse(
 
 export interface IssuedAuth {
   response: AuthResponse;
-  /** Нет при параллельном refresh: свежая cookie уже у браузера. */
   cookie?: { token: string; remember: boolean };
 }
 
@@ -151,7 +150,7 @@ export async function login(
 
 type RefreshOutcome =
   | { kind: 'rotated'; token: string }
-  | { kind: 'concurrent' }
+  | { kind: 'concurrent'; token: string }
   | { kind: 'reused' };
 
 export type RefreshResult = IssuedAuth | { reused: true };
@@ -167,10 +166,14 @@ export async function refresh(
   if (!found) throw new AppError('REFRESH_INVALID');
   if (found.revokedAt || found.expiresAt <= now) throw new AppError('REFRESH_EXPIRED');
 
+  // Reproduce successors without storing plaintext refresh tokens in the database.
+  const successor = (previous: string) => createHmac('sha256', deps.env.JWT_ACCESS_SECRET)
+    .update(`refresh:${previous}`).digest('base64url');
+
   // Отзыв сессии при краже должен закоммититься, поэтому ошибку бросаем уже после транзакции.
   const outcome = await deps.withTx<RefreshOutcome>(async (tx) => {
     if (await repo.markRefreshTokenUsed(tx, found.id, now)) {
-      const nextToken = newRefreshToken();
+      const nextToken = successor(token);
       await repo.insertRefreshToken(tx, found.sessionId, sha256(nextToken), now);
       await repo.extendSession(
         tx,
@@ -183,7 +186,16 @@ export async function refresh(
 
     const usedAt = await repo.getRefreshTokenUsedAt(tx, found.id);
     if (usedAt && now.getTime() - usedAt.getTime() <= REFRESH_GRACE_MS) {
-      return { kind: 'concurrent' };
+      let current = successor(token);
+      let row = await repo.findRefreshToken(tx, sha256(current));
+      // Follow any further rotations so a delayed response restores the latest cookie.
+      while (row?.usedAt) {
+        current = successor(current);
+        row = await repo.findRefreshToken(tx, sha256(current));
+      }
+      if (row) return { kind: 'concurrent', token: current };
+      // Tokens rotated before this deployment cannot be reconstructed.
+      throw new AppError('REFRESH_INVALID');
     }
     await repo.revokeSession(tx, found.sessionId, now);
     return { kind: 'reused' };
@@ -194,9 +206,7 @@ export async function refresh(
   const user = await repo.findUserById(deps.db, found.userId);
   if (!user) throw new AppError('REFRESH_INVALID');
   const response = await authResponse(deps, user, found.sessionId);
-  return outcome.kind === 'rotated'
-    ? { response, cookie: { token: outcome.token, remember: found.remember } }
-    : { response };
+  return { response, cookie: { token: outcome.token, remember: found.remember } };
 }
 
 export async function logout(deps: AppDeps, token: string | undefined): Promise<void> {

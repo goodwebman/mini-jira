@@ -16,6 +16,7 @@
     "icons:test": "node --test scripts/generate-icons.test.mjs"
   },
   "dependencies": {
+    "@gwmt/contracts": "*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "react": "^19.3.1",

@@ -229,7 +229,8 @@ describe('авторизация', () => {
       const token = await cookieFrom(await register());
       const [a, b] = await Promise.all([refreshWith(token), refreshWith(token)]);
       expect([a.status, b.status]).toEqual([200, 200]);
-      expect([refreshCookieOf(a), refreshCookieOf(b)].filter(Boolean)).toHaveLength(1);
+      expect([refreshCookieOf(a), refreshCookieOf(b)].filter(Boolean)).toHaveLength(2);
+      expect(refreshCookieOf(a)).toBe(refreshCookieOf(b));
       expect((await json(a)).accessToken).toEqual(expect.any(String));
       expect((await json(b)).accessToken).toEqual(expect.any(String));
     });
@@ -285,6 +286,19 @@ describe('авторизация', () => {
       expect((await json(foreign)).error.code).toBe('FORBIDDEN_ORIGIN');
       expect((await refreshWith(token, { Origin: APP_URL })).status).toBe(200);
     });
+  });
+
+  it('recovers the latest cookie after a lost refresh response', async () => {
+    const first = tokenValue(refreshCookieOf(await register()));
+    const rotated = await refreshWith(first);
+    t.advance(1000);
+    const recovered = await refreshWith(first);
+    expect(refreshCookieOf(recovered)).toBe(refreshCookieOf(rotated));
+    const latest = await refreshWith(tokenValue(refreshCookieOf(recovered)));
+    const retry = await refreshWith(first);
+    expect(refreshCookieOf(retry)).toBe(refreshCookieOf(latest));
+    t.advance(31_000);
+    expect((await refreshWith(tokenValue(refreshCookieOf(retry)))).status).toBe(200);
   });
 
   describe('logout', () => {
