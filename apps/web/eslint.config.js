@@ -19,4 +19,28 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Ядро авторизации переносится между проектами как есть: без фреймворков и кода приложения.
+    // Браузер доступен только через AuthPlatform, поэтому токену некуда случайно уехать.
+    files: ['src/entities/auth/lib/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^(react(-dom)?|axios)(/|$)|^@(tanstack|reduxjs|gwmt)/|^@/|/(model|api)(/|$)',
+              message: 'Ядро авторизации не зависит от фреймворков и кода приложения.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-globals': [
+        'error',
+        ...['window', 'document', 'navigator', 'location', 'localStorage', 'sessionStorage'].map(
+          (name) => ({ name, message: 'Браузерные API доступны только через AuthPlatform.' }),
+        ),
+      ],
+    },
+  },
 ])

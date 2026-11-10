@@ -68,6 +68,7 @@ export async function findRefreshToken(db: Db, tokenHash: string) {
   const [row] = await db
     .select({
       id: refreshTokens.id,
+      usedAt: refreshTokens.usedAt,
       sessionId: authSessions.id,
       userId: authSessions.userId,
       remember: authSessions.remember,
