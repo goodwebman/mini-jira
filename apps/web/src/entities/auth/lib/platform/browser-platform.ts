@@ -1,3 +1,4 @@
+import { AuthError } from '../errors';
 import { LocalLocks } from './local-locks';
 import { createMemoryPlatform } from './memory-platform';
 import type { AuthChannel, AuthMarkers, AuthPlatform, AuthResumeInfo } from './types';
@@ -25,6 +26,7 @@ async function withWebLock<T>(
   name: string,
   task: () => Promise<T>,
   timeoutMs: number,
+  fallback: () => Promise<T>,
 ): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -36,8 +38,10 @@ async function withWebLock<T>(
       return task();
     })) as T;
   } catch (error) {
-    // Блокировку не дали: истёк таймаут или запрет в sandbox-iframe. Операция важнее.
-    if (!acquired) return task();
+    // A busy lock must never be bypassed; unavailable APIs fall back to the local queue.
+    if (!acquired && controller.signal.aborted) throw new AuthError('timeout');
+    if (!acquired && error instanceof DOMException &&
+      (error.name === 'SecurityError' || error.name === 'NotSupportedError')) return fallback();
     throw error;
   } finally {
     clearTimeout(timer);
@@ -46,7 +50,14 @@ async function withWebLock<T>(
 
 function openBroadcastChannel(scope: BrowserScope, name: string): AuthChannel | null {
   if (!scope.BroadcastChannel) return null;
-  const channel = new scope.BroadcastChannel(name);
+  let channel: BroadcastChannel;
+  try {
+    channel = new scope.BroadcastChannel(name);
+  } catch (error) {
+    if (error instanceof DOMException &&
+      (error.name === 'SecurityError' || error.name === 'NotSupportedError')) return null;
+    throw error;
+  }
   return {
     post: (message) => channel.postMessage(message),
     subscribe: (listener) => {
@@ -70,7 +81,7 @@ function createMarkers(scope: BrowserScope): AuthMarkers {
     }
   };
   return {
-    has: (key) => attempt((storage) => storage.getItem(key) !== null)?.value ?? fallback.has(key),
+    has: (key) => fallback.has(key) || (attempt((storage) => storage.getItem(key) !== null)?.value ?? false),
     set: (key) => {
       if (!attempt((storage) => storage.setItem(key, '1'))) fallback.add(key);
     },
@@ -91,7 +102,7 @@ export function createBrowserPlatform(scope: BrowserScope): AuthPlatform {
     withLock: (name, task, { timeoutMs }) => {
       const webLocks = scope.navigator?.locks;
       return webLocks
-        ? withWebLock(webLocks, name, task, timeoutMs)
+        ? withWebLock(webLocks, name, task, timeoutMs, () => localLocks.run(name, task, timeoutMs))
         : localLocks.run(name, task, timeoutMs);
     },
     openChannel: (name) => openBroadcastChannel(scope, name),

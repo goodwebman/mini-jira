@@ -23,6 +23,8 @@ function decorate(request: Request, attempt: AuthAttempt): Request {
   for (const [name, value] of Object.entries(attempt.headers)) headers.set(name, value);
   return new Request(request, {
     headers,
+    // Custom API-key/CSRF headers must never follow a redirect to another origin.
+    redirect: 'error',
     ...(attempt.credentialsMode ? { credentials: attempt.credentialsMode } : {}),
   });
 }

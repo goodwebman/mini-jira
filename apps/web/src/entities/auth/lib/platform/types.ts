@@ -23,10 +23,7 @@ export interface AuthPlatform {
   now(): number;
   origin(): string | null;
   isVisible(): boolean;
-  /**
-   * Выполняет задачу под блокировкой, общей для всех вкладок. Не дождавшись за
-   * `timeoutMs`, выполняет её всё равно: замороженная вкладка не должна вешать остальные.
-   */
+  /** Wait at most timeoutMs; reject without running task if the lock remains busy. */
   withLock<T>(name: string, task: () => Promise<T>, options: { timeoutMs: number }): Promise<T>;
   openChannel(name: string): AuthChannel | null;
   onResume(listener: (info: AuthResumeInfo) => void): Unsubscribe;

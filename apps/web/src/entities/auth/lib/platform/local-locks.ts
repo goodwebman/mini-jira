@@ -1,14 +1,6 @@
-const noop = () => undefined;
+import { withDeadline } from '../internal/async';
 
-function waitAtMost(promise: Promise<unknown>, timeoutMs: number): Promise<void> {
-  return new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, timeoutMs);
-    promise.finally(() => {
-      clearTimeout(timer);
-      resolve();
-    });
-  });
-}
+const noop = () => undefined;
 
 /** Очередь FIFO внутри одной вкладки: запасной вариант, когда Web Locks недоступен. */
 export class LocalLocks {
@@ -16,8 +8,14 @@ export class LocalLocks {
 
   run<T>(name: string, task: () => Promise<T>, timeoutMs: number): Promise<T> {
     const previous = this.#tails.get(name) ?? Promise.resolve();
-    const result = waitAtMost(previous, timeoutMs).then(task);
-    this.#tails.set(name, result.catch(noop));
+    const result = withDeadline(timeoutMs, () => previous).then(task);
+    const settled = result.then(noop, noop);
+    // A timed-out waiter must not release a lock still held by its predecessor.
+    const tail = previous.then(() => settled);
+    this.#tails.set(name, tail);
+    void tail.then(() => {
+      if (this.#tails.get(name) === tail) this.#tails.delete(name);
+    });
     return result;
   }
 }

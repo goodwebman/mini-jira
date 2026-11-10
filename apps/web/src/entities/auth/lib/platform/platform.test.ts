@@ -77,7 +77,7 @@ describe('браузерная платформа', () => {
       expect(request).toHaveBeenCalledWith('x', expect.anything(), expect.any(Function));
     });
 
-    it('не дождавшись блокировки, выполняет задачу без неё', async () => {
+    it('отклоняет ожидание занятой блокировки, не запуская задачу', async () => {
       vi.useFakeTimers();
       const request = (_name: string, options: { signal: AbortSignal }) =>
         new Promise((_, reject) => {
@@ -88,11 +88,12 @@ describe('браузерная платформа', () => {
       const { scope } = createScope(fakeLocks(request as unknown as LockManager['request']));
       const task = vi.fn(async () => 'without-lock');
 
-      const result = createBrowserPlatform(scope).withLock('x', task, { timeoutMs: 1_000 });
+      const result = createBrowserPlatform(scope).withLock('x', task, { timeoutMs: 1_000 })
+        .catch((error: unknown) => error);
       await vi.advanceTimersByTimeAsync(1_000);
 
-      await expect(result).resolves.toBe('without-lock');
-      expect(task).toHaveBeenCalledTimes(1);
+      expect(await result).toMatchObject({ code: 'timeout' });
+      expect(task).not.toHaveBeenCalled();
     });
 
     it('запрет блокировки (sandbox-iframe) не ломает операцию', async () => {
@@ -140,6 +141,18 @@ describe('браузерная платформа', () => {
   });
 
   describe('флаги', () => {
+    it('сохраняет намерение выхода, когда чтение разрешено, а запись превысила квоту', () => {
+      const { scope } = createScope({ localStorage: {
+        getItem: () => null,
+        setItem: () => { throw new DOMException('Full', 'QuotaExceededError'); },
+        removeItem: () => undefined,
+      } });
+      const { markers } = createBrowserPlatform(scope);
+      markers.set('pending');
+      expect(markers.has('pending')).toBe(true);
+      markers.delete('pending');
+      expect(markers.has('pending')).toBe(false);
+    });
     it('живут в localStorage', () => {
       const { scope, storage } = createScope();
       const { markers } = createBrowserPlatform(scope);
@@ -166,6 +179,12 @@ describe('браузерная платформа', () => {
   });
 
   describe('канал вкладок', () => {
+    it('недоступный по политике BroadcastChannel не срывает запуск', () => {
+      const { scope } = createScope({ BroadcastChannel: class {
+        constructor() { throw new DOMException('Denied', 'SecurityError'); }
+      } as unknown as typeof BroadcastChannel });
+      expect(createBrowserPlatform(scope).openChannel('x')).toBeNull();
+    });
     it('нет BroadcastChannel: null', () => {
       const { scope } = createScope();
       expect(createBrowserPlatform(scope).openChannel('c')).toBeNull();
@@ -259,13 +278,23 @@ describe('LocalLocks', () => {
     await expect(locks.run('x', async () => 'next', 1_000)).resolves.toBe('next');
   });
 
-  it('зависшая задача не вешает очередь навсегда', async () => {
+  it('таймаут ожидающего не выпускает следующего раньше владельца', async () => {
     vi.useFakeTimers();
     const locks = new LocalLocks();
-    void locks.run('x', () => new Promise(() => undefined), 500);
-    const next = locks.run('x', async () => 'next', 500);
+    const gate = deferred();
+    const owner = locks.run('x', () => gate.promise, 500);
+    const skipped = vi.fn(async () => 'skipped');
+    const next = locks.run('x', skipped, 500).catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(500);
-    await expect(next).resolves.toBe('next');
+    expect(await next).toMatchObject({ code: 'timeout' });
+    const last = vi.fn(async () => 'last');
+    const waiting = locks.run('x', last, 1_000);
+    await flush();
+    expect(last).not.toHaveBeenCalled();
+    gate.resolve();
+    await owner;
+    await expect(waiting).resolves.toBe('last');
+    expect(skipped).not.toHaveBeenCalled();
   });
 
   it('разные имена не мешают друг другу', async () => {

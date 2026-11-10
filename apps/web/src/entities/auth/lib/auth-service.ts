@@ -387,7 +387,10 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     if (this.#credentials === null) return 'done';
 
     const verdict = await this.#assess(response, this.#credentials);
-    if (ticket.epoch !== this.#epoch) return 'done';
+    if (ticket.epoch !== this.#epoch) {
+      if (response.status === 401) return 'done';
+      throw sessionChanged();
+    }
     if (verdict.action === 'pass') return 'done';
 
     // Запрос ушёл с реквизитами, которые уже заменили: сессия тут ни при чём.
@@ -516,14 +519,21 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     const signOuts = this.#signOuts;
     this.#store.patch({ phase: 'signing-in', error: null });
     try {
-      const result = await this.#exclusive(() =>
-        withDeadline(this.#operationTimeoutMs, (signal) => this.#strategy.login(input, { signal })),
-      );
-      if (isRedirect(result)) return this.#redirect(result);
+      const result = await this.#exclusive(async () => {
+        if (this.#isDestroyed || signOuts !== this.#signOuts) throw sessionChanged();
+        const grant = await withDeadline(this.#operationTimeoutMs, (signal) =>
+          this.#strategy.login(input, { signal }),
+        );
+        if (this.#isDestroyed || signOuts !== this.#signOuts) {
+          if (!isRedirect(grant)) await this.#revokeOrphan(grant);
+          throw sessionChanged();
+        }
+        return grant;
+      });
       if (this.#isDestroyed || signOuts !== this.#signOuts) {
-        await this.#revokeOrphan(result);
         throw sessionChanged();
       }
+      if (isRedirect(result)) return this.#redirect(result);
       this.#cancelBootstrapRetry();
       this.#platform.markers.delete(this.#pendingLogoutKey);
       this.#openSession(result, { origin: 'local', announce: true });
@@ -557,7 +567,7 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   async #runLogout(): Promise<AuthState<TUser>> {
     const { status } = this.getSnapshot();
     const isPending = this.#platform.markers.has(this.#pendingLogoutKey);
-    if (status === 'guest' && !isPending) return this.getSnapshot();
+    if (status === 'guest' && !isPending && this.#loginRun === null) return this.getSnapshot();
 
     const credentials = this.#credentials;
     this.#signOuts += 1;

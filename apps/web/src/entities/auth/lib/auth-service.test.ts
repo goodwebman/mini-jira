@@ -23,6 +23,73 @@ import type { AuthPersistence, PersistedSession } from './types';
 const unauthorized = () => AuthError.fromStatus(401, { serverCode: 'REFRESH_EXPIRED' });
 const networkDown = () => new TypeError('Failed to fetch');
 
+describe('async session boundaries', () => {
+  it('logout cancels a pending login after bootstrap has resolved to guest', async () => {
+    const grant = deferred<TestGrant>();
+    const { auth, strategy } = createAuth({ strategy: { login: vi.fn(() => grant.promise) } });
+    await auth.bootstrap();
+    expect(auth.getSnapshot().status).toBe('guest');
+    const result = auth.login({}).catch((error: unknown) => error);
+    await flush();
+    expect(strategy.login).toHaveBeenCalledOnce();
+    const logout = auth.logout();
+    grant.resolve(makeGrant('cancelled'));
+    expect(await result).toMatchObject({ code: 'session_changed' });
+    await logout;
+    expect(auth.getSnapshot().status).toBe('guest');
+    auth.destroy();
+  });
+  it('rejects an old successful response if identity changes during assessment', async () => {
+    const verdict = deferred<{ action: 'pass' }>();
+    const assess = vi.fn(() => verdict.promise);
+    const { auth } = await createSignedIn({ strategy: { assess } });
+    const request = auth.execute(TARGET, async () => ({ status: 200 }));
+    const outcome = request.catch((error: unknown) => error);
+    await flush();
+    expect(assess).toHaveBeenCalledOnce();
+    await auth.establish(makeGrant('other', makeUser('other')));
+    verdict.resolve({ action: 'pass' });
+    expect(await outcome).toMatchObject({ code: 'session_changed' });
+    auth.destroy();
+  });
+
+  it.each(['logout', 'destroy'] as const)('does not redirect after %s during SSO login', async (action) => {
+    const redirect = deferred<{ redirectTo: string }>();
+    const { auth, platform } = createAuth({ strategy: { login: vi.fn(() => redirect.promise) } });
+    const outcome = auth.login({}).catch((error: unknown) => error);
+    await flush();
+    const stopped = auth[action]();
+    redirect.resolve({ redirectTo: '/sso' });
+    expect(await outcome).toMatchObject({ code: 'session_changed' });
+    await stopped;
+    expect(platform.navigated).toEqual([]);
+    auth.destroy();
+  });
+
+  it('keeps orphan cleanup inside the session lock', async () => {
+    const login = deferred<TestGrant>();
+    const cleanup = deferred();
+    const browser = new TestBrowser();
+    const a = createAuth({ browser, strategy: {
+      login: vi.fn(() => login.promise), logout: vi.fn(() => cleanup.promise),
+    } });
+    const first = a.auth.login({}).catch((error: unknown) => error);
+    await flush();
+    a.auth.destroy();
+    login.resolve(makeGrant('orphan'));
+    await flush();
+    const b = createAuth({ browser });
+    const second = b.auth.login({});
+    await flush();
+    expect(b.strategy.login).not.toHaveBeenCalled();
+    cleanup.resolve();
+    expect(await first).toMatchObject({ code: 'session_changed' });
+    await second;
+    expect(b.strategy.login).toHaveBeenCalledOnce();
+    b.auth.destroy();
+  });
+});
+
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
@@ -1293,16 +1360,18 @@ describe('несколько вкладок', () => {
     },
   );
 
-  it('заблокированная вкладка не вешает остальные: операция идёт по таймауту', async () => {
+  it('занятая блокировка даёт unknown с таймаутом без обхода очереди', async () => {
     vi.useFakeTimers();
     const browser = new TestBrowser();
     void browser.locks.run('test:session', () => new Promise(() => undefined), 60_000);
-    const { auth } = createAuth({ browser, config: { operationTimeoutMs: 1_000 } });
+    const { auth, strategy } = createAuth({ browser, config: { operationTimeoutMs: 1_000 } });
 
     const boot = auth.bootstrap();
     await vi.advanceTimersByTimeAsync(10_000);
 
-    await expect(boot).resolves.toMatchObject({ status: 'guest' });
+    await expect(boot).resolves.toMatchObject({ status: 'unknown', error: { code: 'timeout' } });
+    expect(strategy.restore).not.toHaveBeenCalled();
+    auth.destroy();
   });
 });
 

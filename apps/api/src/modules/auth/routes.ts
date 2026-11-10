@@ -245,7 +245,7 @@ export function authRoutes(deps: AppDeps) {
       summary: 'Новый access-токен по cookie',
       description:
         'Вызывается при запуске приложения и когда истёк access. Токен в cookie одноразовый: при успехе приходит новая cookie. ' +
-        'Параллельный запрос из соседней вкладки в течение 30 секунд получает 200 с новым access, но без `Set-Cookie`. ' +
+        'Параллельный запрос из соседней вкладки в течение 30 секунд получает 200 с новым access и `Set-Cookie` с актуальным refresh-токеном. ' +
         'Повтор старой cookie позже 30 секунд считается кражей: сессия отзывается целиком.',
       security: refreshCookie,
       middleware: [sameOrigin],

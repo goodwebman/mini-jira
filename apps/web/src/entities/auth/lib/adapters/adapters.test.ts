@@ -41,6 +41,11 @@ async function signedInFetch(...tokens: string[]) {
 }
 
 describe('createAuthFetch', () => {
+  it('blocks redirects for requests with credentials, including custom headers', async () => {
+    const { authFetch, requests } = await signedInFetch('first-token');
+    await authFetch(URL_OK, { redirect: 'follow' });
+    expect(requests[0]?.redirect).toBe('error');
+  });
   it('добавляет заголовок и сохраняет метод, тело и свои заголовки', async () => {
     const { authFetch, requests } = await signedInFetch('first-token');
     await authFetch(URL_OK, {
