@@ -1,6 +1,6 @@
 import type { VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, useState, type HTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { getInitials, getTintByName } from './avatar-utils';
 import { avatarVariants } from './UIAvatar.variants';
 

@@ -10,8 +10,8 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { cn } from '../../lib/cn';
-import { Portal, type Placement } from '../../lib/dom';
+import { cn } from '@/shared/lib/cn';
+import { Portal, type Placement } from '@/shared/lib/dom';
 import {
   useControllableState,
   useEscape,
@@ -19,7 +19,7 @@ import {
   useFocusTrap,
   useMergedRefs,
   useOutsideClick,
-} from '../../lib/hooks';
+} from '@/shared/lib/hooks';
 
 export interface IUIPopoverProps {
   readonly testId?: string;

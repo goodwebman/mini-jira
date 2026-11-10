@@ -1,6 +1,6 @@
 import { forwardRef, memo, type HTMLAttributes, type MouseEvent } from 'react';
-import { cn } from '../../lib/cn';
-import { UIButton, type IUIButtonProps } from '../UIButton';
+import { cn } from '@/shared/lib/cn';
+import { UIButton, type IUIButtonProps } from '@/shared/ui/UIButton';
 import { useDialogContext } from './dialog-context';
 
 export type IUIDialogBodyProps = HTMLAttributes<HTMLDivElement>;

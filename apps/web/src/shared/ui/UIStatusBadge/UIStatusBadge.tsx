@@ -1,5 +1,5 @@
 import { forwardRef, memo, type HTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { STATUS_DOT_CLASS, STATUS_TINT_CLASS, type UITaskStatus } from './status.styles';
 
 export interface IUIStatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {

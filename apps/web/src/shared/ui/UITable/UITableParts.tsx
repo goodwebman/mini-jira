@@ -5,8 +5,8 @@ import {
   type TdHTMLAttributes,
   type ThHTMLAttributes,
 } from 'react';
-import { cn } from '../../lib/cn';
-import { Slot, type ISlotProps } from '../../lib/dom';
+import { cn } from '@/shared/lib/cn';
+import { Slot, type ISlotProps } from '@/shared/lib/dom';
 
 export type IUITableSectionProps = HTMLAttributes<HTMLTableSectionElement>;
 

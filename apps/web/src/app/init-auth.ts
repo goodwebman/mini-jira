@@ -1,6 +1,6 @@
-import { authService } from '../entities/auth';
-import { configureHttp } from '../shared/api/http';
+import { authService } from '@/entities/auth';
+import { configureApiTransport } from '@/shared/api';
 
-configureHttp(authService.fetch);
+configureApiTransport(authService.fetch);
 void authService.bootstrap();
 authService.startPolling();

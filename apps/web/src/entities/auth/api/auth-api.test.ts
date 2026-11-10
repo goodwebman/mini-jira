@@ -43,6 +43,7 @@ const fetchMock = vi.fn<typeof fetch>();
 beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
+  vi.stubEnv('VITE_API_URL', '/api/v1');
   vi.stubEnv('VITE_AUTH_SALT', 'build-salt');
   vi.stubEnv('VITE_APP_VERSION', '1.2.3');
 });
@@ -158,6 +159,13 @@ describe('вход и регистрация', () => {
 });
 
 describe('refresh', () => {
+  it('использует API URL из env и отправляет refresh-cookie', async () => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.com/api/v1/');
+    fetchMock.mockResolvedValue(json(AUTH_RESPONSE));
+    await authApi.refresh({ ...context, accessToken: null, refreshToken: null });
+    expect(lastCall().url).toBe('https://api.example.com/api/v1/auth/refresh');
+    expect(lastCall().init?.credentials).toBe('include');
+  });
   it('POST без тела: refresh-токен приезжает в cookie сам', async () => {
     fetchMock.mockResolvedValue(json(AUTH_RESPONSE));
     await expect(

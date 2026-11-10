@@ -11,14 +11,14 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { cn } from '../../lib/cn';
-import { Portal, type Placement } from '../../lib/dom';
+import { cn } from '@/shared/lib/cn';
+import { Portal, type Placement } from '@/shared/lib/dom';
 import {
   useControllableState,
   useEscape,
   useFloatingPosition,
   useMergedRefs,
-} from '../../lib/hooks';
+} from '@/shared/lib/hooks';
 
 export interface IUITooltipProps {
   readonly testId?: string;

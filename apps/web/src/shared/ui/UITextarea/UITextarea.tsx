@@ -5,10 +5,10 @@ import {
   type ChangeEvent,
   type TextareaHTMLAttributes,
 } from 'react';
-import { cn } from '../../lib/cn';
-import { FieldError } from '../UIField/FieldError';
-import { fieldControlVariants } from '../UIField/field.styles';
-import { useFieldControl } from '../UIField/use-field-control';
+import { cn } from '@/shared/lib/cn';
+import { FieldError } from '@/shared/ui/UIField/FieldError';
+import { fieldControlVariants } from '@/shared/ui/UIField/field.styles';
+import { useFieldControl } from '@/shared/ui/UIField/use-field-control';
 
 export interface IUITextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   readonly testId?: string;

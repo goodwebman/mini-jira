@@ -1,6 +1,6 @@
 import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { UIBrand } from '../UIBrand';
+import { cn } from '@/shared/lib/cn';
+import { UIBrand } from '@/shared/ui/UIBrand';
 
 export interface IUISideNavProps extends HTMLAttributes<HTMLElement> {
   readonly testId?: string;

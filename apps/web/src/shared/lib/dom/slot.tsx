@@ -6,7 +6,7 @@ import {
   type ElementType,
   type ReactElement,
 } from 'react';
-import { cn } from '../cn';
+import { cn } from '@/shared/lib/cn';
 
 /** Элемент, в который кит подставит свои классы и контент, например `<Link to="/boards" />`. */
 export type RenderElement = ReactElement<{ className?: string }>;

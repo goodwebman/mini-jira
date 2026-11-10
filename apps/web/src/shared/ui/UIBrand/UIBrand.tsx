@@ -1,7 +1,7 @@
 import { forwardRef, memo, type HTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
-import { UIIcons } from '../icons';
-import { UIIconTile } from '../UIIconTile';
+import { cn } from '@/shared/lib/cn';
+import { UIIcons } from '@/shared/ui/icons';
+import { UIIconTile } from '@/shared/ui/UIIconTile';
 
 export interface IUIBrandProps extends HTMLAttributes<HTMLDivElement> {
   readonly testId?: string;

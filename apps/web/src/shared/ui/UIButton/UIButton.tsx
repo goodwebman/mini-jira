@@ -1,7 +1,7 @@
 import type { VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, type ButtonHTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
-import { UIIcons } from '../icons';
+import { cn } from '@/shared/lib/cn';
+import { UIIcons } from '@/shared/ui/icons';
 import { buttonVariants } from './UIButton.variants';
 
 /**

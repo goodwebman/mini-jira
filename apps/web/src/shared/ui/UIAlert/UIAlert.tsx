@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { UIIcons, type UIIconComponent } from '../icons';
+import { cn } from '@/shared/lib/cn';
+import { UIIcons, type UIIconComponent } from '@/shared/ui/icons';
 
 const alertVariants = cva(
   "flex items-center gap-2 rounded-control px-3 py-2 text-small font-medium [&_svg:not([class*='size-'])]:size-icon",

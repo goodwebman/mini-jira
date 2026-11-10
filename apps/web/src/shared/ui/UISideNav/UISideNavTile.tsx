@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { Slot, type ISlotProps } from '../../lib/dom';
+import { cn } from '@/shared/lib/cn';
+import { Slot, type ISlotProps } from '@/shared/lib/dom';
 
 const tileVariants = cva(
   [

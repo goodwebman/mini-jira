@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import App from '../App';
+import App from '@/App';
 
 const auth = vi.hoisted(() => ({
   state: { status: 'unknown', phase: 'idle', user: null, error: null } as {
@@ -8,11 +8,11 @@ const auth = vi.hoisted(() => ({
   },
   login: vi.fn(), logout: vi.fn(), replace: vi.fn(),
 }));
-vi.mock('../entities/auth', () => ({
+vi.mock('@/entities/auth', () => ({
   useAuth: () => auth.state,
   authService: { login: auth.login, logout: auth.logout },
 }));
-vi.mock('../kit-gallery/KitGallery', () => ({ KitGallery: () => <div>Protected content</div> }));
+vi.mock('@/kit-gallery/KitGallery', () => ({ KitGallery: () => <div>Protected content</div> }));
 
 beforeEach(() => {
   vi.clearAllMocks();

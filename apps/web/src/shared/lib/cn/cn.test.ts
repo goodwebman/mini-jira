@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import css from '../../styles/theme.css?raw';
+import css from '@/shared/styles/theme.css?raw';
 import { cn, THEME_TOKENS } from './cn';
 
 describe('cn', () => {

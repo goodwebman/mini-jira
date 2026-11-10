@@ -1,5 +1,5 @@
 import { memo, type CSSProperties, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export interface IUIChartLegendItem {
   readonly label: ReactNode;

@@ -1,6 +1,6 @@
 import { forwardRef, memo, type HTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
-import { UIIcons, type UIIconComponent } from '../icons';
+import { cn } from '@/shared/lib/cn';
+import { UIIcons, type UIIconComponent } from '@/shared/ui/icons';
 
 /** Приоритеты задач. Совпадают с `TaskPriority` из @gwmt/contracts. */
 export type UITaskPriority = 'crit' | 'high' | 'med' | 'low';

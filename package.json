@@ -10,6 +10,7 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run build:contracts && concurrently --kill-others --names api,web \"npm run dev -w @gwmt/api\" \"npm run dev:web\"",
     "build:contracts": "npm run build -w @gwmt/contracts",
     "build": "npm run build:contracts && npm run build -w mini-jira",
     "dev:contracts": "npm run dev -w @gwmt/contracts",
@@ -23,5 +24,8 @@
     "db:seed": "npm run build:contracts && npm run db:seed -w @gwmt/api",
     "typecheck": "npm run build:contracts && npm run typecheck -w @gwmt/contracts -w @gwmt/api",
     "test": "npm run build:contracts && npm run test -w @gwmt/contracts -w @gwmt/api"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7"
   }
 }

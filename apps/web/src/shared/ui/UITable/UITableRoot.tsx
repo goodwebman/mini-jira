@@ -1,5 +1,5 @@
 import { forwardRef, memo, type TableHTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export interface IUITableProps extends TableHTMLAttributes<HTMLTableElement> {
   readonly testId?: string;

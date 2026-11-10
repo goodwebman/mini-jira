@@ -1,6 +1,6 @@
 import type { VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, type ButtonHTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { iconButtonVariants } from './UIIconButton.variants';
 
 export interface IUIIconButtonProps

@@ -1,5 +1,5 @@
 import { forwardRef, memo, type LabelHTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export interface IUILabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   readonly testId?: string;

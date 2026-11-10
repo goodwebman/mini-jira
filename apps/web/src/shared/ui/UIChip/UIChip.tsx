@@ -1,6 +1,6 @@
 import type { VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { chipVariants } from './UIChip.variants';
 
 export interface IUIChipProps

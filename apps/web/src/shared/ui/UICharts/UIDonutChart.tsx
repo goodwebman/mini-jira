@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { seriesColor } from './chart-utils';
 
 export interface IUIDonutSegment {

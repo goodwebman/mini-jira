@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { authService, useAuth } from '../../entities/auth';
-import { UIButton, UIField, UIInput, UIAlert } from '../../shared/ui';
+import { authService, useAuth } from '@/entities/auth';
+import { UIButton, UIField, UIInput, UIAlert } from '@/shared/ui';
 import { safeReturnTo } from './return-to';
 
 export function LoginPage() {

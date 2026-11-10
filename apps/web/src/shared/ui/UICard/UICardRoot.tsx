@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, type HTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const cardVariants = cva('flex min-w-0 flex-col gap-3 rounded-block border border-border bg-surface', {
   variants: {

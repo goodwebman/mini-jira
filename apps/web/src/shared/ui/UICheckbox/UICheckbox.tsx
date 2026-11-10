@@ -6,9 +6,9 @@ import {
   type InputHTMLAttributes,
   type ReactNode,
 } from 'react';
-import { cn } from '../../lib/cn';
-import { useIsomorphicLayoutEffect, useMergedRefs } from '../../lib/hooks';
-import { UIIcons } from '../icons';
+import { cn } from '@/shared/lib/cn';
+import { useIsomorphicLayoutEffect, useMergedRefs } from '@/shared/lib/hooks';
+import { UIIcons } from '@/shared/ui/icons';
 
 export interface IUICheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
   readonly testId?: string;

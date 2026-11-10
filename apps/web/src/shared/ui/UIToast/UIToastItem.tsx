@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, type ReactNode } from 'react';
-import { UIIcons } from '../icons';
-import { UIIconButton } from '../UIIconButton';
+import { UIIcons } from '@/shared/ui/icons';
+import { UIIconButton } from '@/shared/ui/UIIconButton';
 
 interface IUIToastItemProps {
   readonly message: ReactNode;

@@ -1,7 +1,7 @@
 import { forwardRef, memo } from 'react';
-import { cn } from '../../lib/cn';
-import { Slot, type ISlotProps } from '../../lib/dom';
-import { UIAvatar } from '../UIAvatar';
+import { cn } from '@/shared/lib/cn';
+import { Slot, type ISlotProps } from '@/shared/lib/dom';
+import { UIAvatar } from '@/shared/ui/UIAvatar';
 
 export interface IUISideNavProfileProps extends Omit<ISlotProps, 'as' | 'children'> {
   readonly testId?: string;

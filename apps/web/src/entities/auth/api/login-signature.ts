@@ -1,4 +1,5 @@
-import { AuthError } from '../lib';
+import { AuthError } from '@/entities/auth/lib';
+import { env } from '@/shared/config';
 
 async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -11,8 +12,8 @@ async function sha256Hex(text: string): Promise<string> {
  * ровно таким, как в теле запроса.
  */
 export async function createLoginSignature(email: string): Promise<Record<string, string>> {
-  const salt = import.meta.env.VITE_AUTH_SALT as string | undefined;
-  const version = import.meta.env.VITE_APP_VERSION as string | undefined;
+  const salt = env.appSalt;
+  const version = env.appVersion;
   if (!salt || !version) {
     throw new AuthError('misconfigured', {
       message: 'Не заданы VITE_AUTH_SALT и VITE_APP_VERSION: смотри apps/web/.env.example',

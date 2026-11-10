@@ -1,5 +1,5 @@
 import { memo, useState, type PointerEvent } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { ChartAxes } from './ChartAxes';
 import { clampIndex, createPlot, gridPath, maxOf, seriesColor, type ChartPlot } from './chart-utils';
 import { UIChartTooltip } from './UIChartTooltip';

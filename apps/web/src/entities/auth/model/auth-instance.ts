@@ -1,12 +1,13 @@
 import type { Me } from '@gwmt/contracts';
-import { authApi, fetchMe, type CredentialsInput } from '../api/auth-api';
+import { authApi, fetchMe, type CredentialsInput } from '@/entities/auth/api/auth-api';
+import { getApiUrl, requireApiUrl } from '@/shared/api';
 import {
   AuthService,
   BearerStrategy,
   withSsoRedirect,
   type BearerCredentials,
   type SsoLoginInput,
-} from '../lib';
+} from '@/entities/auth/lib';
 
 export type OAuthProvider = 'github' | 'google';
 export type AuthLoginInput = CredentialsInput | (SsoLoginInput & { readonly sso: OAuthProvider });
@@ -15,7 +16,7 @@ const strategy = withSsoRedirect<BearerCredentials, Me, CredentialsInput, OAuthP
   new BearerStrategy({ api: authApi }),
   {
     buildUrl: (provider, returnTo) =>
-      `/api/v1/auth/${provider}/start?next=${encodeURIComponent(returnTo)}`,
+      getApiUrl(`/auth/${provider}/start?next=${encodeURIComponent(returnTo)}`),
     defaultReturnTo: '/boards',
   },
 );
@@ -24,6 +25,7 @@ const strategy = withSsoRedirect<BearerCredentials, Me, CredentialsInput, OAuthP
 export const authService = new AuthService<Me, AuthLoginInput, BearerCredentials>({
   strategy,
   namespace: 'gwmt-auth',
+  trustedOrigins: /^https?:\/\//i.test(requireApiUrl()) ? [new URL(requireApiUrl()).origin] : [],
   identify: (user) => user.id,
   fetchUser: fetchMe,
 });

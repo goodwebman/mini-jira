@@ -5,7 +5,7 @@ import {
   type RefAttributes,
   type SVGProps,
 } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export interface IUIIconProps extends Omit<SVGProps<SVGSVGElement>, 'children' | 'ref'> {
   /**

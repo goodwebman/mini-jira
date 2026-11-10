@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Portal } from '../../lib/dom';
+import { Portal } from '@/shared/lib/dom';
 import { ToastContext, type ToastOptions } from './toast-context';
 import { UIToastItem } from './UIToastItem';
 

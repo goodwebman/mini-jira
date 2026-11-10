@@ -1,5 +1,5 @@
 import { useCallback, useState, type RefCallback } from 'react';
-import { useBreakpoint, type Breakpoint } from '../../lib/hooks';
+import { useBreakpoint, type Breakpoint } from '@/shared/lib/hooks';
 
 /** Ширина до первого замера: в браузере замер успевает до paint. */
 const FALLBACK_WIDTH = 640;

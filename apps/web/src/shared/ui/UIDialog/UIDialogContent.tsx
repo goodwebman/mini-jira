@@ -1,10 +1,10 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, useId, useRef, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { Portal } from '../../lib/dom';
-import { useEscape, useFocusTrap, useMergedRefs, useScrollLock } from '../../lib/hooks';
-import { UIIcons } from '../icons';
-import { UIIconButton } from '../UIIconButton';
+import { cn } from '@/shared/lib/cn';
+import { Portal } from '@/shared/lib/dom';
+import { useEscape, useFocusTrap, useMergedRefs, useScrollLock } from '@/shared/lib/hooks';
+import { UIIcons } from '@/shared/ui/icons';
+import { UIIconButton } from '@/shared/ui/UIIconButton';
 import { useDialogContext } from './dialog-context';
 
 const dialogPanelVariants = cva(

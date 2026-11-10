@@ -1,6 +1,6 @@
 import { forwardRef, memo, useId, useMemo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { UILabel } from '../UILabel';
+import { cn } from '@/shared/lib/cn';
+import { UILabel } from '@/shared/ui/UILabel';
 import { FieldContext } from './field-context';
 import { FieldError } from './FieldError';
 

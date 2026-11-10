@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
-import { useAuth } from '../entities/auth';
-import { UISkeleton, UIAlert } from '../shared/ui';
+import { useAuth } from '@/entities/auth';
+import { UISkeleton, UIAlert } from '@/shared/ui';
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const { status, error } = useAuth();

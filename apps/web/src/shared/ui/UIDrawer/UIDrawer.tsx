@@ -1,6 +1,6 @@
 import { forwardRef, memo, useId, useRef, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { useEscape, useFocusTrap, useMergedRefs } from '../../lib/hooks';
+import { cn } from '@/shared/lib/cn';
+import { useEscape, useFocusTrap, useMergedRefs } from '@/shared/lib/hooks';
 
 export interface IUIDrawerProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   readonly testId?: string;

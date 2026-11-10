@@ -1,8 +1,8 @@
 import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { UIIcons } from '../icons';
-import { UIButton, type IUIButtonProps } from '../UIButton';
-import { UIIconButton } from '../UIIconButton';
+import { cn } from '@/shared/lib/cn';
+import { UIIcons } from '@/shared/ui/icons';
+import { UIButton, type IUIButtonProps } from '@/shared/ui/UIButton';
+import { UIIconButton } from '@/shared/ui/UIIconButton';
 
 export interface IUIPageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   readonly testId?: string;

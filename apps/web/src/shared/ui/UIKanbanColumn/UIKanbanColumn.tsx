@@ -1,7 +1,7 @@
 import { forwardRef, memo, Children, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { UIIcons } from '../icons';
-import { STATUS_DOT_CLASS, type UITaskStatus } from '../UIStatusBadge/status.styles';
+import { cn } from '@/shared/lib/cn';
+import { UIIcons } from '@/shared/ui/icons';
+import { STATUS_DOT_CLASS, type UITaskStatus } from '@/shared/ui/UIStatusBadge/status.styles';
 
 export interface IUIKanbanColumnProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   readonly testId?: string;

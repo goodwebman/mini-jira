@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { UIInput } from '../UIInput';
-import { UISearchInput } from '../UISearchInput';
-import { UISelect } from '../UISelect';
-import { UITextarea } from '../UITextarea';
+import { UIInput } from '@/shared/ui/UIInput';
+import { UISearchInput } from '@/shared/ui/UISearchInput';
+import { UISelect } from '@/shared/ui/UISelect';
+import { UITextarea } from '@/shared/ui/UITextarea';
 import { UIField } from './UIField';
 
 describe('UIField', () => {

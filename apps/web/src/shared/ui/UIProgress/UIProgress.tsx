@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, type CSSProperties, type HTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const trackVariants = cva('w-full overflow-hidden rounded-full', {
   variants: {

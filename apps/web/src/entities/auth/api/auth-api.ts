@@ -12,10 +12,9 @@ import {
   type BearerApi,
   type BearerTokens,
   type FetchUserContext,
-} from '../lib';
+} from '@/entities/auth/lib';
 import { createLoginSignature } from './login-signature';
-
-const API_ROOT = '/api/v1';
+import { getApiUrl } from '@/shared/api';
 
 export type CredentialsInput =
   | (LoginBody & { readonly kind: 'password' })
@@ -35,7 +34,7 @@ async function throwIfFailed(response: Response): Promise<Response> {
 
 // Запросы авторизации идут обычным fetch: через авторизованный refresh ждал бы сам себя.
 function post(path: string, init: RequestInit): Promise<Response> {
-  return fetch(`${API_ROOT}${path}`, { method: 'POST', ...init }).then(throwIfFailed);
+  return fetch(getApiUrl(path), { method: 'POST', credentials: 'include', ...init }).then(throwIfFailed);
 }
 
 // Срок берётся из JWT, а не из accessTokenExpiresAt: дата зависит от часов клиента.
@@ -63,7 +62,7 @@ export const authApi = {
 } satisfies BearerApi<Me, CredentialsInput>;
 
 export async function fetchMe({ fetch: authFetch, signal }: FetchUserContext): Promise<Me> {
-  const response = await authFetch(`${API_ROOT}/me`, { signal }).then(throwIfFailed);
+  const response = await authFetch(getApiUrl('/me'), { signal }).then(throwIfFailed);
   const parsed = meSchema.safeParse(await response.json().catch(() => null));
   if (!parsed.success) throw new AuthError('bad_response');
   return parsed.data;

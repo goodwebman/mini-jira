@@ -1,5 +1,5 @@
 import { forwardRef, memo, type HTMLAttributes } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export type IUICardHeaderProps = HTMLAttributes<HTMLDivElement>;
 

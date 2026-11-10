@@ -1,4 +1,4 @@
-import { computePosition, type Placement } from '../dom/position';
+import { computePosition, type Placement } from '@/shared/lib/dom/position';
 import { useIsomorphicLayoutEffect } from './use-isomorphic-layout-effect';
 
 /** Ковариантная ссылка: принимает ref любого конкретного тега без каста. */

@@ -1,7 +1,7 @@
 import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { Slot, type RenderElement } from '../../lib/dom';
-import { UIPriority, type UITaskPriority } from '../UIPriority';
+import { cn } from '@/shared/lib/cn';
+import { Slot, type RenderElement } from '@/shared/lib/dom';
+import { UIPriority, type UITaskPriority } from '@/shared/ui/UIPriority';
 
 export interface IUITaskCardProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   readonly testId?: string;

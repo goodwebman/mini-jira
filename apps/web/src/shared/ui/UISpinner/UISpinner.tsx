@@ -1,6 +1,6 @@
 import { forwardRef, memo } from 'react';
-import { cn } from '../../lib/cn';
-import { UIIcons, type IUIIconProps } from '../icons';
+import { cn } from '@/shared/lib/cn';
+import { UIIcons, type IUIIconProps } from '@/shared/ui/icons';
 
 export interface IUISpinnerProps extends IUIIconProps {
   readonly testId?: string;

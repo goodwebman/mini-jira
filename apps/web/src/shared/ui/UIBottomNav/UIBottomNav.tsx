@@ -1,6 +1,6 @@
 import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { Slot, type ISlotProps } from '../../lib/dom';
+import { cn } from '@/shared/lib/cn';
+import { Slot, type ISlotProps } from '@/shared/lib/dom';
 
 export interface IUIBottomNavProps extends HTMLAttributes<HTMLElement> {
   readonly testId?: string;

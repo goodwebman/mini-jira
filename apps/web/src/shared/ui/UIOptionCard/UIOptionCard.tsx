@@ -1,5 +1,5 @@
 import { forwardRef, memo, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export interface IUIOptionCardProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'title'> {
   readonly testId?: string;

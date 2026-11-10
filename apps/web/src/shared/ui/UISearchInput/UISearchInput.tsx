@@ -1,9 +1,9 @@
 import { forwardRef, memo } from 'react';
-import { cn } from '../../lib/cn';
-import { UIIcons } from '../icons';
-import { useFieldContext } from '../UIField/field-context';
-import { UIIconButton } from '../UIIconButton';
-import { UIInput, type IUIInputProps } from '../UIInput';
+import { cn } from '@/shared/lib/cn';
+import { UIIcons } from '@/shared/ui/icons';
+import { useFieldContext } from '@/shared/ui/UIField/field-context';
+import { UIIconButton } from '@/shared/ui/UIIconButton';
+import { UIInput, type IUIInputProps } from '@/shared/ui/UIInput';
 
 export interface IUISearchInputProps extends Omit<IUIInputProps, 'leftSlot' | 'rightSlot' | 'type'> {
   /** Если передан и поле не пустое, справа появляется кнопка очистки. */

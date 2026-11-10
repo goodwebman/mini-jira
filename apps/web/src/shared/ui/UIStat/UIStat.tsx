@@ -1,7 +1,7 @@
 import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { UICard } from '../UICard';
-import { UIProgress } from '../UIProgress';
+import { cn } from '@/shared/lib/cn';
+import { UICard } from '@/shared/ui/UICard';
+import { UIProgress } from '@/shared/ui/UIProgress';
 
 export interface IUIStatProps extends HTMLAttributes<HTMLDivElement> {
   readonly testId?: string;

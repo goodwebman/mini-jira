@@ -1,5 +1,5 @@
 import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export interface IUIEmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   readonly testId?: string;

@@ -15,11 +15,13 @@
 ```bash
 npm install
 cp apps/api/.env.example apps/api/.env   # заполните значения
+cp apps/web/.env.example apps/web/.env   # задайте соль сборки
 npm run db:migrate
 npm run db:seed
-npm run dev:api                          # http://localhost:3000/api/v1
-npm run dev:web                          # http://localhost:5173, /api проксируется на бэкенд
+npm run dev                             # фронтенд и бэкенд одной командой
 ```
+
+Фронтенд: http://localhost:5173, API: http://localhost:3000/api/v1. Запросы `/api` проксируются на бэкенд. Команда сначала собирает contracts; `Ctrl+C` останавливает оба сервера. Для отдельного запуска доступны `npm run dev:api` и `npm run dev:web`.
 
 После сида вход под любым аккаунтом с паролем `password`. Для проверки ролей на доске GWT:
 
@@ -35,6 +37,7 @@ npm run dev:web                          # http://localhost:5173, /api прок�
 
 | Команда | Что делает |
 |---|---|
+| `npm run dev` | Собирает contracts и запускает фронтенд и бэкенд вместе |
 | `npm test` | Собирает contracts и запускает все тесты. Сеть и Docker не нужны, база это PGlite |
 | `npm run typecheck` | Проверка типов contracts и api |
 | `npm run build` | Сборка contracts и фронта |
@@ -94,6 +97,10 @@ npx openapi-typescript docs/openapi.json -o apps/web/src/api/schema.d.ts
 ```
 
 ## Переменные окружения
+
+Фронтенд читает `apps/web/.env` через `env` из `@/shared/config` — это единственная точка доступа к `import.meta.env`. `VITE_API_URL=/api/v1` использует локальный Vite proxy; для отдельного API задайте полный адрес с префиксом, например `https://api.example.com/api/v1`. `VITE_AUTH_SALT` и `VITE_APP_VERSION` задают подпись входа. После изменения `.env` перезапустите Vite; значения `VITE_*` попадают в браузерный бандл.
+
+Запросы приложения идут через `apiClient` из `@/shared/api`: `apiClient.get<Me>('/me')`, `apiClient.post('/tasks', body)`. Клиент добавляет API URL, сериализует JSON, поддерживает FormData и бросает `ApiError` со статусом и телом ответа. При старте `app/init-auth.ts` подключает `authService.fetch`, который обновляет токен и повторяет запросы. Запросы входа, refresh и logout используют обычный fetch, чтобы refresh не ждал сам себя. Импорты между модулями используют `@/` (каталог `apps/web/src`); алиас работает в TypeScript, Vite и Vitest.
 
 Список лежит в `apps/api/.env.example`. Бэкенд проверяет их при старте и не запустится с неверными значениями.
 

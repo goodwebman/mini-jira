@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefAttributes,
 } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export interface IUISegmentedOption<T extends string> {
   readonly value: T;

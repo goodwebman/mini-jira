@@ -1,9 +1,9 @@
 import type { VariantProps } from 'class-variance-authority';
 import { forwardRef, memo, type InputHTMLAttributes, type ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { FieldError } from '../UIField/FieldError';
-import { fieldControlVariants } from '../UIField/field.styles';
-import { useFieldControl } from '../UIField/use-field-control';
+import { cn } from '@/shared/lib/cn';
+import { FieldError } from '@/shared/ui/UIField/FieldError';
+import { fieldControlVariants } from '@/shared/ui/UIField/field.styles';
+import { useFieldControl } from '@/shared/ui/UIField/use-field-control';
 
 export interface IUIInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof fieldControlVariants> {

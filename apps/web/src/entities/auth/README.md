@@ -194,13 +194,15 @@ export const authService = new AuthService<User, LoginInput, BearerCredentials>(
 **FSD.** `shared` не может импортировать `entities`, а другие сущности друг друга. Поэтому общий HTTP-клиент живёт в `shared/api` и получает авторизованный fetch при старте из слоя `app`:
 
 ```ts
-// shared/api/http.ts
-let client: typeof fetch = (...args) => fetch(...args);
-export const configureHttp = (next: typeof fetch) => (client = next);
-export const http: typeof fetch = (...args) => client(...args);
+// app/init-auth.ts
+import { authService } from '@/entities/auth';
+import { configureApiTransport } from '@/shared/api';
 
-// app/providers/auth.ts
-configureHttp(authService.fetch);
+configureApiTransport(authService.fetch);
+
+// Запросы приложения
+import { apiClient } from '@/shared/api';
+await apiClient.get('/me');
 ```
 
 ## Проверки
@@ -213,7 +215,7 @@ npm run typecheck -w mini-jira
 ## Подключение в приложении
 
 `main.tsx` импортирует `app/init-auth.ts` один раз вне React StrictMode:
-модуль настраивает `shared/api/http.ts`, вызывает bootstrap и запускает polling.
+модуль подключает авторизованный транспорт к `apiClient`, вызывает bootstrap и запускает polling.
 Компоненты читают состояние через `useAuth` из публичного API сущности.
 `app/AuthGuard.tsx` скрывает защищённый экран до восстановления сессии,
 переводит гостя на `/login` и сохраняет локальный адрес в `returnTo`.

@@ -1,5 +1,5 @@
 import { useCallback, type Ref, type RefCallback } from 'react';
-import { mergeRefs } from '../dom/merge-refs';
+import { mergeRefs } from '@/shared/lib/dom/merge-refs';
 
 /** Стабильный callback-ref, который пишет узел сразу в два ref'а (свой и `forwardRef`). */
 export function useMergedRefs<T>(

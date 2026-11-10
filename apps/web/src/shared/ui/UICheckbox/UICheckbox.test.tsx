@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { UISwitch } from '../UISwitch';
+import { UISwitch } from '@/shared/ui/UISwitch';
 import { UICheckbox } from './UICheckbox';
 
 describe('UICheckbox', () => {
