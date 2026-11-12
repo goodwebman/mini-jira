@@ -55,27 +55,36 @@ const toHex = (bytes: Uint8Array) =>
   Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 
 const sha256: Hasher = async (text) =>
-  toHex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))));
+  toHex(
+    new Uint8Array(
+      await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)),
+    ),
+  );
 
 function randomHex(byteLength: number): string {
   return toHex(crypto.getRandomValues(new Uint8Array(byteLength)));
 }
 
-const isAscii = (value: string) => Array.from(value).every((char) => char.charCodeAt(0) < 0x80);
+const isAscii = (value: string) =>
+  Array.from(value).every((char) => char.charCodeAt(0) < 0x80);
 
 const quote = (value: string) => `"${value.replace(/(["\\])/g, '\\$1')}"`;
 
 /** Разбирает `WWW-Authenticate`: в нём может быть несколько схем и кавычки с запятыми. */
-function parseChallenges(header: string): { scheme: string; params: Map<string, string> }[] {
+function parseChallenges(
+  header: string,
+): { scheme: string; params: Map<string, string> }[] {
   const challenges: { scheme: string; params: Map<string, string> }[] = [];
   let index = 0;
 
   const skipSeparators = () => {
-    while (index < header.length && /[\s,]/.test(header.charAt(index))) index += 1;
+    while (index < header.length && /[\s,]/.test(header.charAt(index)))
+      index += 1;
   };
   const readToken = () => {
     const start = index;
-    while (index < header.length && !/[\s,=]/.test(header.charAt(index))) index += 1;
+    while (index < header.length && !/[\s,=]/.test(header.charAt(index)))
+      index += 1;
     return header.slice(start, index);
   };
   const readValue = () => {
@@ -109,9 +118,11 @@ function parseChallenges(header: string): { scheme: string; params: Map<string, 
 }
 
 /** RFC 7616 в браузере. Сервер обязан отдавать `WWW-Authenticate` и через CORS. */
-export class DigestStrategy<TUser>
-  implements AuthStrategy<DigestCredentials, TUser, DigestLoginInput>
-{
+export class DigestStrategy<TUser> implements AuthStrategy<
+  DigestCredentials,
+  TUser,
+  DigestLoginInput
+> {
   readonly name = 'digest';
   readonly #options: DigestStrategyOptions<TUser>;
   readonly #hashers: ReadonlyMap<string, Hasher>;
@@ -119,10 +130,9 @@ export class DigestStrategy<TUser>
   constructor(options: DigestStrategyOptions<TUser>) {
     this.#options = options;
     this.#hashers = new Map(
-      Object.entries({ 'SHA-256': sha256, ...options.hashers }).map(([name, hasher]) => [
-        name.toUpperCase(),
-        hasher,
-      ]),
+      Object.entries({ 'SHA-256': sha256, ...options.hashers }).map(
+        ([name, hasher]) => [name.toUpperCase(), hasher],
+      ),
     );
   }
 
@@ -137,12 +147,18 @@ export class DigestStrategy<TUser>
     const probe = await this.#send({}, context.signal);
     if (probe.status !== 401) {
       throw probe.ok
-        ? new AuthError('misconfigured', { message: 'verifyUrl не запрашивает авторизацию' })
+        ? new AuthError('misconfigured', {
+            message: 'verifyUrl не запрашивает авторизацию',
+          })
         : await AuthError.fromResponse(probe);
     }
-    const challenge = this.#selectChallenge(probe.headers.get('WWW-Authenticate'));
+    const challenge = this.#selectChallenge(
+      probe.headers.get('WWW-Authenticate'),
+    );
     if (!challenge) {
-      throw new AuthError('misconfigured', { message: 'Сервер не предложил поддерживаемый Digest' });
+      throw new AuthError('misconfigured', {
+        message: 'Сервер не предложил поддерживаемый Digest',
+      });
     }
 
     const credentials: DigestCredentials = {
@@ -150,7 +166,10 @@ export class DigestStrategy<TUser>
       realm: challenge.realm,
       algorithm: challenge.algorithm,
       isSession: challenge.isSession,
-      secret: await this.#hash(challenge.algorithm, `${username}:${challenge.realm}:${password}`),
+      secret: await this.#hash(
+        challenge.algorithm,
+        `${username}:${challenge.realm}:${password}`,
+      ),
       nonce: challenge.nonce,
       opaque: challenge.opaque,
       counter: 0,
@@ -164,18 +183,38 @@ export class DigestStrategy<TUser>
     return { credentials, user: await this.#options.parseUser?.(response) };
   }
 
-  async decorate(credentials: DigestCredentials, target: AuthTarget): Promise<AuthDecoration> {
+  async decorate(
+    credentials: DigestCredentials,
+    target: AuthTarget,
+  ): Promise<AuthDecoration> {
     // Счётчик увеличивается до первого await: у параллельных запросов он не совпадёт.
     credentials.counter += 1;
-    const { username, realm, secret, algorithm, isSession, nonce, opaque, counter } = credentials;
+    const {
+      username,
+      realm,
+      secret,
+      algorithm,
+      isSession,
+      nonce,
+      opaque,
+      counter,
+    } = credentials;
     const nc = counter.toString(16).padStart(8, '0');
     const cnonce = randomHex(16);
     const url = new URL(target.url, 'https://digest.invalid');
     const uri = `${url.pathname}${url.search}`;
 
-    const ha1 = isSession ? await this.#hash(algorithm, `${secret}:${nonce}:${cnonce}`) : secret;
-    const ha2 = await this.#hash(algorithm, `${target.method.toUpperCase()}:${uri}`);
-    const response = await this.#hash(algorithm, `${ha1}:${nonce}:${nc}:${cnonce}:auth:${ha2}`);
+    const ha1 = isSession
+      ? await this.#hash(algorithm, `${secret}:${nonce}:${cnonce}`)
+      : secret;
+    const ha2 = await this.#hash(
+      algorithm,
+      `${target.method.toUpperCase()}:${uri}`,
+    );
+    const response = await this.#hash(
+      algorithm,
+      `${ha1}:${nonce}:${nc}:${cnonce}:auth:${ha2}`,
+    );
 
     const parts = [
       // Не-ASCII логин передаётся расширенным параметром (RFC 7616, 3.4).
@@ -192,17 +231,26 @@ export class DigestStrategy<TUser>
       `response=${quote(response)}`,
     ];
     if (opaque !== undefined) parts.push(`opaque=${quote(opaque)}`);
-    return { headers: { Authorization: `Digest ${parts.join(', ')}` }, credentialsMode: 'omit' };
+    return {
+      headers: { Authorization: `Digest ${parts.join(', ')}` },
+      credentialsMode: 'omit',
+    };
   }
 
-  assess(response: AuthResponseInfo, credentials: DigestCredentials): AuthVerdict {
+  assess(
+    response: AuthResponseInfo,
+    credentials: DigestCredentials,
+  ): AuthVerdict {
     if (response.status !== 401) {
       this.#applyNextNonce(response.header('Authentication-Info'), credentials);
       return { action: 'pass' };
     }
-    const challenge = this.#selectChallenge(response.header('WWW-Authenticate'));
+    const challenge = this.#selectChallenge(
+      response.header('WWW-Authenticate'),
+    );
     // Только `stale` означает «пароль верный, обнови nonce». Иначе реквизиты отвергнуты.
-    if (!challenge?.isStale || challenge.realm !== credentials.realm) return { action: 'reject' };
+    if (!challenge?.isStale || challenge.realm !== credentials.realm)
+      return { action: 'reject' };
     credentials.nonce = challenge.nonce;
     credentials.opaque = challenge.opaque;
     credentials.counter = 0;
@@ -211,7 +259,9 @@ export class DigestStrategy<TUser>
 
   #applyNextNonce(header: string | null, credentials: DigestCredentials): void {
     if (!header) return;
-    const nextNonce = parseChallenges(`Digest ${header}`)[0]?.params.get('nextnonce');
+    const nextNonce = parseChallenges(`Digest ${header}`)[0]?.params.get(
+      'nextnonce',
+    );
     if (!nextNonce) return;
     credentials.nonce = nextNonce;
     credentials.counter = 0;
@@ -223,11 +273,22 @@ export class DigestStrategy<TUser>
       if (scheme !== 'digest') continue;
       const realm = params.get('realm');
       const nonce = params.get('nonce');
-      const qop = params.get('qop')?.split(',').map((value) => value.trim().toLowerCase());
+      const qop = params
+        .get('qop')
+        ?.split(',')
+        .map((value) => value.trim().toLowerCase());
       const rawAlgorithm = (params.get('algorithm') ?? 'MD5').toUpperCase();
       const isSession = rawAlgorithm.endsWith('-SESS');
-      const algorithm = isSession ? rawAlgorithm.slice(0, -'-SESS'.length) : rawAlgorithm;
-      if (!realm || !nonce || !qop?.includes('auth') || !this.#hashers.has(algorithm)) continue;
+      const algorithm = isSession
+        ? rawAlgorithm.slice(0, -'-SESS'.length)
+        : rawAlgorithm;
+      if (
+        !realm ||
+        !nonce ||
+        !qop?.includes('auth') ||
+        !this.#hashers.has(algorithm)
+      )
+        continue;
       return {
         realm,
         nonce,
@@ -242,12 +303,22 @@ export class DigestStrategy<TUser>
 
   async #hash(algorithm: string, text: string): Promise<string> {
     const hasher = this.#hashers.get(algorithm);
-    if (!hasher) throw new AuthError('misconfigured', { message: `Нет алгоритма ${algorithm}` });
+    if (!hasher)
+      throw new AuthError('misconfigured', {
+        message: `Нет алгоритма ${algorithm}`,
+      });
     return hasher(text);
   }
 
-  #send(headers: Readonly<Record<string, string>>, signal: AbortSignal): Promise<Response> {
+  #send(
+    headers: Readonly<Record<string, string>>,
+    signal: AbortSignal,
+  ): Promise<Response> {
     const send = this.#options.fetch ?? globalThis.fetch;
-    return send(this.#options.verifyUrl, { headers, signal, credentials: 'omit' });
+    return send(this.#options.verifyUrl, {
+      headers,
+      signal,
+      credentials: 'omit',
+    });
   }
 }

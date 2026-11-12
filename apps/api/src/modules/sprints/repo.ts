@@ -1,16 +1,21 @@
 import type { TaskStatus } from '@gwmt/contracts';
 import { and, asc, desc, eq, inArray, lt, ne, sql } from 'drizzle-orm';
+
 import type { Db } from '../../db/client.js';
 import {
+  type SprintRow,
   boardMembers,
   boards,
-  sprints,
   sprintTasks,
-  tasks,
+  sprints,
   taskStatusIntervals,
-  type SprintRow,
+  tasks,
 } from '../../db/schema.js';
-import type { KpiTask, SprintKpiSnapshot, VelocityItem } from '../kpi/compute.js';
+import type {
+  KpiTask,
+  SprintKpiSnapshot,
+  VelocityItem,
+} from '../kpi/compute.js';
 
 export async function findActiveSprintWithTimezone(db: Db, boardId: number) {
   const [row] = await db
@@ -21,7 +26,10 @@ export async function findActiveSprintWithTimezone(db: Db, boardId: number) {
   return row ?? null;
 }
 
-export async function findActiveSprint(db: Db, boardId: number): Promise<SprintRow | null> {
+export async function findActiveSprint(
+  db: Db,
+  boardId: number,
+): Promise<SprintRow | null> {
   const [row] = await db
     .select()
     .from(sprints)
@@ -30,7 +38,10 @@ export async function findActiveSprint(db: Db, boardId: number): Promise<SprintR
 }
 
 /** Параллельный запрос ждёт здесь и после коммита первого уже не увидит закрытую строку. */
-export async function lockActiveSprint(db: Db, boardId: number): Promise<SprintRow | null> {
+export async function lockActiveSprint(
+  db: Db,
+  boardId: number,
+): Promise<SprintRow | null> {
   const [row] = await db
     .select()
     .from(sprints)
@@ -39,7 +50,11 @@ export async function lockActiveSprint(db: Db, boardId: number): Promise<SprintR
   return row ?? null;
 }
 
-export async function findSprintByNumber(db: Db, boardId: number, number: number) {
+export async function findSprintByNumber(
+  db: Db,
+  boardId: number,
+  number: number,
+) {
   const [row] = await db
     .select()
     .from(sprints)
@@ -56,7 +71,10 @@ export async function listSprints(db: Db, boardId: number, limit: number) {
     .limit(limit);
 }
 
-export async function insertSprint(db: Db, values: typeof sprints.$inferInsert) {
+export async function insertSprint(
+  db: Db,
+  values: typeof sprints.$inferInsert,
+) {
   const [sprint] = await db.insert(sprints).values(values).returning();
   if (!sprint) throw new Error('sprint was not created');
   return sprint;
@@ -92,10 +110,15 @@ export async function moveOpenTasks(
   if (moved.length === 0) return;
   await db
     .insert(sprintTasks)
-    .values(moved.map(({ id }) => ({ sprintId: toSprintId, taskId: id, addedAt })));
+    .values(
+      moved.map(({ id }) => ({ sprintId: toSprintId, taskId: id, addedAt })),
+    );
 }
 
-export async function loadKpiTasks(db: Db, sprintId: string): Promise<KpiTask[]> {
+export async function loadKpiTasks(
+  db: Db,
+  sprintId: string,
+): Promise<KpiTask[]> {
   const rows = await db
     .select({
       id: tasks.id,
@@ -121,7 +144,12 @@ export async function loadKpiTasks(db: Db, sprintId: string): Promise<KpiTask[]>
       pausedSec: taskStatusIntervals.pausedSec,
     })
     .from(taskStatusIntervals)
-    .where(inArray(taskStatusIntervals.taskId, rows.map((row) => row.id)))
+    .where(
+      inArray(
+        taskStatusIntervals.taskId,
+        rows.map((row) => row.id),
+      ),
+    )
     .orderBy(asc(taskStatusIntervals.enteredAt));
 
   const byTask = new Map<string, KpiTask['intervals']>();
@@ -130,14 +158,22 @@ export async function loadKpiTasks(db: Db, sprintId: string): Promise<KpiTask[]>
     if (list) list.push(interval);
     else byTask.set(taskId, [interval]);
   }
-  return rows.map(({ id, ...task }) => ({ ...task, intervals: byTask.get(id) ?? [] }));
+  return rows.map(({ id, ...task }) => ({
+    ...task,
+    intervals: byTask.get(id) ?? [],
+  }));
 }
 
-export async function listNonGuestMemberIds(db: Db, boardId: number): Promise<string[]> {
+export async function listNonGuestMemberIds(
+  db: Db,
+  boardId: number,
+): Promise<string[]> {
   const rows = await db
     .select({ userId: boardMembers.userId })
     .from(boardMembers)
-    .where(and(eq(boardMembers.boardId, boardId), ne(boardMembers.role, 'guest')));
+    .where(
+      and(eq(boardMembers.boardId, boardId), ne(boardMembers.role, 'guest')),
+    );
   return rows.map((row) => row.userId);
 }
 
@@ -176,7 +212,13 @@ export async function countTasksByStatus(db: Db, sprintId: string) {
     .from(tasks)
     .where(eq(tasks.sprintId, sprintId))
     .groupBy(tasks.status);
-  const counts: Record<TaskStatus, number> = { todo: 0, work: 0, review: 0, test: 0, done: 0 };
+  const counts: Record<TaskStatus, number> = {
+    todo: 0,
+    work: 0,
+    review: 0,
+    test: 0,
+    done: 0,
+  };
   for (const row of rows) counts[row.status] = row.count;
   return counts;
 }

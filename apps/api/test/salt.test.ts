@@ -1,9 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { authThrottle } from '../src/db/schema.js';
-import { createSalt, createSaltToken, SALT_TIMESTAMP_WINDOW_MS } from '../src/lib/salt.js';
+import {
+  SALT_TIMESTAMP_WINDOW_MS,
+  createSalt,
+  createSaltToken,
+} from '../src/lib/salt.js';
 import { errorCode } from './fixtures.js';
-import { createTestApp, json, saltHeaders, signedPost, testEnv, type TestApp } from './helpers.js';
+import {
+  type TestApp,
+  createTestApp,
+  json,
+  saltHeaders,
+  signedPost,
+  testEnv,
+} from './helpers.js';
 
 // Значения получены функциями createSalt и createSaltHeaders из @deamondsear/core с этим же секретом.
 const CLIENT_VECTOR = {
@@ -19,7 +31,11 @@ describe('подпись входа и регистрации', () => {
   let counter = 0;
   const email = () => `salt${(counter += 1)}@example.com`;
 
-  const loginBody = (address: string) => ({ email: address, password: 'bad-pass', remember: true });
+  const loginBody = (address: string) => ({
+    email: address,
+    password: 'bad-pass',
+    remember: true,
+  });
   const registerBody = (address: string) => ({
     name: 'Имя',
     email: address,
@@ -27,7 +43,11 @@ describe('подпись входа и регистрации', () => {
     acceptedTerms: true,
   });
 
-  const rawPost = (path: string, body: unknown, headers: Record<string, string>) =>
+  const rawPost = (
+    path: string,
+    body: unknown,
+    headers: Record<string, string>,
+  ) =>
     t.app.request(`/api/v1${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...headers },
@@ -42,14 +62,22 @@ describe('подпись входа и регистрации', () => {
 
   describe('совместимость с клиентом', () => {
     it('соль и подпись совпадают с @deamondsear/core', () => {
-      expect(createSalt(CLIENT_VECTOR.version, testEnv.SALT_SECRET)).toBe(CLIENT_VECTOR.salt);
-      expect(createSaltToken(CLIENT_VECTOR.salt, CLIENT_VECTOR.email, CLIENT_VECTOR.timestamp)).toBe(
-        CLIENT_VECTOR.token,
+      expect(createSalt(CLIENT_VECTOR.version, testEnv.SALT_SECRET)).toBe(
+        CLIENT_VECTOR.salt,
       );
+      expect(
+        createSaltToken(
+          CLIENT_VECTOR.salt,
+          CLIENT_VECTOR.email,
+          CLIENT_VECTOR.timestamp,
+        ),
+      ).toBe(CLIENT_VECTOR.token);
     });
 
     it('сервер принимает заголовки, собранные клиентской функцией', async () => {
-      const local = await createTestApp(new Date(Number(CLIENT_VECTOR.timestamp)));
+      const local = await createTestApp(
+        new Date(Number(CLIENT_VECTOR.timestamp)),
+      );
       const res = await local.app.request('/api/v1/auth/login', {
         method: 'POST',
         headers: {
@@ -74,7 +102,10 @@ describe('подпись входа и регистрации', () => {
       'без заголовка %s даёт 403',
       async (header) => {
         const address = email();
-        const headers: Record<string, string> = saltHeaders(address, t.clock.current);
+        const headers: Record<string, string> = saltHeaders(
+          address,
+          t.clock.current,
+        );
         delete headers[header];
         const res = await rawPost(path, body(address), headers);
         expect(res.status).toBe(403);
@@ -83,7 +114,11 @@ describe('подпись входа и регистрации', () => {
     );
 
     it('подпись чужого email не подходит', async () => {
-      const res = await rawPost(path, body(email()), saltHeaders('other@example.com', t.clock.current));
+      const res = await rawPost(
+        path,
+        body(email()),
+        saltHeaders('other@example.com', t.clock.current),
+      );
       expect(res.status).toBe(403);
       expect(await errorCode(res)).toBe('SALT_INVALID');
     });
@@ -104,7 +139,11 @@ describe('подпись входа и регистрации', () => {
     const res = await rawPost('/auth/login', loginBody(address), {
       'fastify-version': '1.2.3',
       'fastify-timestamp': timestamp,
-      'fastify-token': createSaltToken(createSalt('1.2.3', 'x'.repeat(40)), address, timestamp),
+      'fastify-token': createSaltToken(
+        createSalt('1.2.3', 'x'.repeat(40)),
+        address,
+        timestamp,
+      ),
     });
     expect(res.status).toBe(403);
   });
@@ -120,7 +159,11 @@ describe('подпись входа и регистрации', () => {
 
   it('новая версия клиента с верной солью проходит', async () => {
     const address = email();
-    const res = await rawPost('/auth/login', loginBody(address), saltHeaders(address, t.clock.current, '2.0.0'));
+    const res = await rawPost(
+      '/auth/login',
+      loginBody(address),
+      saltHeaders(address, t.clock.current, '2.0.0'),
+    );
     expect(res.status).toBe(401);
   });
 
@@ -132,7 +175,11 @@ describe('подпись входа и регистрации', () => {
       ['на границе в будущем', SALT_TIMESTAMP_WINDOW_MS],
     ])('%s принимается', async (_name, offset) => {
       const address = email();
-      const res = await rawPost('/auth/login', loginBody(address), saltHeaders(address, at(offset)));
+      const res = await rawPost(
+        '/auth/login',
+        loginBody(address),
+        saltHeaders(address, at(offset)),
+      );
       expect(res.status).toBe(401);
     });
 
@@ -141,7 +188,11 @@ describe('подпись входа и регистрации', () => {
       ['из будущего', SALT_TIMESTAMP_WINDOW_MS + 1],
     ])('%s отклоняется', async (_name, offset) => {
       const address = email();
-      const res = await rawPost('/auth/login', loginBody(address), saltHeaders(address, at(offset)));
+      const res = await rawPost(
+        '/auth/login',
+        loginBody(address),
+        saltHeaders(address, at(offset)),
+      );
       expect(res.status).toBe(403);
       expect(await errorCode(res)).toBe('SALT_INVALID');
     });
@@ -167,48 +218,77 @@ describe('подпись входа и регистрации', () => {
 
   it('email подписывается как в теле, до trim', async () => {
     const address = `  ${email()}  `;
-    const res = await rawPost('/auth/login', loginBody(address), saltHeaders(address, t.clock.current));
+    const res = await rawPost(
+      '/auth/login',
+      loginBody(address),
+      saltHeaders(address, t.clock.current),
+    );
     expect(res.status).toBe(401);
     expect(await errorCode(res)).toBe('INVALID_CREDENTIALS');
   });
 
   it('пустой email проходит подпись и получает ошибку поля', async () => {
-    const res = await signedPost(t, '/auth/login', { email: '', password: 'x', remember: true });
+    const res = await signedPost(t, '/auth/login', {
+      email: '',
+      password: 'x',
+      remember: true,
+    });
     expect(res.status).toBe(422);
-    expect((await json(res)).error.fields.email).toBe('Введите корректный email');
+    expect((await json(res)).error.fields.email).toBe(
+      'Введите корректный email',
+    );
   });
 
   it('запрос без подписи не тратит счётчик неудач входа', async () => {
     const address = email();
     await rawPost('/auth/login', loginBody(address), {});
-    const rows = await t.db.select().from(authThrottle).where(eq(authThrottle.key, `login:${address}`));
+    const rows = await t.db
+      .select()
+      .from(authThrottle)
+      .where(eq(authThrottle.key, `login:${address}`));
     expect(rows).toEqual([]);
   });
 
   it('верный вход с подписью выдаёт сессию', async () => {
     const address = email();
-    expect((await signedPost(t, '/auth/register', registerBody(address))).status).toBe(201);
-    const res = await signedPost(t, '/auth/login', { email: address, password: 'password', remember: true });
+    expect(
+      (await signedPost(t, '/auth/register', registerBody(address))).status,
+    ).toBe(201);
+    const res = await signedPost(t, '/auth/login', {
+      email: address,
+      password: 'password',
+      remember: true,
+    });
     expect(res.status).toBe(200);
   });
 
   it('заголовки подписи описаны в OpenAPI', async () => {
     const doc = await json(await t.request('GET', '/openapi.json'));
     for (const path of ['/api/v1/auth/login', '/api/v1/auth/register']) {
-      const parameters = doc.paths[path].post.parameters as { name: string; in: string; required: boolean }[];
-      const headers = parameters.filter((parameter) => parameter.in === 'header');
+      const parameters = doc.paths[path].post.parameters as {
+        name: string;
+        in: string;
+        required: boolean;
+      }[];
+      const headers = parameters.filter(
+        (parameter) => parameter.in === 'header',
+      );
       expect(headers.map((header) => header.name).sort()).toEqual([
         'fastify-timestamp',
         'fastify-token',
         'fastify-version',
       ]);
       expect(headers.every((header) => header.required)).toBe(true);
-      expect(doc.paths[path].post.responses['403'].description).toContain('SALT_INVALID');
+      expect(doc.paths[path].post.responses['403'].description).toContain(
+        'SALT_INVALID',
+      );
     }
   });
 
   it('refresh, logout и OAuth подпись не требуют', async () => {
-    expect(await errorCode(await t.request('POST', '/auth/refresh'))).toBe('REFRESH_MISSING');
+    expect(await errorCode(await t.request('POST', '/auth/refresh'))).toBe(
+      'REFRESH_MISSING',
+    );
     expect((await t.request('POST', '/auth/logout')).status).toBe(204);
     expect((await t.app.request('/api/v1/auth/github/start')).status).toBe(302);
     expect((await t.app.request('/api/v1/auth/google/start')).status).toBe(302);

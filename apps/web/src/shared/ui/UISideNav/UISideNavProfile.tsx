@@ -1,9 +1,13 @@
 import { forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { Slot, type ISlotProps } from '@/shared/lib/dom';
+import { type ISlotProps, Slot } from '@/shared/lib/dom';
 import { UIAvatar } from '@/shared/ui/UIAvatar';
 
-export interface IUISideNavProfileProps extends Omit<ISlotProps, 'as' | 'children'> {
+export interface IUISideNavProfileProps extends Omit<
+  ISlotProps,
+  'as' | 'children'
+> {
   readonly testId?: string;
   readonly name: string;
   /** Фото пользователя. */
@@ -15,7 +19,18 @@ export interface IUISideNavProfileProps extends Omit<ISlotProps, 'as' | 'childre
 
 /** Ссылка на профиль внизу меню. В узком меню остаётся только аватар. */
 const UISideNavProfileBase = forwardRef<HTMLElement, IUISideNavProfileProps>(
-  ({ className, testId, name, avatarSrc, caption = 'Профиль', active = false, ...props }, ref) => (
+  (
+    {
+      className,
+      testId,
+      name,
+      avatarSrc,
+      caption = 'Профиль',
+      active = false,
+      ...props
+    },
+    ref,
+  ) => (
     <Slot
       ref={ref}
       aria-label={caption}
@@ -29,10 +44,10 @@ const UISideNavProfileBase = forwardRef<HTMLElement, IUISideNavProfileProps>(
       )}
       {...props}
     >
-      <UIAvatar name={name} src={avatarSrc} size="md" />
-      <span className="hidden min-w-0 flex-col lg:flex">
-        <span className="truncate font-medium">{name}</span>
-        <span className="text-caption text-muted-foreground">{caption}</span>
+      <UIAvatar name={name} src={avatarSrc} size='md' />
+      <span className='hidden min-w-0 flex-col lg:flex'>
+        <span className='truncate font-medium'>{name}</span>
+        <span className='text-caption text-muted-foreground'>{caption}</span>
       </span>
     </Slot>
   ),

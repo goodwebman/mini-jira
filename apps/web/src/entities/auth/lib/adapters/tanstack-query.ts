@@ -20,7 +20,11 @@ export function bindAuthToQueryClient<TUser>(
 }
 
 /** Для опции `retry`: окончательные ошибки авторизации не повторяются. */
-export function shouldRetryQuery(failureCount: number, error: unknown, limit = 3): boolean {
+export function shouldRetryQuery(
+  failureCount: number,
+  error: unknown,
+  limit = 3,
+): boolean {
   if (isAuthError(error) && !error.retryable) return false;
   return failureCount < limit;
 }

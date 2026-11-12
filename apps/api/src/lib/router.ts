@@ -1,10 +1,12 @@
-import { apiErrorSchema, type ErrorCode } from '@gwmt/contracts';
+import { type ErrorCode, apiErrorSchema } from '@gwmt/contracts';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { z } from 'zod';
+
 import type { AppEnv } from './context.js';
 import { errorMessage, validationHook } from './errors.js';
 
-export const createRouter = () => new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
+export const createRouter = () =>
+  new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
 
 export const bearerAuth = [{ bearerAuth: [] }];
 export const refreshCookie = [{ refreshCookie: [] }];
@@ -16,14 +18,18 @@ export const jsonBody = <T extends z.ZodType>(schema: T) => ({
   content: { 'application/json': { schema } },
 });
 
-export const jsonResponse = <T extends z.ZodType>(schema: T, description: string) => ({
+export const jsonResponse = <T extends z.ZodType>(
+  schema: T,
+  description: string,
+) => ({
   description,
   content: { 'application/json': { schema } },
 });
 
 export const setsRefreshCookie = {
   'Set-Cookie': {
-    description: 'gwmt_refresh=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth',
+    description:
+      'gwmt_refresh=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth',
     schema: { type: 'string' as const },
   },
 };
@@ -37,12 +43,16 @@ const errorResponse = (codes: readonly ErrorCode[]) =>
 type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500;
 
 /** Ответы с ошибками ручки: каждому статусу перечисляются его коды контракта. */
-export function errors<const T extends Partial<Record<ErrorStatus, readonly ErrorCode[]>>>(map: T) {
+export function errors<
+  const T extends Partial<Record<ErrorStatus, readonly ErrorCode[]>>,
+>(map: T) {
   const entries = Object.entries(map).map(([status, codes]) => [
     status,
     errorResponse(codes as readonly ErrorCode[]),
   ]);
-  return Object.fromEntries(entries) as { [K in keyof T]: ReturnType<typeof errorResponse> };
+  return Object.fromEntries(entries) as {
+    [K in keyof T]: ReturnType<typeof errorResponse>;
+  };
 }
 
 export const ACCESS_ERRORS = [

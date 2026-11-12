@@ -1,4 +1,5 @@
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { type ReactNode, useCallback, useMemo } from 'react';
+
 import { DialogContext } from './dialog-context';
 
 export interface IUIDialogProps {
@@ -32,6 +33,8 @@ export function UIDialogRoot({ open, onOpenChange, children }: IUIDialogProps) {
     return null;
   }
 
-  return <DialogContext.Provider value={context}>{children}</DialogContext.Provider>;
+  return (
+    <DialogContext.Provider value={context}>{children}</DialogContext.Provider>
+  );
 }
 UIDialogRoot.displayName = 'UIDialog';

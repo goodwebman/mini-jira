@@ -1,7 +1,10 @@
+import { type ButtonHTMLAttributes, forwardRef, memo } from 'react';
+
 import type { VariantProps } from 'class-variance-authority';
-import { forwardRef, memo, type ButtonHTMLAttributes } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 import { UIIcons } from '@/shared/ui/icons';
+
 import { buttonVariants } from './UIButton.variants';
 
 /**
@@ -10,7 +13,9 @@ import { buttonVariants } from './UIButton.variants';
  * @extends {ButtonHTMLAttributes<HTMLButtonElement>}
  */
 export interface IUIButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+  extends
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
   /** # Суффикс для data-name (UIButton-<testId>), упрощает поиск в тестах и отладке HTML */
   readonly testId?: string;
   /** # Состояние загрузки: блокирует клики, добавляет спиннер и aria-busy */
@@ -26,7 +31,17 @@ export interface IUIButtonProps
  */
 const UIButtonBase = forwardRef<HTMLButtonElement, IUIButtonProps>(
   (
-    { className, variant, size, testId, loading = false, disabled, type = 'button', children, ...props },
+    {
+      className,
+      variant,
+      size,
+      testId,
+      loading = false,
+      disabled,
+      type = 'button',
+      children,
+      ...props
+    },
     ref,
   ) => (
     <button
@@ -38,7 +53,12 @@ const UIButtonBase = forwardRef<HTMLButtonElement, IUIButtonProps>(
       className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     >
-      {loading && <UIIcons.Spinner data-name="UIButton-spinner" className="size-icon-sm animate-spin" />}
+      {loading && (
+        <UIIcons.Spinner
+          data-name='UIButton-spinner'
+          className='size-icon-sm animate-spin'
+        />
+      )}
       {children}
     </button>
   ),

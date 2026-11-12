@@ -6,7 +6,8 @@ export type Unsubscribe = () => void;
 
 /** `unknown`: сессия ещё не проверена, экран не должен мигать гостем. */
 export type AuthStatus = 'unknown' | 'authenticated' | 'guest';
-export type AuthPhase = 'idle' | 'restoring' | 'signing-in' | 'renewing' | 'redirecting';
+export type AuthPhase =
+  'idle' | 'restoring' | 'signing-in' | 'renewing' | 'redirecting';
 
 /** Снимок не содержит секретов: его можно класть в React, Redux и devtools. */
 export interface AuthState<TUser> {
@@ -31,7 +32,11 @@ export type AuthEvent<TUser> =
       /** Вошёл другой пользователь: данные прошлого нельзя показывать. */
       readonly identityChanged: boolean;
     }
-  | { readonly type: 'logout'; readonly state: AuthState<TUser>; readonly origin: AuthOrigin }
+  | {
+      readonly type: 'logout';
+      readonly state: AuthState<TUser>;
+      readonly origin: AuthOrigin;
+    }
   | {
       readonly type: 'kick';
       readonly state: AuthState<TUser>;
@@ -120,18 +125,28 @@ export interface RestoreContext<TCredentials, TUser> extends StrategyContext {
 export interface AuthStrategy<TCredentials, TUser, TLoginInput> {
   readonly name: string;
   /** Холодный старт. `null`: сессии нет. */
-  restore(context: RestoreContext<TCredentials, TUser>): Promise<AuthGrant<TCredentials, TUser> | null>;
+  restore(
+    context: RestoreContext<TCredentials, TUser>,
+  ): Promise<AuthGrant<TCredentials, TUser> | null>;
   login(
     input: TLoginInput,
     context: StrategyContext,
   ): Promise<AuthGrant<TCredentials, TUser> | AuthRedirect>;
   /** Нет метода: реквизиты не обновляются, и 401 означает конец сессии. */
-  renew?(context: CredentialContext<TCredentials>): Promise<AuthGrant<TCredentials, TUser>>;
+  renew?(
+    context: CredentialContext<TCredentials>,
+  ): Promise<AuthGrant<TCredentials, TUser>>;
   /** `credentials: null` бывает при отложенном выходе: уже после перезагрузки страницы. */
   logout?(context: CredentialContext<TCredentials>): Promise<void>;
-  decorate(credentials: TCredentials, target: AuthTarget): MaybePromise<AuthDecoration>;
+  decorate(
+    credentials: TCredentials,
+    target: AuthTarget,
+  ): MaybePromise<AuthDecoration>;
   /** По умолчанию 401 ведёт к `renew` или, если обновляться нечем, к `reject`. */
-  assess?(response: AuthResponseInfo, credentials: TCredentials): MaybePromise<AuthVerdict>;
+  assess?(
+    response: AuthResponseInfo,
+    credentials: TCredentials,
+  ): MaybePromise<AuthVerdict>;
 }
 
 export interface PersistedSession<TCredentials, TUser> {
@@ -185,7 +200,10 @@ export interface ExecuteOptions<TResult> {
 
 /** Всё, что нужно адаптеру HTTP-библиотеки. */
 export interface AuthPipeline {
-  readonly prepare: (target: AuthTarget, options?: PrepareOptions) => Promise<AuthAttempt>;
+  readonly prepare: (
+    target: AuthTarget,
+    options?: PrepareOptions,
+  ) => Promise<AuthAttempt>;
   readonly settle: (
     attempt: Pick<AuthAttempt, 'ticket'>,
     response: AuthResponseInfo,

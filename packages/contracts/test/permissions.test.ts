@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
+
 import {
-  allowedStatuses,
-  can,
-  createStatusError,
-  statusMoveError,
   type BoardAction,
   type BoardRole,
   type MoveTask,
   type TaskStatus,
+  allowedStatuses,
+  can,
+  createStatusError,
+  statusMoveError,
 } from '../src/index.js';
 
 const REVIEWER = 'reviewer-id';
@@ -50,7 +51,9 @@ describe('statusMoveError', () => {
 
   it('гость не двигает ничего, даже будучи ревьювером', () => {
     const guest = { id: REVIEWER, role: 'guest' as const };
-    expect(statusMoveError(guest, task('review'), 'work')).toBe('ROLE_FORBIDDEN');
+    expect(statusMoveError(guest, task('review'), 'work')).toBe(
+      'ROLE_FORBIDDEN',
+    );
     expect(statusMoveError(guest, task('todo'), 'work')).toBe('ROLE_FORBIDDEN');
   });
 
@@ -61,27 +64,45 @@ describe('statusMoveError', () => {
   });
 
   it('шаг назад без назначения на задачу запрещён', () => {
-    expect(statusMoveError(worker(), task('work'), 'todo')).toBe('STATUS_MOVE_FORBIDDEN');
-    expect(statusMoveError(worker(), task('review'), 'work')).toBe('STATUS_MOVE_FORBIDDEN');
+    expect(statusMoveError(worker(), task('work'), 'todo')).toBe(
+      'STATUS_MOVE_FORBIDDEN',
+    );
+    expect(statusMoveError(worker(), task('review'), 'work')).toBe(
+      'STATUS_MOVE_FORBIDDEN',
+    );
   });
 
   it('ревьювер возвращает только из review в work', () => {
-    expect(statusMoveError(worker(REVIEWER), task('review'), 'work')).toBeNull();
-    expect(statusMoveError(worker(REVIEWER), task('review'), 'todo')).toBe('STATUS_MOVE_FORBIDDEN');
-    expect(statusMoveError(worker(REVIEWER), task('test'), 'review')).toBe('STATUS_MOVE_FORBIDDEN');
-    expect(statusMoveError(worker(REVIEWER), task('test'), 'work')).toBe('STATUS_MOVE_FORBIDDEN');
+    expect(
+      statusMoveError(worker(REVIEWER), task('review'), 'work'),
+    ).toBeNull();
+    expect(statusMoveError(worker(REVIEWER), task('review'), 'todo')).toBe(
+      'STATUS_MOVE_FORBIDDEN',
+    );
+    expect(statusMoveError(worker(REVIEWER), task('test'), 'review')).toBe(
+      'STATUS_MOVE_FORBIDDEN',
+    );
+    expect(statusMoveError(worker(REVIEWER), task('test'), 'work')).toBe(
+      'STATUS_MOVE_FORBIDDEN',
+    );
   });
 
   it('тестировщик возвращает из test в review или work', () => {
     expect(statusMoveError(worker(TESTER), task('test'), 'review')).toBeNull();
     expect(statusMoveError(worker(TESTER), task('test'), 'work')).toBeNull();
-    expect(statusMoveError(worker(TESTER), task('test'), 'todo')).toBe('STATUS_MOVE_FORBIDDEN');
-    expect(statusMoveError(worker(TESTER), task('done'), 'test')).toBe('STATUS_MOVE_FORBIDDEN');
+    expect(statusMoveError(worker(TESTER), task('test'), 'todo')).toBe(
+      'STATUS_MOVE_FORBIDDEN',
+    );
+    expect(statusMoveError(worker(TESTER), task('done'), 'test')).toBe(
+      'STATUS_MOVE_FORBIDDEN',
+    );
   });
 
   it('под запретом рабочий не выводит задачу из todo никуда', () => {
     for (const to of ['work', 'review', 'test', 'done'] as const) {
-      expect(statusMoveError(worker(), task('todo', true), to)).toBe('TASK_TAKE_LOCKED');
+      expect(statusMoveError(worker(), task('todo', true), to)).toBe(
+        'TASK_TAKE_LOCKED',
+      );
     }
   });
 
@@ -92,7 +113,8 @@ describe('statusMoveError', () => {
 });
 
 describe('allowedStatuses', () => {
-  const allowed = (role: BoardRole, id: string, t: MoveTask) => allowedStatuses({ id, role }, t);
+  const allowed = (role: BoardRole, id: string, t: MoveTask) =>
+    allowedStatuses({ id, role }, t);
 
   it('текущий статус входит в список у всех ролей', () => {
     expect(allowed('guest', OTHER, task('review'))).toEqual(['review']);
@@ -101,8 +123,17 @@ describe('allowedStatuses', () => {
   });
 
   it('ревьювер видит шаг назад, посторонний нет', () => {
-    expect(allowed('worker', REVIEWER, task('review'))).toEqual(['work', 'review', 'test', 'done']);
-    expect(allowed('worker', OTHER, task('review'))).toEqual(['review', 'test', 'done']);
+    expect(allowed('worker', REVIEWER, task('review'))).toEqual([
+      'work',
+      'review',
+      'test',
+      'done',
+    ]);
+    expect(allowed('worker', OTHER, task('review'))).toEqual([
+      'review',
+      'test',
+      'done',
+    ]);
   });
 
   it('администратор видит все статусы', () => {

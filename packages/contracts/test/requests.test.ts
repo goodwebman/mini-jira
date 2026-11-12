@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
+
 import {
   boardIdParamSchema,
   createBoardBodySchema,
@@ -28,47 +29,81 @@ describe('тексты ошибок из контракта', () => {
       acceptedTerms: true,
     };
     expect(registerBodySchema.safeParse(valid).success).toBe(true);
-    expect(fieldMessage(registerBodySchema, { ...valid, name: '   ' }, 'name')).toBe(
-      'Введите имя и фамилию',
-    );
-    expect(fieldMessage(registerBodySchema, { ...valid, email: 'nope' }, 'email')).toBe(
-      'Введите корректный email',
-    );
-    expect(fieldMessage(registerBodySchema, { ...valid, password: 'short' }, 'password')).toBe(
-      'Минимум 8 символов',
-    );
     expect(
-      fieldMessage(registerBodySchema, { ...valid, acceptedTerms: false }, 'acceptedTerms'),
+      fieldMessage(registerBodySchema, { ...valid, name: '   ' }, 'name'),
+    ).toBe('Введите имя и фамилию');
+    expect(
+      fieldMessage(registerBodySchema, { ...valid, email: 'nope' }, 'email'),
+    ).toBe('Введите корректный email');
+    expect(
+      fieldMessage(
+        registerBodySchema,
+        { ...valid, password: 'short' },
+        'password',
+      ),
+    ).toBe('Минимум 8 символов');
+    expect(
+      fieldMessage(
+        registerBodySchema,
+        { ...valid, acceptedTerms: false },
+        'acceptedTerms',
+      ),
     ).toBe('Нужно принять условия');
   });
 
   it('пустые поля дают тот же текст, что и неверные', () => {
-    expect(fieldMessage(registerBodySchema, {}, 'name')).toBe('Введите имя и фамилию');
-    expect(fieldMessage(registerBodySchema, {}, 'email')).toBe('Введите корректный email');
-    expect(fieldMessage(loginBodySchema, {}, 'password')).toBe('Введите пароль');
+    expect(fieldMessage(registerBodySchema, {}, 'name')).toBe(
+      'Введите имя и фамилию',
+    );
+    expect(fieldMessage(registerBodySchema, {}, 'email')).toBe(
+      'Введите корректный email',
+    );
+    expect(fieldMessage(loginBodySchema, {}, 'password')).toBe(
+      'Введите пароль',
+    );
   });
 
   it('вход', () => {
     expect(
-      fieldMessage(loginBodySchema, { email: 'a@b.co', password: '', remember: true }, 'password'),
+      fieldMessage(
+        loginBodySchema,
+        { email: 'a@b.co', password: '', remember: true },
+        'password',
+      ),
     ).toBe('Введите пароль');
   });
 
   it('профиль', () => {
-    expect(fieldMessage(updateMeBodySchema, { name: '  ' }, 'name')).toBe('Введите имя');
+    expect(fieldMessage(updateMeBodySchema, { name: '  ' }, 'name')).toBe(
+      'Введите имя',
+    );
     expect(updateMeBodySchema.safeParse({}).success).toBe(true);
   });
 
   it('доска', () => {
-    expect(fieldMessage(createBoardBodySchema, { memberIds: [] }, 'name')).toBe('Введите название');
+    expect(fieldMessage(createBoardBodySchema, { memberIds: [] }, 'name')).toBe(
+      'Введите название',
+    );
     expect(
-      fieldMessage(createBoardBodySchema, { name: 'x', key: 'abc', memberIds: [] }, 'key'),
+      fieldMessage(
+        createBoardBodySchema,
+        { name: 'x', key: 'abc', memberIds: [] },
+        'key',
+      ),
     ).toBe('Введите ключ');
     expect(
-      createBoardBodySchema.safeParse({ name: 'x', key: 'ABC123', memberIds: [] }).success,
+      createBoardBodySchema.safeParse({
+        name: 'x',
+        key: 'ABC123',
+        memberIds: [],
+      }).success,
     ).toBe(true);
     expect(
-      fieldMessage(createBoardBodySchema, { name: 'x', key: 'ABCDEFG', memberIds: [] }, 'key'),
+      fieldMessage(
+        createBoardBodySchema,
+        { name: 'x', key: 'ABCDEFG', memberIds: [] },
+        'key',
+      ),
     ).toBe('Введите ключ');
   });
 
@@ -81,14 +116,18 @@ describe('тексты ошибок из контракта', () => {
 
     it('без ревьювера', () => {
       expect(
-        fieldMessage(createTaskBodySchema, { ...valid, reviewerId: undefined }, 'reviewerId'),
+        fieldMessage(
+          createTaskBodySchema,
+          { ...valid, reviewerId: undefined },
+          'reviewerId',
+        ),
       ).toBe('Выберите ревьювера');
     });
 
     it('без названия', () => {
-      expect(fieldMessage(createTaskBodySchema, { ...valid, title: ' ' }, 'title')).toBe(
-        'Введите название',
-      );
+      expect(
+        fieldMessage(createTaskBodySchema, { ...valid, title: ' ' }, 'title'),
+      ).toBe('Введите название');
     });
 
     it.each([0, -1, 1000, 1.25])('оценка %s отклоняется', (sp) => {
@@ -98,7 +137,9 @@ describe('тексты ошибок из контракта', () => {
     });
 
     it.each([0.1, 0.3, 2.5, 999, 998.9])('оценка %s проходит', (sp) => {
-      expect(createTaskBodySchema.safeParse({ ...valid, sp }).success).toBe(true);
+      expect(createTaskBodySchema.safeParse({ ...valid, sp }).success).toBe(
+        true,
+      );
     });
   });
 });
@@ -106,14 +147,22 @@ describe('тексты ошибок из контракта', () => {
 describe('параметры', () => {
   it('ключ задачи', () => {
     expect(taskKeyParamSchema.safeParse({ key: 'GWT-101' }).success).toBe(true);
-    expect(taskKeyParamSchema.safeParse({ key: 'gwt-101' }).success).toBe(false);
+    expect(taskKeyParamSchema.safeParse({ key: 'gwt-101' }).success).toBe(
+      false,
+    );
     expect(taskKeyParamSchema.safeParse({ key: 'GWT' }).success).toBe(false);
   });
 
   it('id доски за пределами integer не проходит', () => {
-    expect(boardIdParamSchema.safeParse({ boardId: '9' }).data).toEqual({ boardId: 9 });
-    expect(boardIdParamSchema.safeParse({ boardId: '99999999999' }).success).toBe(false);
-    expect(boardIdParamSchema.safeParse({ boardId: 'abc' }).success).toBe(false);
+    expect(boardIdParamSchema.safeParse({ boardId: '9' }).data).toEqual({
+      boardId: 9,
+    });
+    expect(
+      boardIdParamSchema.safeParse({ boardId: '99999999999' }).success,
+    ).toBe(false);
+    expect(boardIdParamSchema.safeParse({ boardId: 'abc' }).success).toBe(
+      false,
+    );
   });
 
   it('поиск людей: пустой q разрешён, один символ нет', () => {
@@ -126,7 +175,11 @@ describe('параметры', () => {
 
 describe('локаль', () => {
   it('сообщения zod по умолчанию на русском', () => {
-    const message = fieldMessage(loginBodySchema, { email: 'a@b.co', password: 'x' }, 'remember');
+    const message = fieldMessage(
+      loginBodySchema,
+      { email: 'a@b.co', password: 'x' },
+      'remember',
+    );
     expect(message).toMatch(/[а-яё]/i);
   });
 });

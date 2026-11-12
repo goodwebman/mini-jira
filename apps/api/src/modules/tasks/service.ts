@@ -1,6 +1,4 @@
 import {
-  can,
-  statusMoveError,
   type BoardRole,
   type CreateCommentBody,
   type CreateLinkBody,
@@ -19,13 +17,16 @@ import {
   type TaskStatus,
   type TaskTimer,
   type UpdateTaskBody,
+  can,
+  statusMoveError,
 } from '@gwmt/contracts';
+
 import type { Db } from '../../db/client.js';
 import type { AppDeps, TaskAccess } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import { countWorkdays, dateInZone } from '../../lib/workdays.js';
-import { toSprintBrief } from '../sprints/service.js';
 import * as sprintsRepo from '../sprints/repo.js';
+import { toSprintBrief } from '../sprints/service.js';
 import * as repo from './repo.js';
 
 const INVERSE_LINK: Record<TaskLinkType, TaskLinkType> = {
@@ -84,7 +85,12 @@ async function loadCard(db: Db, taskId: string): Promise<TaskCard> {
 type AssigneeField = 'authorId' | 'reviewerId' | 'testerId' | 'designerId';
 type Assignees = Partial<Record<AssigneeField, string | null | undefined>>;
 
-const ASSIGNEE_FIELDS: AssigneeField[] = ['authorId', 'reviewerId', 'testerId', 'designerId'];
+const ASSIGNEE_FIELDS: AssigneeField[] = [
+  'authorId',
+  'reviewerId',
+  'testerId',
+  'designerId',
+];
 
 async function assertAssignable(db: Db, boardId: number, people: Assignees) {
   const entries = ASSIGNEE_FIELDS.flatMap((field) => {
@@ -93,7 +99,11 @@ async function assertAssignable(db: Db, boardId: number, people: Assignees) {
   });
   if (entries.length === 0) return;
 
-  const roles = await repo.listMemberRoles(db, boardId, entries.map((entry) => entry.userId));
+  const roles = await repo.listMemberRoles(
+    db,
+    boardId,
+    entries.map((entry) => entry.userId),
+  );
   let code: ErrorCode | null = null;
   const fields: Record<string, string> = {};
   for (const { field, userId } of entries) {
@@ -120,11 +130,18 @@ export async function listBoardTasks(deps: AppDeps, boardId: number) {
   };
 }
 
-function completedDays(firstStartedAt: Date | null, doneAt: Date, timezone: string): number {
+function completedDays(
+  firstStartedAt: Date | null,
+  doneAt: Date,
+  timezone: string,
+): number {
   if (!firstStartedAt) return 1;
   return Math.max(
     1,
-    countWorkdays(dateInZone(firstStartedAt, timezone), dateInZone(doneAt, timezone)),
+    countWorkdays(
+      dateInZone(firstStartedAt, timezone),
+      dateInZone(doneAt, timezone),
+    ),
   );
 }
 
@@ -164,7 +181,12 @@ export async function createTask(
       updatedAt: now,
     });
     await repo.addTaskToSprint(tx, sprint.id, taskId, now);
-    await repo.insertInterval(tx, { taskId, status, enteredAt: now, changedBy: actorId });
+    await repo.insertInterval(tx, {
+      taskId,
+      status,
+      enteredAt: now,
+      changedBy: actorId,
+    });
     return loadCard(tx, taskId);
   });
 }
@@ -205,13 +227,15 @@ export async function updateTask(
     if (!locked) throw new AppError('TASK_NOT_FOUND');
     const { task, timezone } = locked;
 
-    if (body.status !== undefined) assertMoveAllowed(actor, toMoveTask(task), body.status);
+    if (body.status !== undefined)
+      assertMoveAllowed(actor, toMoveTask(task), body.status);
 
     // Нынешнего человека можно оставить, даже если его убрали с доски или понизили до гостя.
     const changedPeople: Assignees = {};
     for (const field of ASSIGNEE_FIELDS) {
       const value = body[field];
-      if (value !== undefined && value !== task[field]) changedPeople[field] = value;
+      if (value !== undefined && value !== task[field])
+        changedPeople[field] = value;
     }
     await assertAssignable(tx, task.boardId, changedPeople);
 
@@ -254,30 +278,46 @@ export async function updateTask(
   });
 }
 
-export async function setTakeLock(deps: AppDeps, taskId: string): Promise<TaskCard> {
+export async function setTakeLock(
+  deps: AppDeps,
+  taskId: string,
+): Promise<TaskCard> {
   const task = await repo.findTask(deps.db, taskId);
   if (!task) throw new AppError('TASK_NOT_FOUND');
-  if (!task.takeLocked && !(await repo.setTakeLockIfTodo(deps.db, taskId, deps.now()))) {
+  if (
+    !task.takeLocked &&
+    !(await repo.setTakeLockIfTodo(deps.db, taskId, deps.now()))
+  ) {
     throw new AppError('TASK_NOT_LOCKABLE');
   }
   return loadCard(deps.db, taskId);
 }
 
-export async function clearTakeLock(deps: AppDeps, taskId: string): Promise<TaskCard> {
+export async function clearTakeLock(
+  deps: AppDeps,
+  taskId: string,
+): Promise<TaskCard> {
   await repo.clearTakeLock(deps.db, taskId, deps.now());
   return loadCard(deps.db, taskId);
 }
 
-export async function pauseTask(deps: AppDeps, taskId: string): Promise<TaskCard> {
+export async function pauseTask(
+  deps: AppDeps,
+  taskId: string,
+): Promise<TaskCard> {
   if (!(await repo.startPause(deps.db, taskId, deps.now()))) {
     const task = await repo.findTask(deps.db, taskId);
     if (!task) throw new AppError('TASK_NOT_FOUND');
-    if (!PAUSABLE.includes(task.status)) throw new AppError('TASK_NOT_PAUSABLE');
+    if (!PAUSABLE.includes(task.status))
+      throw new AppError('TASK_NOT_PAUSABLE');
   }
   return loadCard(deps.db, taskId);
 }
 
-export async function resumeTask(deps: AppDeps, taskId: string): Promise<TaskCard> {
+export async function resumeTask(
+  deps: AppDeps,
+  taskId: string,
+): Promise<TaskCard> {
   const now = deps.now();
   return deps.withTx(async (tx) => {
     const locked = await repo.lockTask(tx, taskId);
@@ -285,7 +325,9 @@ export async function resumeTask(deps: AppDeps, taskId: string): Promise<TaskCar
     const { task } = locked;
 
     if (task.pausedAt) {
-      const seconds = Math.floor((now.getTime() - task.pausedAt.getTime()) / 1000);
+      const seconds = Math.floor(
+        (now.getTime() - task.pausedAt.getTime()) / 1000,
+      );
       await repo.updateTask(tx, taskId, {
         pausedAt: null,
         pausedTotalSec: task.pausedTotalSec + seconds,
@@ -311,8 +353,18 @@ export async function createLink(
 
   const now = deps.now();
   const created = await repo.insertLinkPair(deps.db, [
-    { taskId: access.id, targetTaskId: target.id, type: body.type, createdAt: now },
-    { taskId: target.id, targetTaskId: access.id, type: INVERSE_LINK[body.type], createdAt: now },
+    {
+      taskId: access.id,
+      targetTaskId: target.id,
+      type: body.type,
+      createdAt: now,
+    },
+    {
+      taskId: target.id,
+      targetTaskId: access.id,
+      type: INVERSE_LINK[body.type],
+      createdAt: now,
+    },
   ]);
   if (!created) throw new AppError('TASK_LINK_EXISTS');
 
@@ -336,7 +388,8 @@ export async function deleteLink(
 ): Promise<void> {
   const target = await repo.findLinkTarget(deps.db, targetKey, userId);
   if (!target) return;
-  if (!target.role || !can(target.role, 'task.link')) throw new AppError('ROLE_FORBIDDEN');
+  if (!target.role || !can(target.role, 'task.link'))
+    throw new AppError('ROLE_FORBIDDEN');
   await repo.deleteLinkPair(deps.db, access.id, target.id);
 }
 
@@ -356,7 +409,12 @@ export async function createComment(
   const card = await repo.listTaskComments(deps.db, taskId);
   const author = card.find((item) => item.id === comment.id)?.author;
   if (!author) throw new AppError('TASK_NOT_FOUND');
-  return { id: comment.id, author, text: comment.text, createdAt: comment.createdAt.toISOString() };
+  return {
+    id: comment.id,
+    author,
+    text: comment.text,
+    createdAt: comment.createdAt.toISOString(),
+  };
 }
 
 export async function getTaskDetail(
@@ -373,10 +431,17 @@ export async function getTaskDetail(
   ]);
   if (!row || !meta) throw new AppError('TASK_NOT_FOUND');
 
-  const currentPeople = [row.author.id, row.reviewer.id, row.tester?.id, row.designer?.id].filter(
-    (id): id is string => id !== undefined,
+  const currentPeople = [
+    row.author.id,
+    row.reviewer.id,
+    row.tester?.id,
+    row.designer?.id,
+  ].filter((id): id is string => id !== undefined);
+  const assigneeOptions = await repo.listAssigneeOptions(
+    deps.db,
+    row.boardId,
+    currentPeople,
   );
-  const assigneeOptions = await repo.listAssigneeOptions(deps.db, row.boardId, currentPeople);
 
   return {
     ...toTaskCard(row),
@@ -408,7 +473,11 @@ export async function getTaskDetail(
 export async function searchTasks(
   deps: AppDeps,
   userId: string,
-  query: { q?: string | undefined; excludeLinkedTo?: string | undefined; limit: number },
+  query: {
+    q?: string | undefined;
+    excludeLinkedTo?: string | undefined;
+    limit: number;
+  },
 ): Promise<TaskSearchResponse> {
   const rows = await repo.searchTasks(deps.db, userId, query);
   return {

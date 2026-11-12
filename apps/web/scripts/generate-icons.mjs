@@ -11,8 +11,8 @@
  * (stroke, fill …) навешивает обёртка createIcon; hyphen-case атрибуты внутренних узлов
  * автоматически переводятся в camelCase для JSX.
  */
-import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, dirname, basename } from 'node:path';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -26,7 +26,8 @@ const BANNER =
   '// АВТОГЕНЕРАЦИЯ — не редактировать руками. Источник: src/shared/ui/icons/raw. Пересобрать: `npm run icons:build`.';
 
 /** `chevron-down` → `ChevronDown` */
-export const toPascal = (name) => name.replace(/(^|-)([a-z0-9])/g, (_, __, c) => c.toUpperCase());
+export const toPascal = (name) =>
+  name.replace(/(^|-)([a-z0-9])/g, (_, __, c) => c.toUpperCase());
 
 /** Извлекает viewBox и внутреннюю разметку из svg-строки. */
 export function parseSvg(svg, file) {
@@ -34,7 +35,8 @@ export function parseSvg(svg, file) {
   if (!viewBox) throw new Error(`[${file}] отсутствует viewBox`);
 
   const inner = /<svg\b[^>]*>([\s\S]*?)<\/svg>/i.exec(svg)?.[1];
-  if (inner == null) throw new Error(`[${file}] не найден корневой <svg>…</svg>`);
+  if (inner == null)
+    throw new Error(`[${file}] не найден корневой <svg>…</svg>`);
 
   return { viewBox: viewBox.trim(), inner };
 }
@@ -43,7 +45,8 @@ export function parseSvg(svg, file) {
 export function attrsToJsx(inner) {
   return inner.replace(
     /(\s)([a-zA-Z][a-zA-Z0-9]*(?:-[a-zA-Z0-9]+)+)(\s*=)/g,
-    (_, ws, name, eq) => ws + name.replace(/-([a-zA-Z0-9])/g, (__, c) => c.toUpperCase()) + eq,
+    (_, ws, name, eq) =>
+      ws + name.replace(/-([a-zA-Z0-9])/g, (__, c) => c.toUpperCase()) + eq,
   );
 }
 
@@ -78,7 +81,9 @@ function buildGeneratedIndex(names) {
 }
 
 function buildRegistry(names) {
-  const imports = names.map((n) => `import { ${toPascal(n)} } from './generated/${n}';`);
+  const imports = names.map(
+    (n) => `import { ${toPascal(n)} } from './generated/${n}';`,
+  );
   const entries = names.map((n) => `  ${toPascal(n)},`);
   return `${BANNER}
 import type { UIIconComponent } from './create-icon';
@@ -97,7 +102,7 @@ export type UIIconName = keyof typeof UIIcons;
 }
 
 function writeOrCheck(path, content, diffs) {
-  let current = null;
+  let current;
   try {
     // git на Windows может выдать CRLF — на смысл файла это не влияет
     current = readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
@@ -130,7 +135,11 @@ function main() {
     }
     const svg = readFileSync(join(RAW_DIR, file), 'utf8');
     const { viewBox, inner } = parseSvg(svg, file);
-    writeOrCheck(join(GEN_DIR, `${name}.tsx`), buildComponent(name, viewBox, formatInner(inner)), diffs);
+    writeOrCheck(
+      join(GEN_DIR, `${name}.tsx`),
+      buildComponent(name, viewBox, formatInner(inner)),
+      diffs,
+    );
     names.push(name);
   }
 
@@ -145,11 +154,14 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`✓ Иконки собраны: ${String(names.length)} шт. → src/shared/ui/icons/generated`);
+  console.log(
+    `✓ Иконки собраны: ${String(names.length)} шт. → src/shared/ui/icons/generated`,
+  );
 }
 
 // Запускаем генерацию только при прямом вызове скрипта, не при импорте в тестах.
-const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+const isMain =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   main();
 }

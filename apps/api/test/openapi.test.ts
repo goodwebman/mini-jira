@@ -1,8 +1,9 @@
+import { ERROR_CODES } from '@gwmt/contracts';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ERROR_CODES } from '@gwmt/contracts';
-import { createTestApp, json, type TestApp } from './helpers.js';
+
+import { type TestApp, createTestApp, json } from './helpers.js';
 
 const EXPECTED: [string, string][] = [
   ['get', '/health'],
@@ -46,14 +47,53 @@ const EXPECTED: [string, string][] = [
 ];
 
 const NAMED_SCHEMAS = [
-  'Me', 'AuthResponse', 'UserBrief', 'BoardMember', 'SprintBrief', 'BoardListItem', 'BoardListResponse',
-  'BoardDetail', 'TaskTimer', 'TaskCard', 'BoardTasksResponse', 'TaskLinkItem', 'TaskComment', 'TaskDetail',
-  'TaskRow', 'MyTasksResponse', 'TaskSearchItem', 'TaskSearchResponse', 'UserSearchResponse', 'NavSummary',
-  'MyTaskStats', 'SprintListItem', 'SprintListResponse', 'SprintKpiDay', 'SprintKpi', 'HealthResponse',
-  'ApiError', 'ErrorCode', 'TaskStatus', 'TaskPriority', 'TaskLinkType', 'TaskRole', 'BoardRole',
-  'SprintState', 'Timezone', 'StageStatus', 'RegisterBody', 'LoginBody', 'UpdateMeBody',
-  'ChangePasswordBody', 'CreateBoardBody', 'AddMemberBody', 'UpdateMemberBody', 'CreateTaskBody',
-  'UpdateTaskBody', 'CreateLinkBody', 'CreateCommentBody',
+  'Me',
+  'AuthResponse',
+  'UserBrief',
+  'BoardMember',
+  'SprintBrief',
+  'BoardListItem',
+  'BoardListResponse',
+  'BoardDetail',
+  'TaskTimer',
+  'TaskCard',
+  'BoardTasksResponse',
+  'TaskLinkItem',
+  'TaskComment',
+  'TaskDetail',
+  'TaskRow',
+  'MyTasksResponse',
+  'TaskSearchItem',
+  'TaskSearchResponse',
+  'UserSearchResponse',
+  'NavSummary',
+  'MyTaskStats',
+  'SprintListItem',
+  'SprintListResponse',
+  'SprintKpiDay',
+  'SprintKpi',
+  'HealthResponse',
+  'ApiError',
+  'ErrorCode',
+  'TaskStatus',
+  'TaskPriority',
+  'TaskLinkType',
+  'TaskRole',
+  'BoardRole',
+  'SprintState',
+  'Timezone',
+  'StageStatus',
+  'RegisterBody',
+  'LoginBody',
+  'UpdateMeBody',
+  'ChangePasswordBody',
+  'CreateBoardBody',
+  'AddMemberBody',
+  'UpdateMemberBody',
+  'CreateTaskBody',
+  'UpdateTaskBody',
+  'CreateLinkBody',
+  'CreateCommentBody',
 ];
 
 interface Parameter {
@@ -69,7 +109,13 @@ interface Operation {
   security?: unknown[];
   parameters?: Parameter[];
   requestBody?: { content: Record<string, { schema: { $ref?: string } }> };
-  responses: Record<string, { description: string; content?: Record<string, { schema: { $ref?: string } }> }>;
+  responses: Record<
+    string,
+    {
+      description: string;
+      content?: Record<string, { schema: { $ref?: string } }>;
+    }
+  >;
 }
 
 const PUBLIC_PREFIXES = ['/auth/', '/health'];
@@ -81,7 +127,10 @@ describe('OpenAPI', () => {
     info: { description: string };
     tags: { name: string }[];
     paths: Record<string, Record<string, Operation>>;
-    components: { schemas: Record<string, unknown>; securitySchemes: Record<string, unknown> };
+    components: {
+      schemas: Record<string, unknown>;
+      securitySchemes: Record<string, unknown>;
+    };
   };
 
   const operations = () =>
@@ -106,19 +155,34 @@ describe('OpenAPI', () => {
 
   it('описаны все ручки контракта и лишних нет', () => {
     const documented = Object.entries(doc.paths).flatMap(([path, item]) =>
-      Object.keys(item).map((method) => `${method} ${path.replace('/api/v1', '')}`),
+      Object.keys(item).map(
+        (method) => `${method} ${path.replace('/api/v1', '')}`,
+      ),
     );
-    expect(documented.sort()).toEqual(EXPECTED.map(([m, p]) => `${m} ${p}`).sort());
+    expect(documented.sort()).toEqual(
+      EXPECTED.map(([m, p]) => `${m} ${p}`).sort(),
+    );
     expect(EXPECTED).toHaveLength(38);
   });
 
   it('ошибки Google описаны рядом с его callback', () => {
-    const response = doc.paths['/api/v1/auth/google/callback']?.get?.responses['302'];
-    for (const failure of ['denied', 'state_mismatch', 'no_verified_email', 'failed', 'email_not_trusted']) {
+    const response =
+      doc.paths['/api/v1/auth/google/callback']?.get?.responses['302'];
+    for (const failure of [
+      'denied',
+      'state_mismatch',
+      'no_verified_email',
+      'failed',
+      'email_not_trusted',
+    ]) {
       expect(response?.description).toContain(`\`google_${failure}\``);
     }
-    expect(doc.paths['/api/v1/auth/google/start']?.get?.operationId).toBe('startGoogleLogin');
-    expect(doc.paths['/api/v1/auth/github/start']?.get?.operationId).toBe('startGithubLogin');
+    expect(doc.paths['/api/v1/auth/google/start']?.get?.operationId).toBe(
+      'startGoogleLogin',
+    );
+    expect(doc.paths['/api/v1/auth/github/start']?.get?.operationId).toBe(
+      'startGithubLogin',
+    );
   });
 
   it.each(EXPECTED)('%s %s описана: группа и заголовок', (method, path) => {
@@ -135,8 +199,13 @@ describe('OpenAPI', () => {
   it('защищённые ручки помечены bearerAuth и документируют 401', () => {
     for (const { method, path, operation } of operations()) {
       if (PUBLIC_PREFIXES.some((prefix) => path.startsWith(prefix))) continue;
-      expect(operation.security, `${method} ${path}`).toEqual([{ bearerAuth: [] }]);
-      expect(operation.responses['401']?.description, `${method} ${path}`).toContain('ACCESS_TOKEN_EXPIRED');
+      expect(operation.security, `${method} ${path}`).toEqual([
+        { bearerAuth: [] },
+      ]);
+      expect(
+        operation.responses['401']?.description,
+        `${method} ${path}`,
+      ).toContain('ACCESS_TOKEN_EXPIRED');
     }
   });
 
@@ -157,35 +226,49 @@ describe('OpenAPI', () => {
     const walk = (node: unknown, path: string) => {
       if (typeof node !== 'object' || node === null) return;
       const allOf = (node as { allOf?: { type?: unknown }[] }).allOf;
-      if (allOf?.some((part) => Array.isArray(part.type) && part.type.includes('null'))) {
+      if (
+        allOf?.some(
+          (part) => Array.isArray(part.type) && part.type.includes('null'),
+        )
+      ) {
         offenders.push(path);
       }
-      for (const [key, value] of Object.entries(node)) walk(value, `${path}/${key}`);
+      for (const [key, value] of Object.entries(node))
+        walk(value, `${path}/${key}`);
     };
     walk(doc, '');
     expect(offenders).toEqual([]);
   });
 
   it('необязательная роль в карточке задачи описана как ссылка или null', () => {
-    const schemas = doc.components.schemas as Record<string, any>;
-    expect(schemas.TaskCard.properties.people.properties.tester).toEqual({
-      anyOf: [{ $ref: '#/components/schemas/UserBrief' }, { type: 'null' }],
-    });
+    expect(doc.components.schemas).toHaveProperty(
+      'TaskCard.properties.people.properties.tester',
+      {
+        anyOf: [{ $ref: '#/components/schemas/UserBrief' }, { type: 'null' }],
+      },
+    );
   });
 
   it('refresh и logout описаны через cookie', () => {
     expect(doc.components.securitySchemes).toHaveProperty('refreshCookie');
-    expect(doc.paths['/api/v1/auth/refresh']?.post?.security).toEqual([{ refreshCookie: [] }]);
-    expect(doc.paths['/api/v1/auth/logout']?.post?.security).toEqual([{ refreshCookie: [] }]);
+    expect(doc.paths['/api/v1/auth/refresh']?.post?.security).toEqual([
+      { refreshCookie: [] },
+    ]);
+    expect(doc.paths['/api/v1/auth/logout']?.post?.security).toEqual([
+      { refreshCookie: [] },
+    ]);
   });
 
   it('параметры пути обязательны', () => {
     for (const { method, path, operation } of operations()) {
       for (const parameter of operation.parameters ?? []) {
-        if (parameter.in === 'path') expect(parameter.required, `${method} ${path}`).toBe(true);
+        if (parameter.in === 'path')
+          expect(parameter.required, `${method} ${path}`).toBe(true);
       }
       const names = [...path.matchAll(/\{(\w+)\}/g)].map((match) => match[1]);
-      const declared = (operation.parameters ?? []).filter((p) => p.in === 'path').map((p) => p.name);
+      const declared = (operation.parameters ?? [])
+        .filter((p) => p.in === 'path')
+        .map((p) => p.name);
       expect(declared.sort(), `${method} ${path}`).toEqual(names.sort());
     }
   });
@@ -193,18 +276,26 @@ describe('OpenAPI', () => {
   it('тела запросов и ответы ссылаются на именованные схемы', () => {
     for (const { method, path, operation } of operations()) {
       const body = operation.requestBody?.content['application/json']?.schema;
-      if (body) expect(body.$ref, `${method} ${path} тело`).toMatch(/^#\/components\/schemas\//);
+      if (body)
+        expect(body.$ref, `${method} ${path} тело`).toMatch(
+          /^#\/components\/schemas\//,
+        );
 
       for (const [status, response] of Object.entries(operation.responses)) {
         const schema = response.content?.['application/json']?.schema;
-        if (schema) expect(schema.$ref, `${method} ${path} ${status}`).toMatch(/^#\/components\/schemas\//);
+        if (schema)
+          expect(schema.$ref, `${method} ${path} ${status}`).toMatch(
+            /^#\/components\/schemas\//,
+          );
       }
     }
   });
 
   it('у каждой ручки описан ровно один успешный ответ', () => {
     for (const { method, path, operation } of operations()) {
-      const success = Object.keys(operation.responses).filter((status) => /^[23]/.test(status));
+      const success = Object.keys(operation.responses).filter((status) =>
+        /^[23]/.test(status),
+      );
       expect(success.length, `${method} ${path}`).toBe(1);
     }
   });
@@ -222,7 +313,9 @@ describe('OpenAPI', () => {
 
   it('коды ошибок приведены вместе с текстом для пользователя', () => {
     const response = doc.paths['/api/v1/tasks/{key}']?.patch?.responses['403'];
-    expect(response?.description).toContain('`TASK_TAKE_LOCKED`: Администратор запретил брать эту задачу в работу');
+    expect(response?.description).toContain(
+      '`TASK_TAKE_LOCKED`: Администратор запретил брать эту задачу в работу',
+    );
   });
 
   it('документ компактный: схемы не вставлены inline', () => {
@@ -241,11 +334,16 @@ describe('OpenAPI', () => {
     expect(res.headers.get('Content-Type')).toContain('text/html');
     const html = await res.text();
     expect(html).toContain('/api/v1/openapi.json');
-    expect(html, 'версия Swagger UI закреплена').toMatch(/swagger-ui-dist@\d+\.\d+\.\d+/);
+    expect(html, 'версия Swagger UI закреплена').toMatch(
+      /swagger-ui-dist@\d+\.\d+\.\d+/,
+    );
   });
 
   it('docs/openapi.json не разошёлся с кодом', () => {
-    const file = readFileSync(resolve(import.meta.dirname, '../../../docs/openapi.json'), 'utf8');
+    const file = readFileSync(
+      resolve(import.meta.dirname, '../../../docs/openapi.json'),
+      'utf8',
+    );
     expect(JSON.parse(file), 'запустите npm run openapi').toEqual(doc);
   });
 });

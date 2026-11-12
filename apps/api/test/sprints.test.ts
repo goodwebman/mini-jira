@@ -1,9 +1,10 @@
-import { and, eq } from 'drizzle-orm';
-import { beforeEach, afterEach, describe, expect, it } from 'vitest';
 import { sprintKpiSchema, sprintListResponseSchema } from '@gwmt/contracts';
-import { sprints, sprintTasks, tasks } from '../src/db/schema.js';
-import { createTask, createTeam, moveTask, type Team } from './fixtures.js';
-import { createTestApp, json, type TestApp } from './helpers.js';
+import { and, eq } from 'drizzle-orm';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { sprintTasks, sprints, tasks } from '../src/db/schema.js';
+import { type Team, createTask, createTeam, moveTask } from './fixtures.js';
+import { type TestApp, createTestApp, json } from './helpers.js';
 
 /** Понедельник сразу после спринта 2026-11-09..2026-11-20, 00:00 по Москве. */
 const AFTER_SPRINT = new Date('2026-11-22T21:00:00.000Z');
@@ -20,9 +21,14 @@ describe('спринты', () => {
   afterEach(() => t.close());
 
   const sprintsOf = (boardId = team.boardId) =>
-    t.db.select().from(sprints).where(eq(sprints.boardId, boardId)).orderBy(sprints.number);
+    t.db
+      .select()
+      .from(sprints)
+      .where(eq(sprints.boardId, boardId))
+      .orderBy(sprints.number);
 
-  const boardDetail = async () => json(await t.request('GET', `/boards/${team.boardId}`, team.admin.token));
+  const boardDetail = async () =>
+    json(await t.request('GET', `/boards/${team.boardId}`, team.admin.token));
 
   it('до понедельника после спринта смены нет', async () => {
     t.clock.current = new Date(AFTER_SPRINT.getTime() - 1000);
@@ -47,14 +53,22 @@ describe('спринты', () => {
     expect(first).toMatchObject({ state: 'closed', plannedSp: 6, doneSp: 3 });
     expect(first?.kpiSnapshot?.todayIndex).toBe(9);
 
-    const rows = await t.db.select().from(tasks).where(eq(tasks.boardId, team.boardId));
+    const rows = await t.db
+      .select()
+      .from(tasks)
+      .where(eq(tasks.boardId, team.boardId));
     expect(rows.find((row) => row.key === open.key)?.sprintId).toBe(second?.id);
     expect(rows.find((row) => row.key === done.key)?.sprintId).toBe(first?.id);
 
     const [moved] = await t.db
       .select()
       .from(sprintTasks)
-      .where(and(eq(sprintTasks.sprintId, second!.id), eq(sprintTasks.taskId, open.id)));
+      .where(
+        and(
+          eq(sprintTasks.sprintId, second!.id),
+          eq(sprintTasks.taskId, open.id),
+        ),
+      );
     expect(moved?.addedAt.toISOString()).toBe(AFTER_SPRINT.toISOString());
   });
 
@@ -68,14 +82,21 @@ describe('спринты', () => {
   it('параллельные запросы в момент смены создают один активный спринт', async () => {
     await createTask(t, team);
     t.clock.current = AFTER_SPRINT;
-    const responses = await Promise.all(Array.from({ length: 6 }, () => boardDetail()));
-    expect(new Set(responses.map((r) => r.currentSprint.number))).toEqual(new Set([2]));
+    const responses = await Promise.all(
+      Array.from({ length: 6 }, () => boardDetail()),
+    );
+    expect(new Set(responses.map((r) => r.currentSprint.number))).toEqual(
+      new Set([2]),
+    );
 
     const all = await sprintsOf();
     expect(all).toHaveLength(2);
     expect(all.filter((sprint) => sprint.state === 'active')).toHaveLength(1);
 
-    const links = await t.db.select().from(sprintTasks).where(eq(sprintTasks.sprintId, all[1]!.id));
+    const links = await t.db
+      .select()
+      .from(sprintTasks)
+      .where(eq(sprintTasks.sprintId, all[1]!.id));
     expect(links).toHaveLength(1);
   });
 
@@ -97,7 +118,9 @@ describe('спринты', () => {
     await t.request('PUT', `/tasks/${task.key}/take-lock`, team.admin.token);
     t.clock.current = AFTER_SPRINT;
     await boardDetail();
-    const detail = await json(await t.request('GET', `/tasks/${task.key}`, team.admin.token));
+    const detail = await json(
+      await t.request('GET', `/tasks/${task.key}`, team.admin.token),
+    );
     expect(detail.isTakeLocked).toBe(true);
     expect(detail.sprint.number).toBe(2);
   });
@@ -107,13 +130,30 @@ describe('спринты', () => {
     t.clock.current = AFTER_SPRINT;
 
     const fresh = sprintKpiSchema.parse(
-      await json(await t.request('GET', `/boards/${team.boardId}/sprints/2/kpi`, team.admin.token)),
+      await json(
+        await t.request(
+          'GET',
+          `/boards/${team.boardId}/sprints/2/kpi`,
+          team.admin.token,
+        ),
+      ),
     );
     expect(fresh.summary.committedSp).toBe(5);
-    expect(fresh.sprint).toMatchObject({ number: 2, todayIndex: 0, dayNumber: 1, totalDays: 10 });
+    expect(fresh.sprint).toMatchObject({
+      number: 2,
+      todayIndex: 0,
+      dayNumber: 1,
+      totalDays: 10,
+    });
 
     const old = sprintKpiSchema.parse(
-      await json(await t.request('GET', `/boards/${team.boardId}/sprints/1/kpi`, team.admin.token)),
+      await json(
+        await t.request(
+          'GET',
+          `/boards/${team.boardId}/sprints/1/kpi`,
+          team.admin.token,
+        ),
+      ),
     );
     expect(old.summary.scopeSp).toBe(5);
     expect(old.sprint.state).toBe('closed');
@@ -125,10 +165,27 @@ describe('спринты', () => {
     t.clock.current = AFTER_SPRINT;
     await boardDetail();
 
-    const before = await json(await t.request('GET', `/boards/${team.boardId}/sprints/1/kpi`, team.admin.token));
-    const edit = await t.request('PATCH', `/tasks/${task.key}`, team.admin.token, { sp: 13 });
+    const before = await json(
+      await t.request(
+        'GET',
+        `/boards/${team.boardId}/sprints/1/kpi`,
+        team.admin.token,
+      ),
+    );
+    const edit = await t.request(
+      'PATCH',
+      `/tasks/${task.key}`,
+      team.admin.token,
+      { sp: 13 },
+    );
     expect(edit.status).toBe(200);
-    const after = await json(await t.request('GET', `/boards/${team.boardId}/sprints/1/kpi`, team.admin.token));
+    const after = await json(
+      await t.request(
+        'GET',
+        `/boards/${team.boardId}/sprints/1/kpi`,
+        team.admin.token,
+      ),
+    );
 
     expect(after.summary).toEqual(before.summary);
     expect(after.summary.doneSp).toBe(5);
@@ -144,21 +201,41 @@ describe('спринты', () => {
     expect(text).not.toContain(team.worker.name);
     expect(first?.kpiSnapshot?.team[0]).toHaveProperty('userId');
 
-    const kpi = await json(await t.request('GET', `/boards/${team.boardId}/sprints/1/kpi`, team.admin.token));
-    const names = kpi.team.map((entry: { user: { name: string } }) => entry.user.name);
+    const kpi = await json(
+      await t.request(
+        'GET',
+        `/boards/${team.boardId}/sprints/1/kpi`,
+        team.admin.token,
+      ),
+    );
+    const names = kpi.team.map(
+      (entry: { user: { name: string } }) => entry.user.name,
+    );
     expect(names).toContain(team.worker.name);
   });
 
   it('гости не попадают в команду, пока не занимают роль', async () => {
     await createTask(t, team);
-    const kpi = await json(await t.request('GET', `/boards/${team.boardId}/sprints/1/kpi`, team.admin.token));
-    const ids = kpi.team.map((entry: { user: { id: string } }) => entry.user.id);
+    const kpi = await json(
+      await t.request(
+        'GET',
+        `/boards/${team.boardId}/sprints/1/kpi`,
+        team.admin.token,
+      ),
+    );
+    const ids = kpi.team.map(
+      (entry: { user: { id: string } }) => entry.user.id,
+    );
     expect(ids).toContain(team.admin.id);
     expect(ids).not.toContain(team.guest.id);
   });
 
   it('несуществующий спринт даёт SPRINT_NOT_FOUND', async () => {
-    const res = await t.request('GET', `/boards/${team.boardId}/sprints/99/kpi`, team.admin.token);
+    const res = await t.request(
+      'GET',
+      `/boards/${team.boardId}/sprints/99/kpi`,
+      team.admin.token,
+    );
     expect(res.status).toBe(404);
     expect((await json(res)).error.code).toBe('SPRINT_NOT_FOUND');
   });
@@ -169,13 +246,33 @@ describe('спринты', () => {
     await createTask(t, team, { sp: 7 });
 
     const body = sprintListResponseSchema.parse(
-      await json(await t.request('GET', `/boards/${team.boardId}/sprints`, team.guest.token)),
+      await json(
+        await t.request(
+          'GET',
+          `/boards/${team.boardId}/sprints`,
+          team.guest.token,
+        ),
+      ),
     );
     expect(body.items.map((item) => item.number)).toEqual([2, 1]);
-    expect(body.items[0]).toMatchObject({ state: 'active', scopeSp: 7, doneSp: 0 });
-    expect(body.items[1]).toMatchObject({ state: 'closed', scopeSp: 2, doneSp: 2 });
+    expect(body.items[0]).toMatchObject({
+      state: 'active',
+      scopeSp: 7,
+      doneSp: 0,
+    });
+    expect(body.items[1]).toMatchObject({
+      state: 'closed',
+      scopeSp: 2,
+      doneSp: 2,
+    });
 
-    const limited = await json(await t.request('GET', `/boards/${team.boardId}/sprints?limit=1`, team.guest.token));
+    const limited = await json(
+      await t.request(
+        'GET',
+        `/boards/${team.boardId}/sprints?limit=1`,
+        team.guest.token,
+      ),
+    );
     expect(limited.items).toHaveLength(1);
   });
 
@@ -186,9 +283,17 @@ describe('спринты', () => {
     await moveTask(t, team.admin.token, task.key, 'done');
     await t.request('PATCH', `/tasks/${task.key}`, team.admin.token, { sp: 3 });
 
-    const kpi = await json(await t.request('GET', `/boards/${team.boardId}/sprints/2/kpi`, team.admin.token));
+    const kpi = await json(
+      await t.request(
+        'GET',
+        `/boards/${team.boardId}/sprints/2/kpi`,
+        team.admin.token,
+      ),
+    );
     expect(kpi.summary.doneSp).toBe(3);
-    expect(kpi.velocity.items.map((item: { number: number }) => item.number)).toEqual([1, 2]);
+    expect(
+      kpi.velocity.items.map((item: { number: number }) => item.number),
+    ).toEqual([1, 2]);
     expect(kpi.velocity.averageDoneSp).toBe(4);
     expect(kpi.board.id).toBe(team.boardId);
     expect(kpi.serverTime).toBe(AFTER_SPRINT.toISOString());

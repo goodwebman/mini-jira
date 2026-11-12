@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent } from 'react';
+
 import { createLayerStack } from '@/shared/lib/dom/layer-stack';
 
 const escapeLayers = createLayerStack();

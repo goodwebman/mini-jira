@@ -1,11 +1,12 @@
 import {
-  apiErrorSchema,
-  authResponseSchema,
-  meSchema,
   type LoginBody,
   type Me,
   type RegisterBody,
+  apiErrorSchema,
+  authResponseSchema,
+  meSchema,
 } from '@gwmt/contracts';
+
 import {
   AuthError,
   type AuthErrorBodyReader,
@@ -13,8 +14,9 @@ import {
   type BearerTokens,
   type FetchUserContext,
 } from '@/entities/auth/lib';
-import { createLoginSignature } from './login-signature';
 import { getApiUrl } from '@/shared/api';
+
+import { createLoginSignature } from './login-signature';
 
 export type CredentialsInput =
   | (LoginBody & { readonly kind: 'password' })
@@ -34,12 +36,18 @@ async function throwIfFailed(response: Response): Promise<Response> {
 
 // Запросы авторизации идут обычным fetch: через авторизованный refresh ждал бы сам себя.
 function post(path: string, init: RequestInit): Promise<Response> {
-  return fetch(getApiUrl(path), { method: 'POST', credentials: 'include', ...init }).then(throwIfFailed);
+  return fetch(getApiUrl(path), {
+    method: 'POST',
+    credentials: 'include',
+    ...init,
+  }).then(throwIfFailed);
 }
 
 // Срок берётся из JWT, а не из accessTokenExpiresAt: дата зависит от часов клиента.
 async function readTokens(response: Response): Promise<BearerTokens<Me>> {
-  const parsed = authResponseSchema.safeParse(await response.json().catch(() => null));
+  const parsed = authResponseSchema.safeParse(
+    await response.json().catch(() => null),
+  );
   if (!parsed.success) throw new AuthError('bad_response');
   return { accessToken: parsed.data.accessToken, user: parsed.data.user };
 }
@@ -47,22 +55,34 @@ async function readTokens(response: Response): Promise<BearerTokens<Me>> {
 export const authApi = {
   login: async (input, { signal }) => {
     const { kind, ...body } = input;
-    const response = await post(kind === 'register' ? '/auth/register' : '/auth/login', {
-      signal,
-      headers: { 'Content-Type': 'application/json', ...(await createLoginSignature(body.email)) },
-      body: JSON.stringify(body),
-    });
+    const response = await post(
+      kind === 'register' ? '/auth/register' : '/auth/login',
+      {
+        signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await createLoginSignature(body.email)),
+        },
+        body: JSON.stringify(body),
+      },
+    );
     return readTokens(response);
   },
-  refresh: async ({ signal }) => readTokens(await post('/auth/refresh', { signal })),
+  refresh: async ({ signal }) =>
+    readTokens(await post('/auth/refresh', { signal })),
   logout: async ({ signal }) => {
     // keepalive: приложение обычно сразу уводит пользователя на другую страницу.
     await post('/auth/logout', { signal, keepalive: true });
   },
 } satisfies BearerApi<Me, CredentialsInput>;
 
-export async function fetchMe({ fetch: authFetch, signal }: FetchUserContext): Promise<Me> {
-  const response = await authFetch(getApiUrl('/me'), { signal }).then(throwIfFailed);
+export async function fetchMe({
+  fetch: authFetch,
+  signal,
+}: FetchUserContext): Promise<Me> {
+  const response = await authFetch(getApiUrl('/me'), { signal }).then(
+    throwIfFailed,
+  );
   const parsed = meSchema.safeParse(await response.json().catch(() => null));
   if (!parsed.success) throw new AuthError('bad_response');
   return parsed.data;

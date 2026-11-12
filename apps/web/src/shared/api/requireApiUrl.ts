@@ -6,7 +6,8 @@ export function getConfiguredApiUrl(): string | null {
 
 export function requireApiUrl(): string {
   const url = getConfiguredApiUrl();
-  if (url === null) throw new Error('VITE_API_URL is not defined. Check apps/web/.env');
+  if (url === null)
+    throw new Error('VITE_API_URL is not defined. Check apps/web/.env');
   return url;
 }
 

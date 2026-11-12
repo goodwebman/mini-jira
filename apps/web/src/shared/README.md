@@ -2,13 +2,13 @@
 
 Нижний слой FSD. Выше него импортируем только через публичный API.
 
-| Импорт                  | Что внутри                                                  |
-| ----------------------- | ----------------------------------------------------------- |
-| `@/shared/ui`           | все компоненты, `UIIcons`, `useToast`                       |
-| `@/shared/ui/UIButton`  | один компонент (у каждого свой `index.ts`)                  |
-| `@/shared/ui/icons`     | именованные иконки: `Check`, `Link`, `User`…                |
-| `@/shared/lib`          | `cn`, `useCn`, хуки, `Portal`, `Slot`                       |
-| `styles/index.css`      | токены и Tailwind; подключается один раз                    |
+| Импорт                 | Что внутри                                   |
+| ---------------------- | -------------------------------------------- |
+| `@/shared/ui`          | все компоненты, `UIIcons`, `useToast`        |
+| `@/shared/ui/UIButton` | один компонент (у каждого свой `index.ts`)   |
+| `@/shared/ui/icons`    | именованные иконки: `Check`, `Link`, `User`… |
+| `@/shared/lib`         | `cn`, `useCn`, хуки, `Portal`, `Slot`        |
+| `styles/index.css`     | токены и Tailwind; подключается один раз     |
 
 ## Подключение
 
@@ -25,21 +25,21 @@
 Цвета и размеры пишем только классами. Стандартная палитра Tailwind отключена:
 `bg-red-500` и `text-lg` просто не соберутся.
 
-| Что            | Классы                                                                                          |
-| -------------- | ----------------------------------------------------------------------------------------------- |
-| Поверхности    | `bg-background` `bg-surface` `bg-column` `bg-muted`                                             |
-| Текст          | `text-foreground` `text-muted-foreground`                                                       |
-| Линии          | `border-border` `border-border-strong` `border-input`                                           |
-| Акцент         | `bg-primary` `bg-primary-hover` `bg-primary-tint` `text-primary-hover`                          |
-| Семантика      | `destructive` `warning` `success` + `-tint`, `-emphasis`                                        |
+| Что            | Классы                                                                                             |
+| -------------- | -------------------------------------------------------------------------------------------------- |
+| Поверхности    | `bg-background` `bg-surface` `bg-column` `bg-muted`                                                |
+| Текст          | `text-foreground` `text-muted-foreground`                                                          |
+| Линии          | `border-border` `border-border-strong` `border-input`                                              |
+| Акцент         | `bg-primary` `bg-primary-hover` `bg-primary-tint` `text-primary-hover`                             |
+| Семантика      | `destructive` `warning` `success` + `-tint`, `-emphasis`                                           |
 | Статусы        | `bg-status-work` `bg-status-work-tint` `text-status-work-emphasis` (`todo` `review` `test` `done`) |
-| Графики        | `var(--chart-1)` … `var(--chart-4)`, `var(--chart-neutral)`, `var(--chart-plan)`                |
-| Шрифт          | `text-micro` `caption` `small` `body` `lead` `title` `heading` `display` `metric` `hero` `field` |
-| Скругления     | `rounded-tag` `control` `card` `block` `modal`                                                  |
-| Тени           | `shadow-popover` `toast` `modal` `drawer`                                                       |
-| Высоты         | `h-control-sm` `h-control` `h-control-lg` `h-chip` `h-header` `h-table-row`                     |
-| Иконки, аватар | `size-icon-sm` `size-icon` `size-icon-lg`, `size-avatar-xs` … `xl`                              |
-| Каркас         | `p-page` `gap-section` `w-sidebar`                                                              |
+| Графики        | `var(--chart-1)` … `var(--chart-4)`, `var(--chart-neutral)`, `var(--chart-plan)`                   |
+| Шрифт          | `text-micro` `caption` `small` `body` `lead` `title` `heading` `display` `metric` `hero` `field`   |
+| Скругления     | `rounded-tag` `control` `card` `block` `modal`                                                     |
+| Тени           | `shadow-popover` `toast` `modal` `drawer`                                                          |
+| Высоты         | `h-control-sm` `h-control` `h-control-lg` `h-chip` `h-header` `h-table-row`                        |
+| Иконки, аватар | `size-icon-sm` `size-icon` `size-icon-lg`, `size-avatar-xs` … `xl`                                 |
+| Каркас         | `p-page` `gap-section` `w-sidebar`                                                                 |
 
 Брейкпоинты совпадают с макетами: `sm` 520 (640), `md` 800 (960), `lg` 1280 (1440), `xl` 1800 (1920).
 Токены сами меняются по ширине, поэтому `h-control` — это 40 px, 44 на узких и 48 на 1920.

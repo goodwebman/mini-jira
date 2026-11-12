@@ -41,8 +41,10 @@ const MAX_NAME_LENGTH = 100;
 export const oauthCallbackUrl = (env: Env, provider: OAuthProvider) =>
   `${env.APP_URL}/api/v1/auth/${provider}/callback`;
 
-export const displayName = (name: string | null | undefined, fallback: string) =>
-  (name?.trim() || fallback).slice(0, MAX_NAME_LENGTH);
+export const displayName = (
+  name: string | null | undefined,
+  fallback: string,
+) => (name?.trim() || fallback).slice(0, MAX_NAME_LENGTH);
 
 export async function readOAuthJson<T>(response: Response): Promise<T> {
   if (!response.ok) throw new OAuthFlowError('failed');

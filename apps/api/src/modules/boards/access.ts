@@ -1,5 +1,11 @@
-import { boardIdParamSchema, can, taskKeyParamSchema, type BoardAction } from '@gwmt/contracts';
+import {
+  type BoardAction,
+  boardIdParamSchema,
+  can,
+  taskKeyParamSchema,
+} from '@gwmt/contracts';
 import { createMiddleware } from 'hono/factory';
+
 import type { AppDeps, AppEnv } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import { ensureActiveSprint } from '../sprints/service.js';
@@ -9,7 +15,9 @@ import * as repo from './repo.js';
 
 export const requireBoardMember = (deps: AppDeps) =>
   createMiddleware<AppEnv>(async (c, next) => {
-    const parsed = boardIdParamSchema.safeParse({ boardId: c.req.param('boardId') });
+    const parsed = boardIdParamSchema.safeParse({
+      boardId: c.req.param('boardId'),
+    });
     if (!parsed.success) throw new AppError('BAD_REQUEST');
 
     const { boardId } = parsed.data;
@@ -27,7 +35,11 @@ export const requireTaskAccess = (deps: AppDeps) =>
     const parsed = taskKeyParamSchema.safeParse({ key: c.req.param('key') });
     if (!parsed.success) throw new AppError('BAD_REQUEST');
 
-    const access = await repo.findTaskAccess(deps.db, parsed.data.key, c.get('userId'));
+    const access = await repo.findTaskAccess(
+      deps.db,
+      parsed.data.key,
+      c.get('userId'),
+    );
     if (!access) throw new AppError('TASK_NOT_FOUND');
 
     c.set('task', { id: access.id, key: access.key, boardId: access.boardId });

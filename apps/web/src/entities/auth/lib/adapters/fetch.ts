@@ -5,7 +5,10 @@ export interface AuthRequestInit extends RequestInit {
   readonly skipAuth?: boolean;
 }
 
-export type AuthFetch = (input: RequestInfo | URL, init?: AuthRequestInit) => Promise<Response>;
+export type AuthFetch = (
+  input: RequestInfo | URL,
+  init?: AuthRequestInit,
+) => Promise<Response>;
 
 export interface CreateAuthFetchOptions {
   /** Базовый fetch. Не должен быть авторизованным. */
@@ -20,12 +23,15 @@ function isRequest(input: RequestInfo | URL): input is Request {
 
 function decorate(request: Request, attempt: AuthAttempt): Request {
   const headers = new Headers(request.headers);
-  for (const [name, value] of Object.entries(attempt.headers)) headers.set(name, value);
+  for (const [name, value] of Object.entries(attempt.headers))
+    headers.set(name, value);
   return new Request(request, {
     headers,
     // Custom API-key/CSRF headers must never follow a redirect to another origin.
     redirect: 'error',
-    ...(attempt.credentialsMode ? { credentials: attempt.credentialsMode } : {}),
+    ...(attempt.credentialsMode
+      ? { credentials: attempt.credentialsMode }
+      : {}),
   });
 }
 
@@ -49,24 +55,37 @@ export function createAuthFetch(
   options: CreateAuthFetchOptions = {},
 ): AuthFetch {
   // Вызов не как метод объекта: родной fetch падает с Illegal invocation при чужом this.
-  const send = (request: Request) => (options.fetch ?? globalThis.fetch)(request);
+  const send = (request: Request) =>
+    (options.fetch ?? globalThis.fetch)(request);
 
   return async (input, init) => {
     const { skipAuth, ...requestInit } = init ?? {};
-    const source = new Request(isRequest(input) ? input : auth.resolveUrl(String(input)), requestInit);
+    const source = new Request(
+      isRequest(input) ? input : auth.resolveUrl(String(input)),
+      requestInit,
+    );
 
     return auth.execute(
       { url: source.url, method: source.method },
       // Тело читается один раз, поэтому у подписанного запроса всегда отправляется копия:
       // оригинал нужен для повтора.
-      (attempt) => send(attempt.ticket.authorized ? decorate(source.clone(), attempt) : source),
+      (attempt) =>
+        send(
+          attempt.ticket.authorized
+            ? decorate(source.clone(), attempt)
+            : source,
+        ),
       {
         signal: source.signal,
         skip: skipAuth,
         inspect: async (response) =>
-          describe(response, (await options.effectiveStatus?.(response)) ?? response.status),
+          describe(
+            response,
+            (await options.effectiveStatus?.(response)) ?? response.status,
+          ),
         // Не прочитанное тело держит соединение.
-        discard: (response) => void response.body?.cancel().catch(() => undefined),
+        discard: (response) =>
+          void response.body?.cancel().catch(() => undefined),
       },
     );
   };

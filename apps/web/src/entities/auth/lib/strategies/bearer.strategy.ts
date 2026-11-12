@@ -31,7 +31,10 @@ export interface BearerApiContext extends StrategyContext {
 
 /** Запросы только через обычный fetch, не через авторизованный. */
 export interface BearerApi<TUser, TLoginInput> {
-  login(input: TLoginInput, context: StrategyContext): Promise<BearerTokens<TUser> | AuthRedirect>;
+  login(
+    input: TLoginInput,
+    context: StrategyContext,
+  ): Promise<BearerTokens<TUser> | AuthRedirect>;
   /** Без этого метода получается простой Bearer: 401 заканчивает сессию. */
   refresh?(context: BearerApiContext): Promise<BearerTokens<TUser>>;
   logout?(context: BearerApiContext): Promise<void>;
@@ -40,29 +43,41 @@ export interface BearerApi<TUser, TLoginInput> {
 export interface BearerStrategyOptions<TUser, TLoginInput> {
   readonly api: BearerApi<TUser, TLoginInput>;
   /** Формат заголовка, если API ждёт не `Authorization: Bearer`. */
-  readonly formatHeaders?: (accessToken: string) => Readonly<Record<string, string>>;
+  readonly formatHeaders?: (
+    accessToken: string,
+  ) => Readonly<Record<string, string>>;
 }
 
-const defaultHeaders = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` });
+const defaultHeaders = (accessToken: string) => ({
+  Authorization: `Bearer ${accessToken}`,
+});
 
 /** JWT и любые Bearer-токены, с refresh и без него, с refresh в cookie и в теле запроса. */
-export class BearerStrategy<TUser, TLoginInput>
-  implements AuthStrategy<BearerCredentials, TUser, TLoginInput>
-{
+export class BearerStrategy<TUser, TLoginInput> implements AuthStrategy<
+  BearerCredentials,
+  TUser,
+  TLoginInput
+> {
   readonly name = 'bearer';
   readonly renew?: (
     context: CredentialContext<BearerCredentials>,
   ) => Promise<AuthGrant<BearerCredentials, TUser>>;
-  readonly logout?: (context: CredentialContext<BearerCredentials>) => Promise<void>;
+  readonly logout?: (
+    context: CredentialContext<BearerCredentials>,
+  ) => Promise<void>;
 
   readonly #api: BearerApi<TUser, TLoginInput>;
-  readonly #formatHeaders: (accessToken: string) => Readonly<Record<string, string>>;
+  readonly #formatHeaders: (
+    accessToken: string,
+  ) => Readonly<Record<string, string>>;
 
   constructor(options: BearerStrategyOptions<TUser, TLoginInput>) {
     const { api } = options;
     this.#api = api;
     this.#formatHeaders = options.formatHeaders ?? defaultHeaders;
-    if (api.refresh) this.renew = (context) => this.#refresh(context.credentials, context.signal);
+    if (api.refresh)
+      this.renew = (context) =>
+        this.#refresh(context.credentials, context.signal);
     if (api.logout) {
       this.logout = async ({ credentials, signal }) => {
         await api.logout?.({
@@ -77,12 +92,19 @@ export class BearerStrategy<TUser, TLoginInput>
   async restore({
     stored,
     signal,
-  }: RestoreContext<BearerCredentials, TUser>): Promise<AuthGrant<BearerCredentials, TUser> | null> {
-    if (stored && (stored.expiresAt === null || stored.expiresAt > Date.now())) {
+  }: RestoreContext<BearerCredentials, TUser>): Promise<AuthGrant<
+    BearerCredentials,
+    TUser
+  > | null> {
+    if (
+      stored &&
+      (stored.expiresAt === null || stored.expiresAt > Date.now())
+    ) {
       return {
         credentials: stored.credentials,
         user: stored.user,
-        expiresInMs: stored.expiresAt === null ? null : stored.expiresAt - Date.now(),
+        expiresInMs:
+          stored.expiresAt === null ? null : stored.expiresAt - Date.now(),
       };
     }
     if (!this.#api.refresh) return null;
@@ -120,11 +142,20 @@ export class BearerStrategy<TUser, TLoginInput>
     previousRefreshToken: string | null,
   ): AuthGrant<BearerCredentials, TUser> {
     const { accessToken } = tokens;
-    if (typeof accessToken !== 'string' || accessToken === '' || /\s/.test(accessToken)) {
-      throw new AuthError('bad_response', { message: 'Сервер вернул некорректный токен' });
+    if (
+      typeof accessToken !== 'string' ||
+      accessToken === '' ||
+      /\s/.test(accessToken)
+    ) {
+      throw new AuthError('bad_response', {
+        message: 'Сервер вернул некорректный токен',
+      });
     }
     return {
-      credentials: { accessToken, refreshToken: tokens.refreshToken ?? previousRefreshToken },
+      credentials: {
+        accessToken,
+        refreshToken: tokens.refreshToken ?? previousRefreshToken,
+      },
       user: tokens.user,
       expiresInMs: tokens.expiresInMs ?? readJwtTtlMs(accessToken),
     };

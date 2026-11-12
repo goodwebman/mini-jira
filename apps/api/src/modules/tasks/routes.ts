@@ -19,6 +19,7 @@ import {
 } from '@gwmt/contracts';
 import { createRoute } from '@hono/zod-openapi';
 import { createMiddleware } from 'hono/factory';
+
 import { TAG } from '../../lib/api-docs.js';
 import type { AppDeps, AppEnv } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
@@ -33,7 +34,11 @@ import {
   jsonResponse,
   taskErrors,
 } from '../../lib/router.js';
-import { requireAction, requireBoardMember, requireTaskAccess } from '../boards/access.js';
+import {
+  requireAction,
+  requireBoardMember,
+  requireTaskAccess,
+} from '../boards/access.js';
 import * as service from './service.js';
 
 const tags = [TAG.tasks];
@@ -84,7 +89,8 @@ export function tasksRoutes(deps: AppDeps) {
         ...errors(boardErrors),
       },
     }),
-    async (c) => c.json(await service.listBoardTasks(deps, c.get('boardId')), 200),
+    async (c) =>
+      c.json(await service.listBoardTasks(deps, c.get('boardId')), 200),
   );
 
   router.openapi(
@@ -97,8 +103,15 @@ export function tasksRoutes(deps: AppDeps) {
       description:
         'Задача попадает в активный спринт. Рабочий создаёт только в `todo`, администратор в любом статусе. Человек с задачи должен быть участником доски и не гостем.',
       security: bearerAuth,
-      middleware: [boardMember, requireAction('task.create'), requireCreateStatus],
-      request: { params: boardIdParamSchema, body: jsonBody(createTaskBodySchema) },
+      middleware: [
+        boardMember,
+        requireAction('task.create'),
+        requireCreateStatus,
+      ],
+      request: {
+        params: boardIdParamSchema,
+        body: jsonBody(createTaskBodySchema),
+      },
       responses: {
         201: jsonResponse(taskCardSchema, 'Задача создана'),
         ...errors({
@@ -110,7 +123,12 @@ export function tasksRoutes(deps: AppDeps) {
     }),
     async (c) =>
       c.json(
-        await service.createTask(deps, c.get('boardId'), c.get('userId'), c.req.valid('json')),
+        await service.createTask(
+          deps,
+          c.get('boardId'),
+          c.get('userId'),
+          c.req.valid('json'),
+        ),
         201,
       ),
   );
@@ -133,7 +151,10 @@ export function tasksRoutes(deps: AppDeps) {
       },
     }),
     async (c) =>
-      c.json(await service.searchTasks(deps, c.get('userId'), c.req.valid('query')), 200),
+      c.json(
+        await service.searchTasks(deps, c.get('userId'), c.req.valid('query')),
+        200,
+      ),
   );
 
   router.openapi(
@@ -153,7 +174,12 @@ export function tasksRoutes(deps: AppDeps) {
     }),
     async (c) =>
       c.json(
-        await service.getTaskDetail(deps, c.get('task'), c.get('userId'), c.get('boardRole')),
+        await service.getTaskDetail(
+          deps,
+          c.get('task'),
+          c.get('userId'),
+          c.get('boardRole'),
+        ),
         200,
       ),
   );
@@ -170,7 +196,10 @@ export function tasksRoutes(deps: AppDeps) {
         'Нынешнего человека можно оставить в роли, даже если его убрали с доски или понизили до гостя.',
       security: bearerAuth,
       middleware: [taskAccess, requireEditableFields],
-      request: { params: taskKeyParamSchema, body: jsonBody(updateTaskBodySchema) },
+      request: {
+        params: taskKeyParamSchema,
+        body: jsonBody(updateTaskBodySchema),
+      },
       responses: {
         200: card,
         ...errors({
@@ -219,13 +248,15 @@ export function tasksRoutes(deps: AppDeps) {
       operationId: 'clearTaskTakeLock',
       tags,
       summary: 'Снять запрет брать в работу',
-      description: 'Только `admin`. Повторное снятие возвращает 200 без изменений.',
+      description:
+        'Только `admin`. Повторное снятие возвращает 200 без изменений.',
       security: bearerAuth,
       middleware: [taskAccess, requireAction('task.lock')],
       request: { params: taskKeyParamSchema },
       responses: { 200: card, ...errors(actionErrors) },
     }),
-    async (c) => c.json(await service.clearTakeLock(deps, c.get('task').id), 200),
+    async (c) =>
+      c.json(await service.clearTakeLock(deps, c.get('task').id), 200),
   );
 
   router.openapi(
@@ -235,7 +266,8 @@ export function tasksRoutes(deps: AppDeps) {
       operationId: 'pauseTask',
       tags,
       summary: 'Поставить на паузу',
-      description: 'Только в `work`, `review`, `test`. Повторная пауза возвращает 200 без изменений.',
+      description:
+        'Только в `work`, `review`, `test`. Повторная пауза возвращает 200 без изменений.',
       security: bearerAuth,
       middleware: [taskAccess, requireAction('task.pause')],
       request: { params: taskKeyParamSchema },
@@ -274,7 +306,10 @@ export function tasksRoutes(deps: AppDeps) {
         'Обратная сторона создаётся сама. На пару задач только одна связь любого типа. Можно связывать задачи разных досок, нужна роль `admin` или `worker` на обеих.',
       security: bearerAuth,
       middleware: [taskAccess, requireAction('task.link')],
-      request: { params: taskKeyParamSchema, body: jsonBody(createLinkBodySchema) },
+      request: {
+        params: taskKeyParamSchema,
+        body: jsonBody(createLinkBodySchema),
+      },
       responses: {
         201: jsonResponse(taskLinkItemSchema, 'Связь создана'),
         ...errors({
@@ -286,7 +321,12 @@ export function tasksRoutes(deps: AppDeps) {
     }),
     async (c) =>
       c.json(
-        await service.createLink(deps, c.get('task'), c.get('userId'), c.req.valid('json')),
+        await service.createLink(
+          deps,
+          c.get('task'),
+          c.get('userId'),
+          c.req.valid('json'),
+        ),
         201,
       ),
   );
@@ -298,7 +338,8 @@ export function tasksRoutes(deps: AppDeps) {
       operationId: 'deleteTaskLink',
       tags: linkTags,
       summary: 'Удалить связь',
-      description: 'Удаляет обе стороны. Нужна роль `admin` или `worker` на обеих досках.',
+      description:
+        'Удаляет обе стороны. Нужна роль `admin` или `worker` на обеих досках.',
       security: bearerAuth,
       middleware: [taskAccess, requireAction('task.link')],
       request: { params: taskLinkParamSchema },
@@ -327,7 +368,10 @@ export function tasksRoutes(deps: AppDeps) {
       summary: 'Добавить комментарий',
       security: bearerAuth,
       middleware: [taskAccess, requireAction('task.comment')],
-      request: { params: taskKeyParamSchema, body: jsonBody(createCommentBodySchema) },
+      request: {
+        params: taskKeyParamSchema,
+        body: jsonBody(createCommentBodySchema),
+      },
       responses: {
         201: jsonResponse(taskCommentSchema, 'Комментарий добавлен'),
         ...errors({ ...actionErrors, 422: ['VALIDATION_ERROR'] }),
@@ -335,7 +379,12 @@ export function tasksRoutes(deps: AppDeps) {
     }),
     async (c) =>
       c.json(
-        await service.createComment(deps, c.get('task').id, c.get('userId'), c.req.valid('json')),
+        await service.createComment(
+          deps,
+          c.get('task').id,
+          c.get('userId'),
+          c.req.valid('json'),
+        ),
         201,
       ),
   );

@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { type ReactNode, createContext, useContext } from 'react';
 
 export interface ToastOptions {
   /** Сколько показывать, мс. `0` — пока не закроют вручную. */

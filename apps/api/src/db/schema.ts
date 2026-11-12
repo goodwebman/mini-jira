@@ -21,16 +21,34 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+
 import type { SprintKpiSnapshot } from '../modules/kpi/compute.js';
 
 const citext = customType<{ data: string }>({ dataType: () => 'citext' });
-const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
+const timestamptz = (name: string) =>
+  timestamp(name, { withTimezone: true, mode: 'date' });
 
 export const boardRoleEnum = pgEnum('board_role', ['admin', 'worker', 'guest']);
 export const sprintStateEnum = pgEnum('sprint_state', ['active', 'closed']);
-export const taskStatusEnum = pgEnum('task_status', ['todo', 'work', 'review', 'test', 'done']);
-export const taskPriorityEnum = pgEnum('task_priority', ['crit', 'high', 'med', 'low']);
-export const taskLinkTypeEnum = pgEnum('task_link_type', ['rel', 'blocks', 'blockedBy', 'dup']);
+export const taskStatusEnum = pgEnum('task_status', [
+  'todo',
+  'work',
+  'review',
+  'test',
+  'done',
+]);
+export const taskPriorityEnum = pgEnum('task_priority', [
+  'crit',
+  'high',
+  'med',
+  'low',
+]);
+export const taskLinkTypeEnum = pgEnum('task_link_type', [
+  'rel',
+  'blocks',
+  'blockedBy',
+  'dup',
+]);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -40,7 +58,10 @@ export const users = pgTable('users', {
   googleId: text('google_id').unique(),
   name: text('name').notNull(),
   job: text('job').notNull().default(''),
-  timezone: text('timezone').$type<Timezone>().notNull().default('Europe/Moscow'),
+  timezone: text('timezone')
+    .$type<Timezone>()
+    .notNull()
+    .default('Europe/Moscow'),
   colorIndex: smallint('color_index').notNull(),
   termsAcceptedAt: timestamptz('terms_accepted_at').notNull(),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
@@ -152,7 +173,9 @@ export const sprints = pgTable(
   },
   (t) => [
     unique('sprints_board_number_unique').on(t.boardId, t.number),
-    uniqueIndex('sprints_one_active_idx').on(t.boardId).where(sql`${t.state} = 'active'`),
+    uniqueIndex('sprints_one_active_idx')
+      .on(t.boardId)
+      .where(sql`${t.state} = 'active'`),
   ],
 );
 
@@ -237,7 +260,9 @@ export const taskStatusIntervals = pgTable(
   },
   (t) => [
     index('task_status_intervals_task_entered_idx').on(t.taskId, t.enteredAt),
-    uniqueIndex('task_status_intervals_open_idx').on(t.taskId).where(sql`${t.leftAt} is null`),
+    uniqueIndex('task_status_intervals_open_idx')
+      .on(t.taskId)
+      .where(sql`${t.leftAt} is null`),
   ],
 );
 

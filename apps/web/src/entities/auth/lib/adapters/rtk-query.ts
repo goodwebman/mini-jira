@@ -19,6 +19,7 @@ export function bindAuthToRtkQuery<TUser>(
   api: RtkApiLike,
 ): Unsubscribe {
   return auth.on((event) => {
-    if (isSessionBoundary(event)) store.dispatch(api.util.resetApiState() as never);
+    if (isSessionBoundary(event))
+      store.dispatch(api.util.resetApiState() as never);
   });
 }

@@ -1,4 +1,5 @@
-import { forwardRef, memo, type LabelHTMLAttributes } from 'react';
+import { type LabelHTMLAttributes, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 export interface IUILabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
@@ -17,7 +18,12 @@ const UILabelBase = forwardRef<HTMLLabelElement, IUILabelProps>(
       {...props}
     >
       {children}
-      {optional && <span className="font-normal text-muted-foreground"> · необязательно</span>}
+      {optional && (
+        <span className='font-normal text-muted-foreground'>
+          {' '}
+          · необязательно
+        </span>
+      )}
     </label>
   ),
 );

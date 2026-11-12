@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 interface FieldErrorProps {
@@ -10,7 +11,11 @@ interface FieldErrorProps {
 /** Текст ошибки под контролом. */
 export function FieldError({ id, className, children }: FieldErrorProps) {
   return (
-    <span id={id} role="alert" className={cn('mt-1 block text-small text-destructive', className)}>
+    <span
+      id={id}
+      role='alert'
+      className={cn('mt-1 block text-small text-destructive', className)}
+    >
       {children}
     </span>
   );

@@ -1,10 +1,17 @@
+import {
+  type ChangeEvent,
+  type SelectHTMLAttributes,
+  forwardRef,
+  memo,
+} from 'react';
+
 import type { VariantProps } from 'class-variance-authority';
-import { forwardRef, memo, type ChangeEvent, type SelectHTMLAttributes } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { UIIcons } from '@/shared/ui/icons';
 import { FieldError } from '@/shared/ui/UIField/FieldError';
 import { fieldControlVariants } from '@/shared/ui/UIField/field.styles';
 import { useFieldControl } from '@/shared/ui/UIField/use-field-control';
+import { UIIcons } from '@/shared/ui/icons';
 
 export interface IUISelectOption {
   readonly value: string;
@@ -13,7 +20,8 @@ export interface IUISelectOption {
 }
 
 export interface IUISelectProps
-  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size' | 'multiple'>,
+  extends
+    Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size' | 'multiple'>,
     VariantProps<typeof fieldControlVariants> {
   readonly testId?: string;
   /** Список опций. Можно вместо него передать `<option>` через children. */
@@ -69,7 +77,7 @@ const UISelectBase = forwardRef<HTMLSelectElement, IUISelectProps>(
 
     return (
       <div className={cn('w-full min-w-0', wrapperClassName)}>
-        <div className="relative">
+        <div className='relative'>
           <select
             ref={ref}
             id={control.controlId}
@@ -89,20 +97,26 @@ const UISelectBase = forwardRef<HTMLSelectElement, IUISelectProps>(
             {...props}
           >
             {placeholder != null && (
-              <option value="" disabled hidden>
+              <option value='' disabled hidden>
                 {placeholder}
               </option>
             )}
             {options?.map((option) => (
-              <option key={option.value} value={option.value} disabled={option.disabled}>
+              <option
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+              >
                 {option.label}
               </option>
             ))}
             {children}
           </select>
-          <UIIcons.ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-icon -translate-y-1/2 text-foreground" />
+          <UIIcons.ChevronDown className='pointer-events-none absolute right-2 top-1/2 size-icon -translate-y-1/2 text-foreground' />
         </div>
-        {control.errorText && <FieldError id={control.errorId}>{control.errorText}</FieldError>}
+        {control.errorText && (
+          <FieldError id={control.errorId}>{control.errorText}</FieldError>
+        )}
       </div>
     );
   },

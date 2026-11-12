@@ -7,12 +7,18 @@ export type TabMessage =
 /** Канал читает любой код этого origin, поэтому форму сообщения проверяем. */
 export function parseTabMessage(raw: unknown): TabMessage | null {
   if (typeof raw !== 'object' || raw === null) return null;
-  const message = raw as { type?: unknown; reason?: unknown; identity?: unknown };
+  const message = raw as {
+    type?: unknown;
+    reason?: unknown;
+    identity?: unknown;
+  };
   switch (message.type) {
     case 'logout':
       return { type: 'logout' };
     case 'kick':
-      return typeof message.reason === 'string' ? { type: 'kick', reason: message.reason } : null;
+      return typeof message.reason === 'string'
+        ? { type: 'kick', reason: message.reason }
+        : null;
     case 'login':
       if (message.identity === null || typeof message.identity === 'string') {
         return { type: 'login', identity: message.identity };

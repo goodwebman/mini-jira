@@ -1,15 +1,23 @@
 import { describe, expect, it } from 'vitest';
+
 import css from '@/shared/styles/theme.css?raw';
-import { cn, THEME_TOKENS } from './cn';
+
+import { THEME_TOKENS, cn } from './cn';
 
 describe('cn', () => {
   it('склеивает условные классы', () => {
-    expect(cn('a', false, null, undefined, ['b', { c: true, d: false }])).toBe('a b c');
+    expect(cn('a', false, null, undefined, ['b', { c: true, d: false }])).toBe(
+      'a b c',
+    );
   });
 
   it('не путает размер шрифта с цветом', () => {
-    expect(cn('text-body', 'text-muted-foreground')).toBe('text-body text-muted-foreground');
-    expect(cn('text-caption text-destructive', 'text-primary')).toBe('text-caption text-primary');
+    expect(cn('text-body', 'text-muted-foreground')).toBe(
+      'text-body text-muted-foreground',
+    );
+    expect(cn('text-caption text-destructive', 'text-primary')).toBe(
+      'text-caption text-primary',
+    );
     expect(cn('text-field', 'text-input')).toBe('text-field text-input');
   });
 
@@ -42,14 +50,18 @@ describe('THEME_TOKENS', () => {
   it('spacing-токены не совпадают со значениями статических утилит', () => {
     // --spacing-block добавил бы каждому `inline-block` ещё и inline-size
     const reserved = ['block', 'flex', 'grid', 'table', 'contents', 'hidden'];
-    expect(THEME_TOKENS.spacing.filter((name) => reserved.includes(name))).toEqual([]);
+    expect(
+      THEME_TOKENS.spacing.filter((name) => reserved.includes(name)),
+    ).toEqual([]);
   });
 
   const tokensOf = (namespace: string): string[] => {
     const pattern = new RegExp(`^\\s*--${namespace}-([a-z][a-z0-9-]*):`, 'gm');
     return [...css.matchAll(pattern)]
       .map((match) => match[1])
-      .filter((name) => !name.endsWith('--line-height') && !name.includes('--'));
+      .filter(
+        (name) => !name.endsWith('--line-height') && !name.includes('--'),
+      );
   };
 
   it.each([

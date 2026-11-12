@@ -1,4 +1,3 @@
-import { randomBytes, timingSafeEqual } from 'node:crypto';
 import {
   authResponseSchema,
   loginBodySchema,
@@ -7,7 +6,10 @@ import {
 } from '@gwmt/contracts';
 import { createRoute } from '@hono/zod-openapi';
 import type { Context } from 'hono';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
+
+import { TAG } from '../../lib/api-docs.js';
 import type { AppDeps, AppEnv } from '../../lib/context.js';
 import {
   clearOAuthCookie,
@@ -18,7 +20,6 @@ import {
   setRefreshCookie,
 } from '../../lib/cookies.js';
 import { AppError } from '../../lib/errors.js';
-import { TAG } from '../../lib/api-docs.js';
 import {
   createRouter,
   errors,
@@ -31,7 +32,11 @@ import {
 import { githubClient } from './github.js';
 import { googleClient } from './google.js';
 import { requireAppOrigin, requireSaltSignature } from './middleware.js';
-import { OAuthFlowError, type OAuthClient, type OAuthFailure } from './oauth.js';
+import {
+  type OAuthClient,
+  type OAuthFailure,
+  OAuthFlowError,
+} from './oauth.js';
 import * as service from './service.js';
 
 const DEFAULT_NEXT = '/boards';
@@ -69,7 +74,9 @@ function registerOAuthRoutes(
 ) {
   const { provider, label } = client;
   const operationName = `${provider.charAt(0).toUpperCase()}${provider.slice(1)}`;
-  const failureList = client.failures.map((failure) => `\`${provider}_${failure}\``).join(', ');
+  const failureList = client.failures
+    .map((failure) => `\`${provider}_${failure}\``)
+    .join(', ');
 
   router.openapi(
     createRoute({
@@ -82,20 +89,21 @@ function registerOAuthRoutes(
       security: noAuth,
       request: {
         query: z.object({
-          next: z
-            .string()
-            .optional()
-            .meta({
-              description: 'Куда вернуть после входа. Только относительный путь, иначе `/boards`',
-              example: '/boards',
-            }),
+          next: z.string().optional().meta({
+            description:
+              'Куда вернуть после входа. Только относительный путь, иначе `/boards`',
+            example: '/boards',
+          }),
         }),
       },
       responses: { 302: { description: `Редирект на ${label}` } },
     }),
     (c) => {
       const state = randomBytes(32).toString('base64url');
-      const value = encodeOAuthCookie(state, safeNext(c.req.valid('query').next));
+      const value = encodeOAuthCookie(
+        state,
+        safeNext(c.req.valid('query').next),
+      );
       setOAuthCookie(c, value, deps.env, provider);
       return c.redirect(client.authorizeUrl(deps.env, state), 302);
     },
@@ -134,9 +142,13 @@ function registerOAuthRoutes(
       clearOAuthCookie(c, deps.env, provider);
 
       const fail = (failure: OAuthFailure) =>
-        c.redirect(`${deps.env.APP_URL}/login?authError=${provider}_${failure}`, 302);
+        c.redirect(
+          `${deps.env.APP_URL}/login?authError=${provider}_${failure}`,
+          302,
+        );
 
-      if (!saved || !state || !sameState(saved.state, state)) return fail('state_mismatch');
+      if (!saved || !state || !sameState(saved.state, state))
+        return fail('state_mismatch');
       if (error || !code) return fail('denied');
 
       try {
@@ -161,7 +173,8 @@ export function authRoutes(deps: AppDeps) {
   const salted = requireSaltSignature(deps);
 
   const applyAuth = (c: Context<AppEnv>, auth: service.IssuedAuth) => {
-    if (auth.cookie) setRefreshCookie(c, auth.cookie.token, auth.cookie.remember, deps.env);
+    if (auth.cookie)
+      setRefreshCookie(c, auth.cookie.token, auth.cookie.remember, deps.env);
     return auth.response;
   };
 
@@ -175,7 +188,10 @@ export function authRoutes(deps: AppDeps) {
       description: 'Создаёт аккаунт и сразу открывает сессию на 30 дней.',
       security: noAuth,
       middleware: [salted],
-      request: { headers: saltHeadersSchema, body: jsonBody(registerBodySchema) },
+      request: {
+        headers: saltHeadersSchema,
+        body: jsonBody(registerBodySchema),
+      },
       responses: {
         201: {
           ...jsonResponse(authResponseSchema, 'Аккаунт создан'),
@@ -255,7 +271,12 @@ export function authRoutes(deps: AppDeps) {
           headers: setsRefreshCookie,
         },
         ...errors({
-          401: ['REFRESH_MISSING', 'REFRESH_INVALID', 'REFRESH_EXPIRED', 'REFRESH_REUSED'],
+          401: [
+            'REFRESH_MISSING',
+            'REFRESH_INVALID',
+            'REFRESH_EXPIRED',
+            'REFRESH_REUSED',
+          ],
           403: ['FORBIDDEN_ORIGIN'],
         }),
       },
@@ -277,7 +298,8 @@ export function authRoutes(deps: AppDeps) {
       operationId: 'logout',
       tags,
       summary: 'Выход',
-      description: 'Всегда 204 при верном `Origin`, даже без cookie. Cookie очищается.',
+      description:
+        'Всегда 204 при верном `Origin`, даже без cookie. Cookie очищается.',
       security: refreshCookie,
       middleware: [sameOrigin],
       responses: {

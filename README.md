@@ -2,10 +2,10 @@
 
 Мини-Jira: канбан-доски, задачи, спринты и KPI. Монорепозиторий на npm workspaces.
 
-| Папка | Что внутри |
-|---|---|
-| `apps/api` | Бэкенд: Hono, Drizzle, Neon. Деплоится на Vercel |
-| `apps/web` | Фронтенд: React и Vite |
+| Папка                | Что внутри                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `apps/api`           | Бэкенд: Hono, Drizzle, Neon. Деплоится на Vercel                                       |
+| `apps/web`           | Фронтенд: React и Vite                                                                 |
 | `packages/contracts` | Общие zod-схемы, типы, подписи и правила доступа `permissions.ts`. Собирается в `dist` |
 
 ## Запуск
@@ -25,39 +25,51 @@ npm run dev                             # фронтенд и бэкенд од�
 
 После сида вход под любым аккаунтом с паролем `password`. Для проверки ролей на доске GWT:
 
-| Email | Роль на GWT |
-|---|---|
-| `anna@example.com` | Администратор |
-| `dmitry@example.com` | Рабочий |
-| `viktoria@example.com` | Гость |
+| Email                  | Роль на GWT   |
+| ---------------------- | ------------- |
+| `anna@example.com`     | Администратор |
+| `dmitry@example.com`   | Рабочий       |
+| `viktoria@example.com` | Гость         |
 
 Сид идемпотентен и отказывается работать при `NODE_ENV=production`.
 
 ## Команды
 
-| Команда | Что делает |
-|---|---|
-| `npm run dev` | Собирает contracts и запускает фронтенд и бэкенд вместе |
-| `npm test` | Собирает contracts и запускает все тесты. Сеть и Docker не нужны, база это PGlite |
-| `npm run typecheck` | Проверка типов contracts и api |
-| `npm run build` | Сборка contracts и фронта |
-| `npm run db:generate` | Новая миграция по изменениям в `apps/api/src/db/schema.ts` |
-| `npm run db:migrate` | Применяет миграции через `DATABASE_URL_UNPOOLED` |
-| `npm run db:seed` | Заполняет базу данными прототипа |
-| `npm run dev:contracts` | Пересобирает contracts при изменениях |
-| `npm run docs` | Swagger UI без базы и `.env` |
-| `npm run openapi` | Обновляет `docs/openapi.json` |
+| Команда                 | Что делает                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| `npm run dev`           | Собирает contracts и запускает фронтенд и бэкенд вместе                           |
+| `npm test`              | Собирает contracts и запускает все тесты. Сеть и Docker не нужны, база это PGlite |
+| `npm run typecheck`     | Проверка типов contracts и api                                                    |
+| `npm run build`         | Сборка contracts и фронта                                                         |
+| `npm run db:generate`   | Новая миграция по изменениям в `apps/api/src/db/schema.ts`                        |
+| `npm run db:migrate`    | Применяет миграции через `DATABASE_URL_UNPOOLED`                                  |
+| `npm run db:seed`       | Заполняет базу данными прототипа                                                  |
+| `npm run dev:contracts` | Пересобирает contracts при изменениях                                             |
+| `npm run docs`          | Swagger UI без базы и `.env`                                                      |
+| `npm run openapi`       | Обновляет `docs/openapi.json`                                                     |
+
+## Проверки кода и коммитов
+
+`npm install` подключает Git-хуки через Husky. Перед коммитом lint-staged запускает ESLint и Prettier для подготовленных файлов: исправления автоматически попадают в коммит, а оставшиеся ошибки и предупреждения ESLint блокируют его.
+
+Обе проверки выполняются в `commit-msg`: сначала проверяется сообщение коммита, затем все подготовленные файлы, даже если сообщение неверное. Консоль показывает нарушения commitlint, вывод ESLint и Prettier и итоговую причину отказа. На Windows инструменты запускаются напрямую через Node.js, а длинные списки файлов разбиваются на части.
+
+Сообщение коммита должно иметь формат `type: описание` или `type(scope): описание`, например `feat(auth): добавить вход`. Допустимые типы: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. Описание — до 72 символов; русский текст разрешён.
+
+Для проверки всего репозитория: `npm run lint` и `npm run format:check`. Для исправлений: `npm run lint:fix` и `npm run format`.
+
+Веб-приложение подключает `AppProviders` из `src/app/providers`: Error Boundary показывает запасной экран с кнопкой перезагрузки при ошибке рендера, QueryClientProvider передаёт существующий клиент запросов.
 
 ## Контракт API
 
 Полное описание всех ручек: группы, поля, ограничения, коды ошибок, правила токенов и ролей.
 
-| Как смотреть | Где |
-|---|---|
-| Swagger без базы и `.env` | `npm run docs`, затем http://localhost:3001/api/v1/docs |
+| Как смотреть              | Где                                                               |
+| ------------------------- | ----------------------------------------------------------------- |
+| Swagger без базы и `.env` | `npm run docs`, затем http://localhost:3001/api/v1/docs           |
 | Swagger на запущенном API | http://localhost:5173/api/v1/docs или `https://<web>/api/v1/docs` |
-| Файл OpenAPI 3.1 | [docs/openapi.json](docs/openapi.json) |
-| Тот же JSON с сервера | `GET /api/v1/openapi.json` |
+| Файл OpenAPI 3.1          | [docs/openapi.json](docs/openapi.json)                            |
+| Тот же JSON с сервера     | `GET /api/v1/openapi.json`                                        |
 
 В режиме `npm run docs` базы нет, поэтому «Try it out» работает только на запущенном API: выполните `POST /auth/login`, скопируйте `accessToken` и вставьте его в Authorize.
 
@@ -81,10 +93,10 @@ npm run dev                             # фронтенд и бэкенд од�
 
 ```ts
 import {
-  allowedStatuses,
-  createTaskBodySchema,
   TASK_STATUS_LABELS,
   type TaskCard,
+  allowedStatuses,
+  createTaskBodySchema,
 } from '@gwmt/contracts';
 ```
 
@@ -104,25 +116,25 @@ npx openapi-typescript docs/openapi.json -o apps/web/src/api/schema.d.ts
 
 Список лежит в `apps/api/.env.example`. Бэкенд проверяет их при старте и не запустится с неверными значениями.
 
-| Имя | Смысл |
-|---|---|
-| `DATABASE_URL` | Пулерное подключение Neon, им пользуется приложение |
-| `DATABASE_URL_UNPOOLED` | Прямое подключение Neon, только для миграций и сида |
-| `JWT_ACCESS_SECRET` | Минимум 32 байта |
-| `SALT_SECRET` | Минимум 32 байта. Из него получается соль сборки клиента |
-| `APP_URL` | Публичный origin фронта без слэша на конце. Локально `http://localhost:5173` |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | OAuth App на GitHub |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | OAuth-клиент Google |
-| `NODE_ENV` | На Vercel выставляется сам |
+| Имя                                        | Смысл                                                                        |
+| ------------------------------------------ | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`                             | Пулерное подключение Neon, им пользуется приложение                          |
+| `DATABASE_URL_UNPOOLED`                    | Прямое подключение Neon, только для миграций и сида                          |
+| `JWT_ACCESS_SECRET`                        | Минимум 32 байта                                                             |
+| `SALT_SECRET`                              | Минимум 32 байта. Из него получается соль сборки клиента                     |
+| `APP_URL`                                  | Публичный origin фронта без слэша на конце. Локально `http://localhost:5173` |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | OAuth App на GitHub                                                          |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | OAuth-клиент Google                                                          |
+| `NODE_ENV`                                 | На Vercel выставляется сам                                                   |
 
 ## Деплой
 
 Два проекта Vercel из одного репозитория:
 
-| Проект | Root Directory |
-|---|---|
-| `gwmt-api` | `apps/api` |
-| `gwmt-web` | `apps/web` |
+| Проект     | Root Directory |
+| ---------- | -------------- |
+| `gwmt-api` | `apps/api`     |
+| `gwmt-web` | `apps/web`     |
 
 1. Создайте проект Neon. Регион функций Vercel должен совпадать с регионом базы: по умолчанию у Vercel это `iad1`, для Франкфурта выберите `fra1` в настройках проекта.
 2. Создайте оба проекта. В настройках Root Directory должна быть включена опция «Include files outside the root directory», иначе не соберётся `packages/contracts`.
@@ -145,14 +157,14 @@ npx openapi-typescript docs/openapi.json -o apps/web/src/api/schema.d.ts
 
 ## Что обновить на фронте после мутации
 
-| Мутация | Обновить |
-|---|---|
-| `POST /boards` | список досок, nav-summary |
-| favorite | список досок и деталь доски, оптимистично |
-| members | деталь доски |
-| создание задачи | задачи доски, nav-summary, мои задачи, task-stats, KPI активного спринта |
-| `PATCH /tasks/:key` | карточку в кэше, nav-summary, мои задачи, task-stats, KPI активного спринта |
-| pause, resume, take-lock | карточку в кэше ответом `TaskCard` |
-| links | деталь задачи, задачи досок обеих задач |
-| comments | добавить ответ в деталь задачи |
-| `PATCH /me` | me |
+| Мутация                  | Обновить                                                                    |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `POST /boards`           | список досок, nav-summary                                                   |
+| favorite                 | список досок и деталь доски, оптимистично                                   |
+| members                  | деталь доски                                                                |
+| создание задачи          | задачи доски, nav-summary, мои задачи, task-stats, KPI активного спринта    |
+| `PATCH /tasks/:key`      | карточку в кэше, nav-summary, мои задачи, task-stats, KPI активного спринта |
+| pause, resume, take-lock | карточку в кэше ответом `TaskCard`                                          |
+| links                    | деталь задачи, задачи досок обеих задач                                     |
+| comments                 | добавить ответ в деталь задачи                                              |
+| `PATCH /me`              | me                                                                          |

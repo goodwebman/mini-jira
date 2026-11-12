@@ -1,5 +1,6 @@
 // Импорт из голого hono обязателен: по нему Vercel находит точку входа. См. src/app.ts.
 import type { Hono } from 'hono';
+
 import { createApp } from './app.js';
 import { createDatabase } from './db/client.js';
 import type { AppEnv } from './lib/context.js';

@@ -24,7 +24,11 @@ export interface AuthPlatform {
   origin(): string | null;
   isVisible(): boolean;
   /** Wait at most timeoutMs; reject without running task if the lock remains busy. */
-  withLock<T>(name: string, task: () => Promise<T>, options: { timeoutMs: number }): Promise<T>;
+  withLock<T>(
+    name: string,
+    task: () => Promise<T>,
+    options: { timeoutMs: number },
+  ): Promise<T>;
   openChannel(name: string): AuthChannel | null;
   onResume(listener: (info: AuthResumeInfo) => void): Unsubscribe;
   onOnline(listener: () => void): Unsubscribe;

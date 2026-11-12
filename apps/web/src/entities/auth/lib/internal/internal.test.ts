@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { AuthError, isAuthError, toAuthError } from '../errors';
 import { describeResponse, describeThrown } from '../response-info';
 import { deferred, flush } from '../testing/test-kit';
-import { abortable, Backoff, SerialQueue, withDeadline } from './async';
+import { Backoff, SerialQueue, abortable, withDeadline } from './async';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -25,12 +26,17 @@ describe('AuthError', () => {
   });
 
   it('читает код сервера и Retry-After', async () => {
-    const response = new Response(JSON.stringify({ error: { code: 'TOO_MANY', message: 'Подождите' } }), {
-      status: 429,
-      headers: { 'Retry-After': '30' },
-    });
+    const response = new Response(
+      JSON.stringify({ error: { code: 'TOO_MANY', message: 'Подождите' } }),
+      {
+        status: 429,
+        headers: { 'Retry-After': '30' },
+      },
+    );
     const error = await AuthError.fromResponse(response, (body) => {
-      const { code, message } = (body as { error: { code: string; message: string } }).error;
+      const { code, message } = (
+        body as { error: { code: string; message: string } }
+      ).error;
       return { serverCode: code, message };
     });
     expect(error).toMatchObject({
@@ -52,7 +58,10 @@ describe('AuthError', () => {
 
   it('битое тело не мешает получить ошибку', async () => {
     const read = vi.fn(() => null);
-    const error = await AuthError.fromResponse(new Response('<html>', { status: 500 }), read);
+    const error = await AuthError.fromResponse(
+      new Response('<html>', { status: 500 }),
+      read,
+    );
     expect(error.code).toBe('server');
     expect(read).toHaveBeenCalledWith(null);
   });
@@ -158,9 +167,13 @@ describe('Backoff', () => {
   it('растёт экспоненциально с разбросом и упирается в потолок', () => {
     vi.spyOn(Math, 'random').mockReturnValue(1);
     const backoff = new Backoff(1_000, 8_000);
-    expect([backoff.next(), backoff.next(), backoff.next(), backoff.next(), backoff.next()]).toEqual([
-      1_000, 2_000, 4_000, 8_000, 8_000,
-    ]);
+    expect([
+      backoff.next(),
+      backoff.next(),
+      backoff.next(),
+      backoff.next(),
+      backoff.next(),
+    ]).toEqual([1_000, 2_000, 4_000, 8_000, 8_000]);
   });
 
   it('нижняя граница разброса равна половине', () => {
@@ -220,7 +233,11 @@ describe('describeResponse', () => {
   });
 
   it('понимает ответ axios с заголовками объектом', async () => {
-    const info = describeResponse({ status: 401, headers: { 'x-test': 'v' }, data: { a: 1 } });
+    const info = describeResponse({
+      status: 401,
+      headers: { 'x-test': 'v' },
+      data: { a: 1 },
+    });
     expect(info?.header('X-Test')).toBe('v');
     await expect(info?.json()).resolves.toEqual({ a: 1 });
   });
@@ -235,9 +252,12 @@ describe('describeResponse', () => {
     expect(describeResponse({ status: 200, headers })?.header('x')).toBe('v');
   });
 
-  it.each([null, undefined, 'x', 1, {}, { status: '200' }])('%j: не ответ', (value) => {
-    expect(describeResponse(value)).toBeNull();
-  });
+  it.each([null, undefined, 'x', 1, {}, { status: '200' }])(
+    '%j: не ответ',
+    (value) => {
+      expect(describeResponse(value)).toBeNull();
+    },
+  );
 
   it('заголовков нет: null', () => {
     expect(describeResponse({ status: 200 })?.header('x')).toBeNull();

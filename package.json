@@ -10,6 +10,11 @@
     "packages/*"
   ],
   "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix --max-warnings 0",
+    "format": "prettier --write --ignore-unknown .",
+    "format:check": "prettier --check --ignore-unknown .",
+    "prepare": "husky",
     "dev": "npm run build:contracts && concurrently --kill-others --names api,web \"npm run dev -w @gwmt/api\" \"npm run dev:web\"",
     "build:contracts": "npm run build -w @gwmt/contracts",
     "build": "npm run build:contracts && npm run build -w mini-jira",
@@ -26,6 +31,19 @@
     "test": "npm run build:contracts && npm run test -w @gwmt/contracts -w @gwmt/api"
   },
   "devDependencies": {
-    "concurrently": "^10.0.7"
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@eslint/js": "^10.0.1",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "concurrently": "^10.0.7",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.10.0",
+    "typescript-eslint": "^8.72.1"
   }
 }

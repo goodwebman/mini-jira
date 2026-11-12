@@ -1,7 +1,17 @@
-import { forwardRef, memo, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from 'react';
+import {
+  type ChangeEvent,
+  type InputHTMLAttributes,
+  type ReactNode,
+  forwardRef,
+  memo,
+} from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
-export interface IUISwitchProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface IUISwitchProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
   readonly testId?: string;
   /** Текст рядом с переключателем. Без него задай `aria-label`. */
   readonly label?: ReactNode;
@@ -14,7 +24,10 @@ export interface IUISwitchProps extends Omit<InputHTMLAttributes<HTMLInputElemen
  * react-hook-form. `className` применяется к корневому элементу.
  */
 const UISwitchBase = forwardRef<HTMLInputElement, IUISwitchProps>(
-  ({ className, testId, label, onCheckedChange, onChange, disabled, ...props }, ref) => {
+  (
+    { className, testId, label, onCheckedChange, onChange, disabled, ...props },
+    ref,
+  ) => {
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
       onChange?.(event);
       onCheckedChange?.(event.currentTarget.checked);
@@ -27,15 +40,17 @@ const UISwitchBase = forwardRef<HTMLInputElement, IUISwitchProps>(
         data-name={testId ? `UISwitch-${testId}` : 'UISwitch'}
         className={cn(
           'inline-flex items-center gap-2 text-body text-foreground',
-          disabled ? 'cursor-not-allowed text-muted-foreground' : 'cursor-pointer',
+          disabled
+            ? 'cursor-not-allowed text-muted-foreground'
+            : 'cursor-pointer',
           className,
         )}
       >
-        <span className="relative inline-flex h-[20px] w-[36px] shrink-0">
+        <span className='relative inline-flex h-[20px] w-[36px] shrink-0'>
           <input
             ref={ref}
-            type="checkbox"
-            role="switch"
+            type='checkbox'
+            role='switch'
             disabled={disabled}
             onChange={handleChange}
             className={cn(
@@ -46,8 +61,8 @@ const UISwitchBase = forwardRef<HTMLInputElement, IUISwitchProps>(
             {...props}
           />
           <span
-            aria-hidden="true"
-            className="pointer-events-none absolute left-[2px] top-[2px] size-[16px] rounded-full bg-surface transition-transform duration-200 peer-checked:translate-x-[16px]"
+            aria-hidden='true'
+            className='pointer-events-none absolute left-[2px] top-[2px] size-[16px] rounded-full bg-surface transition-transform duration-200 peer-checked:translate-x-[16px]'
           />
         </span>
         {label != null && <span>{label}</span>}

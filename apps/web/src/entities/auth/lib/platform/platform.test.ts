@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { deferred, flush } from '../testing/test-kit';
-import { createBrowserPlatform, detectPlatform, type BrowserScope } from './browser-platform';
+import {
+  type BrowserScope,
+  createBrowserPlatform,
+  detectPlatform,
+} from './browser-platform';
 import { LocalLocks } from './local-locks';
 import { createMemoryPlatform } from './memory-platform';
 
@@ -16,7 +21,8 @@ function createEventTarget() {
       listeners.get(type)?.delete(listener);
     },
     dispatch: (type: string, event: object = {}) => {
-      for (const listener of [...(listeners.get(type) ?? [])]) listener(event as Event);
+      for (const listener of [...(listeners.get(type) ?? [])])
+        listener(event as Event);
     },
     count: (type: string) => listeners.get(type)?.size ?? 0,
   };
@@ -39,7 +45,13 @@ function createScope(overrides: Partial<BrowserScope> = {}) {
     },
     ...overrides,
   };
-  return { scope: scope as unknown as BrowserScope, windowTarget, documentTarget, document, storage };
+  return {
+    scope: scope as unknown as BrowserScope,
+    windowTarget,
+    documentTarget,
+    document,
+    storage,
+  };
 }
 
 afterEach(() => {
@@ -68,13 +80,25 @@ describe('браузерная платформа', () => {
     }
 
     it('использует Web Locks, если они есть', async () => {
-      const request = vi.fn(async (_name: string, _options: unknown, task: () => unknown) => task());
-      const { scope } = createScope(fakeLocks(request as unknown as LockManager['request']));
-      const result = await createBrowserPlatform(scope).withLock('x', async () => 'done', {
-        timeoutMs: 1_000,
-      });
+      const request = vi.fn(
+        async (_name: string, _options: unknown, task: () => unknown) => task(),
+      );
+      const { scope } = createScope(
+        fakeLocks(request as unknown as LockManager['request']),
+      );
+      const result = await createBrowserPlatform(scope).withLock(
+        'x',
+        async () => 'done',
+        {
+          timeoutMs: 1_000,
+        },
+      );
       expect(result).toBe('done');
-      expect(request).toHaveBeenCalledWith('x', expect.anything(), expect.any(Function));
+      expect(request).toHaveBeenCalledWith(
+        'x',
+        expect.anything(),
+        expect.any(Function),
+      );
     });
 
     it('отклоняет ожидание занятой блокировки, не запуская задачу', async () => {
@@ -85,10 +109,13 @@ describe('браузерная платформа', () => {
             reject(new DOMException('Aborted', 'AbortError')),
           );
         });
-      const { scope } = createScope(fakeLocks(request as unknown as LockManager['request']));
+      const { scope } = createScope(
+        fakeLocks(request as unknown as LockManager['request']),
+      );
       const task = vi.fn(async () => 'without-lock');
 
-      const result = createBrowserPlatform(scope).withLock('x', task, { timeoutMs: 1_000 })
+      const result = createBrowserPlatform(scope)
+        .withLock('x', task, { timeoutMs: 1_000 })
         .catch((error: unknown) => error);
       await vi.advanceTimersByTimeAsync(1_000);
 
@@ -97,16 +124,25 @@ describe('браузерная платформа', () => {
     });
 
     it('запрет блокировки (sandbox-iframe) не ломает операцию', async () => {
-      const request = () => Promise.reject(new DOMException('Denied', 'SecurityError'));
-      const { scope } = createScope(fakeLocks(request as unknown as LockManager['request']));
+      const request = () =>
+        Promise.reject(new DOMException('Denied', 'SecurityError'));
+      const { scope } = createScope(
+        fakeLocks(request as unknown as LockManager['request']),
+      );
       await expect(
-        createBrowserPlatform(scope).withLock('x', async () => 'ok', { timeoutMs: 1_000 }),
+        createBrowserPlatform(scope).withLock('x', async () => 'ok', {
+          timeoutMs: 1_000,
+        }),
       ).resolves.toBe('ok');
     });
 
     it('ошибка самой задачи не приводит к повторному запуску', async () => {
-      const request = vi.fn(async (_name: string, _options: unknown, task: () => unknown) => task());
-      const { scope } = createScope(fakeLocks(request as unknown as LockManager['request']));
+      const request = vi.fn(
+        async (_name: string, _options: unknown, task: () => unknown) => task(),
+      );
+      const { scope } = createScope(
+        fakeLocks(request as unknown as LockManager['request']),
+      );
       const task = vi.fn(async () => {
         throw new DOMException('Aborted', 'AbortError');
       });
@@ -129,9 +165,13 @@ describe('браузерная платформа', () => {
         },
         { timeoutMs: 1_000 },
       );
-      const second = platform.withLock('x', async () => void order.push('second'), {
-        timeoutMs: 1_000,
-      });
+      const second = platform.withLock(
+        'x',
+        async () => void order.push('second'),
+        {
+          timeoutMs: 1_000,
+        },
+      );
       await flush();
       expect(order).toEqual(['first']);
       gate.resolve();
@@ -142,11 +182,15 @@ describe('браузерная платформа', () => {
 
   describe('флаги', () => {
     it('сохраняет намерение выхода, когда чтение разрешено, а запись превысила квоту', () => {
-      const { scope } = createScope({ localStorage: {
-        getItem: () => null,
-        setItem: () => { throw new DOMException('Full', 'QuotaExceededError'); },
-        removeItem: () => undefined,
-      } });
+      const { scope } = createScope({
+        localStorage: {
+          getItem: () => null,
+          setItem: () => {
+            throw new DOMException('Full', 'QuotaExceededError');
+          },
+          removeItem: () => undefined,
+        },
+      });
       const { markers } = createBrowserPlatform(scope);
       markers.set('pending');
       expect(markers.has('pending')).toBe(true);
@@ -168,7 +212,11 @@ describe('браузерная платформа', () => {
         throw new DOMException('Denied', 'SecurityError');
       };
       const { scope } = createScope({
-        localStorage: { getItem: blocked, setItem: blocked, removeItem: blocked },
+        localStorage: {
+          getItem: blocked,
+          setItem: blocked,
+          removeItem: blocked,
+        },
       });
       const { markers } = createBrowserPlatform(scope);
       markers.set('k');
@@ -180,9 +228,13 @@ describe('браузерная платформа', () => {
 
   describe('канал вкладок', () => {
     it('недоступный по политике BroadcastChannel не срывает запуск', () => {
-      const { scope } = createScope({ BroadcastChannel: class {
-        constructor() { throw new DOMException('Denied', 'SecurityError'); }
-      } as unknown as typeof BroadcastChannel });
+      const { scope } = createScope({
+        BroadcastChannel: class {
+          constructor() {
+            throw new DOMException('Denied', 'SecurityError');
+          }
+        } as unknown as typeof BroadcastChannel,
+      });
       expect(createBrowserPlatform(scope).openChannel('x')).toBeNull();
     });
     it('нет BroadcastChannel: null', () => {
@@ -275,7 +327,9 @@ describe('LocalLocks', () => {
         1_000,
       ),
     ).rejects.toThrow('boom');
-    await expect(locks.run('x', async () => 'next', 1_000)).resolves.toBe('next');
+    await expect(locks.run('x', async () => 'next', 1_000)).resolves.toBe(
+      'next',
+    );
   });
 
   it('таймаут ожидающего не выпускает следующего раньше владельца', async () => {
@@ -300,7 +354,9 @@ describe('LocalLocks', () => {
   it('разные имена не мешают друг другу', async () => {
     const locks = new LocalLocks();
     void locks.run('a', () => new Promise(() => undefined), 60_000);
-    await expect(locks.run('b', async () => 'free', 60_000)).resolves.toBe('free');
+    await expect(locks.run('b', async () => 'free', 60_000)).resolves.toBe(
+      'free',
+    );
   });
 });
 

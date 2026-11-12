@@ -16,7 +16,10 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 export type SessionCookieCredentials = 'cookie-session';
 
 export interface SessionCookieApi<TUser, TLoginInput> {
-  login(input: TLoginInput, context: StrategyContext): Promise<TUser | AuthRedirect>;
+  login(
+    input: TLoginInput,
+    context: StrategyContext,
+  ): Promise<TUser | AuthRedirect>;
   /** На 401 должен бросать ошибку со статусом: так сервис понимает, что сессии нет. */
   getUser(context: StrategyContext): Promise<TUser>;
   logout?(context: StrategyContext): Promise<void>;
@@ -34,11 +37,15 @@ export interface SessionCookieStrategyOptions<TUser, TLoginInput> {
 }
 
 /** Классическая серверная сессия: `Set-Cookie` при входе, браузер шлёт cookie сам. */
-export class SessionCookieStrategy<TUser, TLoginInput>
-  implements AuthStrategy<SessionCookieCredentials, TUser, TLoginInput>
-{
+export class SessionCookieStrategy<TUser, TLoginInput> implements AuthStrategy<
+  SessionCookieCredentials,
+  TUser,
+  TLoginInput
+> {
   readonly name = 'session-cookie';
-  readonly logout?: (context: CredentialContext<SessionCookieCredentials>) => Promise<void>;
+  readonly logout?: (
+    context: CredentialContext<SessionCookieCredentials>,
+  ) => Promise<void>;
 
   readonly #options: SessionCookieStrategyOptions<TUser, TLoginInput>;
 
@@ -57,7 +64,10 @@ export class SessionCookieStrategy<TUser, TLoginInput>
     SessionCookieCredentials,
     TUser
   > | null> {
-    return { credentials: 'cookie-session', user: await this.#options.api.getUser({ signal }) };
+    return {
+      credentials: 'cookie-session',
+      user: await this.#options.api.getUser({ signal }),
+    };
   }
 
   async login(
@@ -65,16 +75,27 @@ export class SessionCookieStrategy<TUser, TLoginInput>
     context: StrategyContext,
   ): Promise<AuthGrant<SessionCookieCredentials, TUser> | AuthRedirect> {
     const result = await this.#options.api.login(input, context);
-    if (typeof result === 'object' && result !== null && 'redirectTo' in result) {
+    if (
+      typeof result === 'object' &&
+      result !== null &&
+      'redirectTo' in result
+    ) {
       return result as AuthRedirect;
     }
     return { credentials: 'cookie-session', user: result as TUser };
   }
 
-  async decorate(_: SessionCookieCredentials, target: AuthTarget): Promise<AuthDecoration> {
+  async decorate(
+    _: SessionCookieCredentials,
+    target: AuthTarget,
+  ): Promise<AuthDecoration> {
     const { csrf, credentialsMode = 'same-origin' } = this.#options;
-    if (!csrf || SAFE_METHODS.has(target.method.toUpperCase())) return { credentialsMode };
+    if (!csrf || SAFE_METHODS.has(target.method.toUpperCase()))
+      return { credentialsMode };
     const token = await csrf.readToken();
-    return { credentialsMode, headers: token ? { [csrf.headerName]: token } : {} };
+    return {
+      credentialsMode,
+      headers: token ? { [csrf.headerName]: token } : {},
+    };
   }
 }

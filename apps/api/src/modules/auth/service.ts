@@ -1,11 +1,21 @@
+import type {
+  AuthResponse,
+  LoginBody,
+  Me,
+  RegisterBody,
+} from '@gwmt/contracts';
 import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto';
-import type { AuthResponse, LoginBody, Me, RegisterBody } from '@gwmt/contracts';
+
 import type { Db } from '../../db/client.js';
 import type { UserRow } from '../../db/schema.js';
 import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import { signAccessToken } from '../../lib/jwt.js';
-import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from '../../lib/password.js';
+import {
+  DUMMY_PASSWORD_HASH,
+  hashPassword,
+  verifyPassword,
+} from '../../lib/password.js';
 import { OAuthFlowError, type OAuthIdentity } from './oauth.js';
 import * as repo from './repo.js';
 
@@ -19,8 +29,10 @@ const THROTTLE_WINDOW_MS = 15 * 60_000;
 
 const COLOR_COUNT = 6;
 
-const sessionTtl = (remember: boolean) => (remember ? REMEMBER_TTL_MS : SHORT_TTL_MS);
-const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+const sessionTtl = (remember: boolean) =>
+  remember ? REMEMBER_TTL_MS : SHORT_TTL_MS;
+const sha256 = (value: string) =>
+  createHash('sha256').update(value).digest('hex');
 const newRefreshToken = () => randomBytes(32).toString('base64url');
 
 export function toMe(user: UserRow): Me {
@@ -94,11 +106,16 @@ export async function register(
       updatedAt: now,
     });
     if (!user) return null;
-    return { user, session: await startSession(tx, user.id, true, userAgent, now) };
+    return {
+      user,
+      session: await startSession(tx, user.id, true, userAgent, now),
+    };
   });
 
   if (!created) {
-    throw new AppError('EMAIL_TAKEN', { fields: { email: 'Этот email уже зарегистрирован' } });
+    throw new AppError('EMAIL_TAKEN', {
+      fields: { email: 'Этот email уже зарегистрирован' },
+    });
   }
   return {
     response: await authResponse(deps, created.user, created.session.sessionId),
@@ -109,8 +126,12 @@ export async function register(
 async function assertNotThrottled(db: Db, key: string, now: Date) {
   const throttle = await repo.findThrottle(db, key);
   if (!throttle?.lockedUntil || throttle.lockedUntil <= now) return;
-  const retryAfter = Math.ceil((throttle.lockedUntil.getTime() - now.getTime()) / 1000);
-  throw new AppError('TOO_MANY_ATTEMPTS', { headers: { 'Retry-After': String(retryAfter) } });
+  const retryAfter = Math.ceil(
+    (throttle.lockedUntil.getTime() - now.getTime()) / 1000,
+  );
+  throw new AppError('TOO_MANY_ATTEMPTS', {
+    headers: { 'Retry-After': String(retryAfter) },
+  });
 }
 
 export async function login(
@@ -124,7 +145,10 @@ export async function login(
 
   const user = await repo.findUserByEmail(deps.db, body.email);
   // Хэш проверяется всегда, иначе по времени ответа видно, есть ли такой email.
-  const matches = await verifyPassword(body.password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+  const matches = await verifyPassword(
+    body.password,
+    user?.passwordHash ?? DUMMY_PASSWORD_HASH,
+  );
 
   if (!user?.passwordHash || !matches) {
     await repo.recordLoginFailure(
@@ -164,17 +188,25 @@ export async function refresh(
   const now = deps.now();
   const found = await repo.findRefreshToken(deps.db, sha256(token));
   if (!found) throw new AppError('REFRESH_INVALID');
-  if (found.revokedAt || found.expiresAt <= now) throw new AppError('REFRESH_EXPIRED');
+  if (found.revokedAt || found.expiresAt <= now)
+    throw new AppError('REFRESH_EXPIRED');
 
   // Reproduce successors without storing plaintext refresh tokens in the database.
-  const successor = (previous: string) => createHmac('sha256', deps.env.JWT_ACCESS_SECRET)
-    .update(`refresh:${previous}`).digest('base64url');
+  const successor = (previous: string) =>
+    createHmac('sha256', deps.env.JWT_ACCESS_SECRET)
+      .update(`refresh:${previous}`)
+      .digest('base64url');
 
   // Отзыв сессии при краже должен закоммититься, поэтому ошибку бросаем уже после транзакции.
   const outcome = await deps.withTx<RefreshOutcome>(async (tx) => {
     if (await repo.markRefreshTokenUsed(tx, found.id, now)) {
       const nextToken = successor(token);
-      await repo.insertRefreshToken(tx, found.sessionId, sha256(nextToken), now);
+      await repo.insertRefreshToken(
+        tx,
+        found.sessionId,
+        sha256(nextToken),
+        now,
+      );
       await repo.extendSession(
         tx,
         found.sessionId,
@@ -206,17 +238,25 @@ export async function refresh(
   const user = await repo.findUserById(deps.db, found.userId);
   if (!user) throw new AppError('REFRESH_INVALID');
   const response = await authResponse(deps, user, found.sessionId);
-  return { response, cookie: { token: outcome.token, remember: found.remember } };
+  return {
+    response,
+    cookie: { token: outcome.token, remember: found.remember },
+  };
 }
 
-export async function logout(deps: AppDeps, token: string | undefined): Promise<void> {
+export async function logout(
+  deps: AppDeps,
+  token: string | undefined,
+): Promise<void> {
   if (!token) return;
   const found = await repo.findRefreshToken(deps.db, sha256(token));
   if (found) await repo.revokeSession(deps.db, found.sessionId, deps.now());
 }
 
 const providerColumns = (identity: OAuthIdentity) =>
-  identity.provider === 'github' ? { githubId: identity.id } : { googleId: identity.id };
+  identity.provider === 'github'
+    ? { githubId: identity.id }
+    : { googleId: identity.id };
 
 /** Вход через внешнего провайдера. Куки и редирект остаются на стороне маршрута. */
 export async function loginWithOAuth(
@@ -240,8 +280,14 @@ export async function loginWithOAuth(
         }
         // Email при регистрации не подтверждается: пароль мог задать злоумышленник,
         // заранее занявший чужой адрес. Поэтому пароль и его сессии сгорают.
-        if (existing.passwordHash) await repo.revokeUserSessions(tx, existing.id, now);
-        user = await repo.linkOAuthAccount(tx, existing.id, providerColumns(identity), now);
+        if (existing.passwordHash)
+          await repo.revokeUserSessions(tx, existing.id, now);
+        user = await repo.linkOAuthAccount(
+          tx,
+          existing.id,
+          providerColumns(identity),
+          now,
+        );
       } else {
         user = await repo.insertUser(tx, {
           email: identity.email,

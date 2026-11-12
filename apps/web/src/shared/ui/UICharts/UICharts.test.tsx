@@ -1,7 +1,20 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { UIAreaChart, UIBarChart, UIChartLegend, UIDonutChart, UILineChart } from './index';
-import { createPlot, linePath, niceScale, pointX, xLabelStep } from './chart-utils';
+
+import {
+  createPlot,
+  linePath,
+  niceScale,
+  pointX,
+  xLabelStep,
+} from './chart-utils';
+import {
+  UIAreaChart,
+  UIBarChart,
+  UIChartLegend,
+  UIDonutChart,
+  UILineChart,
+} from './index';
 
 const margin = { left: 30, right: 10, top: 10, bottom: 20 };
 
@@ -63,12 +76,14 @@ describe('UILineChart', () => {
   });
 
   it('не падает без данных', () => {
-    render(<UILineChart ariaLabel="Пусто" labels={[]} series={[]} />);
+    render(<UILineChart ariaLabel='Пусто' labels={[]} series={[]} />);
     expect(screen.getByRole('img', { name: 'Пусто' })).toBeInTheDocument();
   });
 
   it('подсказка появляется при наведении и исчезает при уходе', () => {
-    render(<UILineChart {...props} formatValue={(value) => `${String(value)} SP`} />);
+    render(
+      <UILineChart {...props} formatValue={(value) => `${String(value)} SP`} />,
+    );
     const chart = screen.getByRole('img', { name: 'Сгорание' });
     // В jsdom rect нулевой: clientX=0 попадает на первую точку
     fireEvent.pointerMove(chart, { clientX: 0 });
@@ -82,10 +97,23 @@ describe('UIAreaChart и UIBarChart', () => {
   it('не падают на пустых и неполных данных', () => {
     render(
       <>
-        <UIAreaChart ariaLabel="Поток" labels={[]} series={[]} />
-        <UIAreaChart ariaLabel="Поток 2" labels={['А', 'Б']} series={[{ name: 'С', values: [1, null] }]} />
-        <UIBarChart ariaLabel="Скорость" labels={[]} series={[]} highlightIndex={3} />
-        <UIBarChart ariaLabel="Скорость 2" labels={['С1']} series={[{ name: 'План', values: [0] }]} />
+        <UIAreaChart ariaLabel='Поток' labels={[]} series={[]} />
+        <UIAreaChart
+          ariaLabel='Поток 2'
+          labels={['А', 'Б']}
+          series={[{ name: 'С', values: [1, null] }]}
+        />
+        <UIBarChart
+          ariaLabel='Скорость'
+          labels={[]}
+          series={[]}
+          highlightIndex={3}
+        />
+        <UIBarChart
+          ariaLabel='Скорость 2'
+          labels={['С1']}
+          series={[{ name: 'План', values: [0] }]}
+        />
       </>,
     );
     expect(screen.getAllByRole('img')).toHaveLength(4);
@@ -94,7 +122,7 @@ describe('UIAreaChart и UIBarChart', () => {
   it('выделенная группа подписывает значение, средняя — свою линию', () => {
     render(
       <UIBarChart
-        ariaLabel="Скорость"
+        ariaLabel='Скорость'
         labels={['С1', 'С2']}
         highlightIndex={1}
         average={{ value: 5, label: 'Средняя: 5' }}
@@ -107,26 +135,40 @@ describe('UIAreaChart и UIBarChart', () => {
 });
 
 describe('UIDonutChart', () => {
-  const arcs = (container: HTMLElement) => container.querySelectorAll('svg path');
+  const arcs = (container: HTMLElement) =>
+    container.querySelectorAll('svg path');
 
   it('рисует только положительные сегменты', () => {
     const { container } = render(
       <UIDonutChart
-        ariaLabel="Статус"
-        segments={[{ label: 'А', value: 3 }, { label: 'Б', value: 0 }, { label: 'В', value: -1 }]}
+        ariaLabel='Статус'
+        segments={[
+          { label: 'А', value: 3 },
+          { label: 'Б', value: 0 },
+          { label: 'В', value: -1 },
+        ]}
       />,
     );
     expect(arcs(container)).toHaveLength(1);
   });
 
   it('при нуле показывает только трек', () => {
-    const { container } = render(<UIDonutChart ariaLabel="Статус" segments={[{ label: 'А', value: 0 }]} />);
+    const { container } = render(
+      <UIDonutChart ariaLabel='Статус' segments={[{ label: 'А', value: 0 }]} />,
+    );
     expect(arcs(container)).toHaveLength(0);
     expect(container.querySelector('circle')).toBeInTheDocument();
   });
 
   it('показывает значение в центре', () => {
-    render(<UIDonutChart ariaLabel="Статус" segments={[]} value="42%" caption="закрыто" />);
+    render(
+      <UIDonutChart
+        ariaLabel='Статус'
+        segments={[]}
+        value='42%'
+        caption='закрыто'
+      />,
+    );
     expect(screen.getByText('42%')).toBeInTheDocument();
     expect(screen.getByText('закрыто')).toBeInTheDocument();
   });
@@ -134,7 +176,12 @@ describe('UIDonutChart', () => {
 
 describe('UIChartLegend', () => {
   it('в режиме list показывает значения', () => {
-    render(<UIChartLegend variant="list" items={[{ label: 'Готово', color: 'red', value: '5 SP' }]} />);
+    render(
+      <UIChartLegend
+        variant='list'
+        items={[{ label: 'Готово', color: 'red', value: '5 SP' }]}
+      />,
+    );
     expect(screen.getByText('5 SP')).toBeInTheDocument();
   });
 });

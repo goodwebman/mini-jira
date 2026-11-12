@@ -1,9 +1,13 @@
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { Slot, type RenderElement } from '@/shared/lib/dom';
+import { type RenderElement, Slot } from '@/shared/lib/dom';
 import { UIPriority, type UITaskPriority } from '@/shared/ui/UIPriority';
 
-export interface IUITaskCardProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+export interface IUITaskCardProps extends Omit<
+  HTMLAttributes<HTMLElement>,
+  'title'
+> {
   readonly testId?: string;
   /** Ключ задачи: MJ-142. */
   readonly taskKey: string;
@@ -45,7 +49,22 @@ export interface IUITaskCardProps extends Omit<HTMLAttributes<HTMLElement>, 'tit
  */
 const UITaskCardBase = forwardRef<HTMLElement, IUITaskCardProps>(
   (
-    { className, testId, taskKey, title, points, priority, priorityLabel, href, render, badges, meta, people, selected = false, ...props },
+    {
+      className,
+      testId,
+      taskKey,
+      title,
+      points,
+      priority,
+      priorityLabel,
+      href,
+      render,
+      badges,
+      meta,
+      people,
+      selected = false,
+      ...props
+    },
     ref,
   ) => (
     <article
@@ -56,16 +75,19 @@ const UITaskCardBase = forwardRef<HTMLElement, IUITaskCardProps>(
         'relative flex flex-none flex-col gap-2 rounded-card border border-border bg-surface p-3',
         'transition-colors duration-150 hover:border-input',
         // inset: снаружи кольцо обрезал бы скролл колонки
-        selected && 'border-primary ring-1 ring-inset ring-primary hover:border-primary',
+        selected &&
+          'border-primary ring-1 ring-inset ring-primary hover:border-primary',
         className,
       )}
       {...props}
     >
-      <div className="flex items-center gap-1 text-caption font-medium text-muted-foreground">
+      <div className='flex items-center gap-1 text-caption font-medium text-muted-foreground'>
         {priority && <UIPriority priority={priority} label={priorityLabel} />}
-        <span className="min-w-0 truncate">{taskKey}</span>
+        <span className='min-w-0 truncate'>{taskKey}</span>
         {points != null && (
-          <span className="ml-auto shrink-0 rounded-tag bg-muted px-1 py-px text-foreground">{points}</span>
+          <span className='ml-auto shrink-0 rounded-tag bg-muted px-1 py-px text-foreground'>
+            {points}
+          </span>
         )}
       </div>
 
@@ -74,21 +96,21 @@ const UITaskCardBase = forwardRef<HTMLElement, IUITaskCardProps>(
         render={render}
         draggable={false}
         aria-label={`Открыть задачу ${taskKey}: ${title}`}
-        className="rounded-[2px] font-medium text-foreground no-underline wrap-anywhere focus-ring after:absolute after:inset-0"
+        className='rounded-[2px] font-medium text-foreground no-underline wrap-anywhere focus-ring after:absolute after:inset-0'
       >
         {title}
       </Slot>
 
       {badges != null && (
-        <div className="flex items-center gap-1 [&_a]:relative [&_a]:z-1 [&_button]:relative [&_button]:z-1">
+        <div className='flex items-center gap-1 [&_a]:relative [&_a]:z-1 [&_button]:relative [&_button]:z-1'>
           {badges}
         </div>
       )}
 
       {(meta != null || people != null) && (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
+        <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground'>
           {meta}
-          {people != null && <span className="ml-auto flex">{people}</span>}
+          {people != null && <span className='ml-auto flex'>{people}</span>}
         </div>
       )}
     </article>

@@ -1,18 +1,31 @@
+import { type ReactNode, useState } from 'react';
+
 import { fireEvent, render, screen } from '@testing-library/react';
-import { useState, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+
 import { UIDialog } from './index';
 
-const overlays = () => document.querySelectorAll('[data-name="UIDialogOverlay"]');
+const overlays = () =>
+  document.querySelectorAll('[data-name="UIDialogOverlay"]');
 const pressEscape = () => fireEvent.keyDown(document.body, { key: 'Escape' });
 
-function Harness({ persistent, children }: { persistent?: boolean; children?: ReactNode }) {
+function Harness({
+  persistent,
+  children,
+}: {
+  persistent?: boolean;
+  children?: ReactNode;
+}) {
   const [open, setOpen] = useState(true);
   return (
     <UIDialog open={open} onOpenChange={setOpen}>
-      <UIDialog.Content title="Новая доска" description="Описание окна" persistent={persistent}>
+      <UIDialog.Content
+        title='Новая доска'
+        description='Описание окна'
+        persistent={persistent}
+      >
         <UIDialog.Body>
-          <input aria-label="Название" />
+          <input aria-label='Название' />
           {children}
         </UIDialog.Body>
         <UIDialog.Footer>
@@ -27,9 +40,16 @@ function NestedDialog() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => { setOpen(true); }}>вложенное</button>
+      <button
+        type='button'
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        вложенное
+      </button>
       <UIDialog open={open} onOpenChange={setOpen}>
-        <UIDialog.Content title="Вложенное" />
+        <UIDialog.Content title='Вложенное' />
       </UIDialog>
     </>
   );
@@ -37,7 +57,11 @@ function NestedDialog() {
 
 describe('UIDialog', () => {
   it('не рендерится, пока закрыт', () => {
-    render(<UIDialog open={false} onOpenChange={() => {}}><UIDialog.Content title="Окно" /></UIDialog>);
+    render(
+      <UIDialog open={false} onOpenChange={() => {}}>
+        <UIDialog.Content title='Окно' />
+      </UIDialog>,
+    );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
@@ -62,9 +86,15 @@ describe('UIDialog', () => {
     };
 
     closeBy(pressEscape);
-    closeBy(() => { fireEvent.click(screen.getByRole('button', { name: 'Закрыть' })); });
-    closeBy(() => { fireEvent.click(overlays()[0]); });
-    closeBy(() => { fireEvent.click(screen.getByRole('button', { name: 'Отмена' })); });
+    closeBy(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }));
+    });
+    closeBy(() => {
+      fireEvent.click(overlays()[0]);
+    });
+    closeBy(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Отмена' }));
+    });
   });
 
   it('persistent не закрывается по фону, но закрывается по Escape', () => {
@@ -76,10 +106,19 @@ describe('UIDialog', () => {
   });
 
   it('Close: preventDefault в onClick отменяет закрытие', () => {
-    const onClick = vi.fn((event: React.MouseEvent) => { event.preventDefault(); });
+    const onClick = vi.fn((event: React.MouseEvent) => {
+      event.preventDefault();
+    });
     render(
-      <UIDialog open onOpenChange={() => { throw new Error('не должно закрыться'); }}>
-        <UIDialog.Content title="Окно"><UIDialog.Close onClick={onClick}>Отмена</UIDialog.Close></UIDialog.Content>
+      <UIDialog
+        open
+        onOpenChange={() => {
+          throw new Error('не должно закрыться');
+        }}
+      >
+        <UIDialog.Content title='Окно'>
+          <UIDialog.Close onClick={onClick}>Отмена</UIDialog.Close>
+        </UIDialog.Content>
       </UIDialog>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Отмена' }));
@@ -94,19 +133,31 @@ describe('UIDialog', () => {
   });
 
   it('Escape во вложенном окне закрывает только его', () => {
-    render(<Harness><NestedDialog /></Harness>);
+    render(
+      <Harness>
+        <NestedDialog />
+      </Harness>,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'вложенное' }));
     expect(screen.getAllByRole('dialog')).toHaveLength(2);
     pressEscape();
-    expect(screen.getByRole('dialog', { name: 'Новая доска' })).toBeInTheDocument();
-    expect(screen.queryByRole('dialog', { name: 'Вложенное' })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('dialog', { name: 'Новая доска' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', { name: 'Вложенное' }),
+    ).not.toBeInTheDocument();
     pressEscape();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('части вне UIDialog падают с понятной ошибкой', () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => render(<UIDialog.Close>Отмена</UIDialog.Close>)).toThrow(/внутри <UIDialog>/);
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    expect(() => render(<UIDialog.Close>Отмена</UIDialog.Close>)).toThrow(
+      /внутри <UIDialog>/,
+    );
     consoleError.mockRestore();
   });
 });

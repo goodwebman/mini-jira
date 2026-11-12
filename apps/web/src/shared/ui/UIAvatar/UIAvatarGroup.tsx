@@ -1,5 +1,7 @@
-import { Children, forwardRef, memo, type HTMLAttributes } from 'react';
+import { Children, type HTMLAttributes, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
+
 import { avatarVariants } from './UIAvatar.variants';
 
 export interface IUIAvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
@@ -31,7 +33,11 @@ const UIAvatarGroupBase = forwardRef<HTMLDivElement, IUIAvatarGroupProps>(
       <div
         ref={ref}
         data-name={testId ? `UIAvatarGroup-${testId}` : 'UIAvatarGroup'}
-        className={cn('flex items-center [&>*]:border-2 [&>*]:border-surface', OVERLAP[size], className)}
+        className={cn(
+          'flex items-center [&>*]:border-2 [&>*]:border-surface',
+          OVERLAP[size],
+          className,
+        )}
         {...props}
       >
         {visible}

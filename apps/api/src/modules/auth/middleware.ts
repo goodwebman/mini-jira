@@ -1,4 +1,5 @@
 import { createMiddleware } from 'hono/factory';
+
 import type { AppDeps, AppEnv } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import { verifyAccessToken } from '../../lib/jwt.js';
@@ -10,13 +11,17 @@ const PUBLIC_PREFIX = '/api/v1/auth/';
 
 export const requireAuth = (deps: AppDeps) =>
   createMiddleware<AppEnv>(async (c, next) => {
-    if (PUBLIC_PATHS.includes(c.req.path) || c.req.path.startsWith(PUBLIC_PREFIX)) {
+    if (
+      PUBLIC_PATHS.includes(c.req.path) ||
+      c.req.path.startsWith(PUBLIC_PREFIX)
+    ) {
       return next();
     }
 
     const header = c.req.header('Authorization');
     if (!header) throw new AppError('ACCESS_TOKEN_MISSING');
-    if (!header.startsWith('Bearer ')) throw new AppError('ACCESS_TOKEN_INVALID');
+    if (!header.startsWith('Bearer '))
+      throw new AppError('ACCESS_TOKEN_INVALID');
 
     const claims = await verifyAccessToken(
       header.slice('Bearer '.length),
@@ -59,6 +64,7 @@ export const requireSaltSignature = (deps: AppDeps) =>
 export const requireAppOrigin = (deps: AppDeps) =>
   createMiddleware<AppEnv>(async (c, next) => {
     const origin = c.req.header('Origin');
-    if (origin && origin !== deps.env.APP_URL) throw new AppError('FORBIDDEN_ORIGIN');
+    if (origin && origin !== deps.env.APP_URL)
+      throw new AppError('FORBIDDEN_ORIGIN');
     return next();
   });

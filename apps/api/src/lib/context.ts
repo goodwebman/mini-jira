@@ -1,5 +1,6 @@
 import type { BoardRole } from '@gwmt/contracts';
 import type { Env as HonoEnv } from 'hono';
+
 import type { Db, WithTx } from '../db/client.js';
 import type { Env } from './env.js';
 

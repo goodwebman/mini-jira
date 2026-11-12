@@ -4,6 +4,7 @@ import { healthResponseSchema } from '@gwmt/contracts';
 import { swaggerUI } from '@hono/swagger-ui';
 import { createRoute } from '@hono/zod-openapi';
 import { sql } from 'drizzle-orm';
+
 import { API_DOCUMENT, TAG } from './lib/api-docs.js';
 import type { AppDeps } from './lib/context.js';
 import { handleError, handleNotFound } from './lib/errors.js';
@@ -59,7 +60,10 @@ export function createApp(deps: AppDeps) {
     await deps.db.execute(sql`select 1`);
     // Шаг 1: первый деплой должен проверить оба драйвера. После приёмки деплоя withTx отсюда уйдёт.
     await deps.withTx((tx) => tx.execute(sql`select 1`));
-    return c.json({ status: 'ok' as const, time: deps.now().toISOString() }, 200);
+    return c.json(
+      { status: 'ok' as const, time: deps.now().toISOString() },
+      200,
+    );
   });
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

@@ -1,4 +1,5 @@
 import { useId } from 'react';
+
 import { useFieldContext } from './field-context';
 
 export interface UseFieldControlArgs {
@@ -29,10 +30,12 @@ export function useFieldControl({
   const generatedId = useId();
   const controlId = id ?? field?.controlId ?? generatedId;
 
-  const errorText = typeof error === 'string' && error.length > 0 ? error : undefined;
+  const errorText =
+    typeof error === 'string' && error.length > 0 ? error : undefined;
   const errorId = errorText ? `${controlId}-error` : undefined;
   const describedBy =
-    [ariaDescribedBy, field?.describedBy, errorId].filter(Boolean).join(' ') || undefined;
+    [ariaDescribedBy, field?.describedBy, errorId].filter(Boolean).join(' ') ||
+    undefined;
 
   return {
     controlId,

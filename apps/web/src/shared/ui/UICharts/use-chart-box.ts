@@ -1,5 +1,6 @@
-import { useCallback, useState, type RefCallback } from 'react';
-import { useBreakpoint, type Breakpoint } from '@/shared/lib/hooks';
+import { type RefCallback, useCallback, useState } from 'react';
+
+import { type Breakpoint, useBreakpoint } from '@/shared/lib/hooks';
 
 /** Ширина до первого замера: в браузере замер успевает до paint. */
 const FALLBACK_WIDTH = 640;
@@ -20,7 +21,10 @@ export interface ChartBox {
 }
 
 /** Реальный размер графика в px: штрихи и подписи не масштабируются вместе с SVG. */
-export function useChartBox(preset: ChartHeightPreset, height?: number): ChartBox {
+export function useChartBox(
+  preset: ChartHeightPreset,
+  height?: number,
+): ChartBox {
   const breakpoint = useBreakpoint();
   const [width, setWidth] = useState(FALLBACK_WIDTH);
 
@@ -34,7 +38,10 @@ export function useChartBox(preset: ChartHeightPreset, height?: number): ChartBo
       }
     };
     measure();
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(measure);
     observer?.observe(node);
     return () => {
       observer?.disconnect();

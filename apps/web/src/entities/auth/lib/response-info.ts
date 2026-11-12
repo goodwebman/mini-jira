@@ -27,12 +27,16 @@ export function describeResponse(value: unknown): AuthResponseInfo | null {
   return {
     status,
     header: (name) => readHeader(response.headers, name),
-    json: async () => (response.clone ? response.clone().json() : response.data),
+    json: async () =>
+      response.clone ? response.clone().json() : response.data,
   };
 }
 
 /** То же для клиентов, которые бросают исключение на статус ошибки. */
 export function describeThrown(error: unknown): AuthResponseInfo | null {
   if (typeof error !== 'object' || error === null) return null;
-  return describeResponse((error as { response?: unknown }).response) ?? describeResponse(error);
+  return (
+    describeResponse((error as { response?: unknown }).response) ??
+    describeResponse(error)
+  );
 }

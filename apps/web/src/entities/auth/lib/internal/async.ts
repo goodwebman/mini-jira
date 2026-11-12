@@ -8,13 +8,18 @@ export function throwIfAborted(signal: AbortSignal | undefined): void {
  * Ждёт общий промис, но отпускает вызывающего по его собственному сигналу.
  * Отмена одного запроса не должна отменять refresh, которого ждут остальные.
  */
-export function abortable<T>(promise: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+export function abortable<T>(
+  promise: Promise<T>,
+  signal: AbortSignal | undefined,
+): Promise<T> {
   if (!signal) return promise;
   if (signal.aborted) return Promise.reject(signal.reason);
   return new Promise<T>((resolve, reject) => {
     const onAbort = () => reject(signal.reason);
     signal.addEventListener('abort', onAbort, { once: true });
-    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
+    promise
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener('abort', onAbort));
   });
 }
 
@@ -26,7 +31,11 @@ export function withDeadline<T>(
   const controller = new AbortController();
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new AuthError('timeout', { message: `Операция не завершилась за ${timeoutMs} мс` }));
+      reject(
+        new AuthError('timeout', {
+          message: `Операция не завершилась за ${timeoutMs} мс`,
+        }),
+      );
       controller.abort();
     }, timeoutMs);
     (async () => task(controller.signal))()

@@ -1,17 +1,18 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
+
 import { AuthError } from '../errors';
 import {
+  SELF_ORIGIN,
+  type TestGrant,
   createAuth,
   createSignedIn,
   deferred,
   flush,
   makeGrant,
   makeUser,
-  SELF_ORIGIN,
-  type TestGrant,
 } from '../testing/test-kit';
-import { attachAuthToAxios, type AxiosLike } from './axios';
+import { type AxiosLike, attachAuthToAxios } from './axios';
 import { createAuthFetch } from './fetch';
 import { graphqlEffectiveStatus } from './graphql';
 import { bindAuthToRtkQuery } from './rtk-query';
@@ -31,13 +32,21 @@ function createBackend(...acceptedTokens: string[]) {
       headers: { 'Content-Type': 'application/json' },
     });
   });
-  return { fetch: fetch as unknown as typeof globalThis.fetch, spy: fetch, requests };
+  return {
+    fetch: fetch as unknown as typeof globalThis.fetch,
+    spy: fetch,
+    requests,
+  };
 }
 
 async function signedInFetch(...tokens: string[]) {
   const backend = createBackend(...tokens);
   const context = await createSignedIn();
-  return { ...context, ...backend, authFetch: createAuthFetch(context.auth, { fetch: backend.fetch }) };
+  return {
+    ...context,
+    ...backend,
+    authFetch: createAuthFetch(context.auth, { fetch: backend.fetch }),
+  };
 }
 
 describe('createAuthFetch', () => {
@@ -62,11 +71,16 @@ describe('createAuthFetch', () => {
 
   it('401: обновляет токен и повторяет запрос с тем же телом', async () => {
     const { authFetch, requests } = await signedInFetch('renewed-token');
-    const response = await authFetch(URL_OK, { method: 'POST', body: 'payload' });
+    const response = await authFetch(URL_OK, {
+      method: 'POST',
+      body: 'payload',
+    });
 
     expect(response.status).toBe(200);
     expect(requests).toHaveLength(2);
-    expect(requests[1]?.headers.get('Authorization')).toBe('Bearer renewed-token');
+    expect(requests[1]?.headers.get('Authorization')).toBe(
+      'Bearer renewed-token',
+    );
     await expect(requests[0]?.text()).resolves.toBe('payload');
     await expect(requests[1]?.text()).resolves.toBe('payload');
   });
@@ -74,7 +88,11 @@ describe('createAuthFetch', () => {
   it('потоковое тело тоже воспроизводится при повторе', async () => {
     const { authFetch, requests } = await signedInFetch('renewed-token');
     const body = new Blob(['stream-payload']).stream();
-    const response = await authFetch(URL_OK, { method: 'POST', body, duplex: 'half' } as RequestInit);
+    const response = await authFetch(URL_OK, {
+      method: 'POST',
+      body,
+      duplex: 'half',
+    } as RequestInit);
 
     expect(response.status).toBe(200);
     await expect(requests[1]?.text()).resolves.toBe('stream-payload');
@@ -110,7 +128,9 @@ describe('createAuthFetch', () => {
       },
     });
     const backend = createBackend();
-    const response = await createAuthFetch(auth, { fetch: backend.fetch })(URL_OK);
+    const response = await createAuthFetch(auth, { fetch: backend.fetch })(
+      URL_OK,
+    );
     expect(response.status).toBe(401);
     expect(eventTypes()).toEqual(['kick']);
   });
@@ -124,7 +144,9 @@ describe('createAuthFetch', () => {
       },
     });
     const backend = createBackend();
-    await expect(createAuthFetch(auth, { fetch: backend.fetch })(URL_OK)).rejects.toMatchObject({
+    await expect(
+      createAuthFetch(auth, { fetch: backend.fetch })(URL_OK),
+    ).rejects.toMatchObject({
       code: 'network',
       retryable: true,
     });
@@ -140,7 +162,9 @@ describe('createAuthFetch', () => {
     const { authFetch, requests } = await signedInFetch('first-token');
     await authFetch('/api/me');
     expect(requests[0]?.url).toBe(`${SELF_ORIGIN}/api/me`);
-    expect(requests[0]?.headers.get('Authorization')).toBe('Bearer first-token');
+    expect(requests[0]?.headers.get('Authorization')).toBe(
+      'Bearer first-token',
+    );
   });
 
   it('принимает URL и Request', async () => {
@@ -149,7 +173,9 @@ describe('createAuthFetch', () => {
     await authFetch(new Request(URL_OK, { method: 'DELETE' }));
     expect(requests[0]?.url).toBe(URL_OK);
     expect(requests[1]?.method).toBe('DELETE');
-    expect(requests[1]?.headers.get('Authorization')).toBe('Bearer first-token');
+    expect(requests[1]?.headers.get('Authorization')).toBe(
+      'Bearer first-token',
+    );
   });
 
   it('skipAuth отправляет без токена и не передаётся в fetch', async () => {
@@ -169,7 +195,9 @@ describe('createAuthFetch', () => {
 
   it('отмена запроса во время ожидания refresh пробрасывает AbortError', async () => {
     const gate = deferred<TestGrant>();
-    const { auth } = await createSignedIn({ strategy: { renew: vi.fn(() => gate.promise) } });
+    const { auth } = await createSignedIn({
+      strategy: { renew: vi.fn(() => gate.promise) },
+    });
     const backend = createBackend();
     const controller = new AbortController();
     const request = createAuthFetch(auth, { fetch: backend.fetch })(URL_OK, {
@@ -205,17 +233,27 @@ describe('createAuthFetch', () => {
 
   it('GraphQL: 200 с UNAUTHENTICATED запускает обновление токена', async () => {
     const graphqlResponse = (body: unknown) =>
-      new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
+      new Response(JSON.stringify(body), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     const fetch = vi
       .fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(
-        graphqlResponse({ errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] }),
+        graphqlResponse({
+          errors: [{ extensions: { code: 'UNAUTHENTICATED' } }],
+        }),
       )
       .mockResolvedValue(graphqlResponse({ data: { me: { id: 1 } } }));
     const { auth, strategy } = await createSignedIn();
-    const authFetch = createAuthFetch(auth, { fetch, effectiveStatus: graphqlEffectiveStatus });
+    const authFetch = createAuthFetch(auth, {
+      fetch,
+      effectiveStatus: graphqlEffectiveStatus,
+    });
 
-    const response = await authFetch(URL_OK, { method: 'POST', body: '{"query":"{me{id}}"}' });
+    const response = await authFetch(URL_OK, {
+      method: 'POST',
+      body: '{"query":"{me{id}}"}',
+    });
 
     expect(strategy.renew).toHaveBeenCalledTimes(1);
     await expect(response.json()).resolves.toEqual({ data: { me: { id: 1 } } });
@@ -224,17 +262,30 @@ describe('createAuthFetch', () => {
 
 describe('graphqlEffectiveStatus', () => {
   const json = (body: unknown, status = 200) =>
-    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
 
   it.each([
-    ['ошибка авторизации', json({ errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] }), 401],
-    ['другая ошибка', json({ errors: [{ extensions: { code: 'FORBIDDEN' } }] }), 200],
+    [
+      'ошибка авторизации',
+      json({ errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] }),
+      401,
+    ],
+    [
+      'другая ошибка',
+      json({ errors: [{ extensions: { code: 'FORBIDDEN' } }] }),
+      200,
+    ],
     ['без ошибок', json({ data: {} }), 200],
     ['статус не 200 не трогается', json({}, 500), 500],
     ['не JSON', new Response('<html>'), 200],
     [
       'битый JSON',
-      new Response('{oops', { headers: { 'Content-Type': 'application/json' } }),
+      new Response('{oops', {
+        headers: { 'Content-Type': 'application/json' },
+      }),
       200,
     ],
     ['ошибка без extensions', json({ errors: [{ message: 'x' }] }), 200],
@@ -264,7 +315,10 @@ function createFakeAxios(
   const sent: Record<string, unknown>[] = [];
 
   const makeInterceptors = (handlers: Map<number, Handler>) => ({
-    use: (fulfilled: (value: never) => unknown, rejected?: (error: never) => unknown) => {
+    use: (
+      fulfilled: (value: never) => unknown,
+      rejected?: (error: never) => unknown,
+    ) => {
       nextId += 1;
       handlers.set(nextId, {
         fulfilled: fulfilled as Handler['fulfilled'],
@@ -292,9 +346,17 @@ function createFakeAxios(
       chain = chain.then((config) => {
         const typed = config as Record<string, unknown>;
         sent.push({ ...typed, headers: { ...(typed.headers as object) } });
-        const response = { ...respond(typed), config: typed, headers: {}, data: {} };
+        const response = {
+          ...respond(typed),
+          config: typed,
+          headers: {},
+          data: {},
+        };
         if (rejectOnError && response.status >= 400) {
-          throw Object.assign(new Error(`status ${response.status}`), { response, config: typed });
+          throw Object.assign(new Error(`status ${response.status}`), {
+            response,
+            config: typed,
+          });
         }
         return response;
       });
@@ -311,18 +373,30 @@ describe('attachAuthToAxios', () => {
   const respondByToken =
     (...tokens: string[]) =>
     (config: Record<string, unknown>) => {
-      const header = (config.headers as Record<string, string> | undefined)?.Authorization;
-      return { status: tokens.some((token) => header === `Bearer ${token}`) ? 200 : 401 };
+      const header = (config.headers as Record<string, string> | undefined)
+        ?.Authorization;
+      return {
+        status: tokens.some((token) => header === `Bearer ${token}`)
+          ? 200
+          : 401,
+      };
     };
 
-  const config = (extra: object = {}) => ({ url: URL_OK, method: 'get', headers: {}, ...extra });
+  const config = (extra: object = {}) => ({
+    url: URL_OK,
+    method: 'get',
+    headers: {},
+    ...extra,
+  });
 
   it('подписывает запрос', async () => {
     const { auth } = await createSignedIn();
     const axios = createFakeAxios(respondByToken('first-token'));
     attachAuthToAxios(auth, axios as unknown as AxiosLike);
     await axios.request(config());
-    expect(axios.sent[0]?.headers).toMatchObject({ Authorization: 'Bearer first-token' });
+    expect(axios.sent[0]?.headers).toMatchObject({
+      Authorization: 'Bearer first-token',
+    });
   });
 
   it('использует AxiosHeaders.set, если он есть', async () => {
@@ -338,7 +412,9 @@ describe('attachAuthToAxios', () => {
     const { auth, strategy } = await createSignedIn();
     const axios = createFakeAxios(respondByToken('renewed-token'));
     attachAuthToAxios(auth, axios as unknown as AxiosLike);
-    await expect(axios.request(config())).resolves.toMatchObject({ status: 200 });
+    await expect(axios.request(config())).resolves.toMatchObject({
+      status: 200,
+    });
     expect(strategy.renew).toHaveBeenCalledTimes(1);
     expect(axios.sent).toHaveLength(2);
   });
@@ -353,9 +429,13 @@ describe('attachAuthToAxios', () => {
 
   it('validateStatus пропустил 401: повтор работает и через успешную ветку', async () => {
     const { auth, strategy } = await createSignedIn();
-    const axios = createFakeAxios(respondByToken('renewed-token'), { rejectOnError: false });
+    const axios = createFakeAxios(respondByToken('renewed-token'), {
+      rejectOnError: false,
+    });
     attachAuthToAxios(auth, axios as unknown as AxiosLike);
-    await expect(axios.request(config())).resolves.toMatchObject({ status: 200 });
+    await expect(axios.request(config())).resolves.toMatchObject({
+      status: 200,
+    });
     expect(strategy.renew).toHaveBeenCalledTimes(1);
     expect(axios.sent).toHaveLength(2);
   });
@@ -370,9 +450,13 @@ describe('attachAuthToAxios', () => {
 
   it('использует getUri для учёта baseURL', async () => {
     const { auth } = await createSignedIn();
-    const axios = Object.assign(createFakeAxios(() => ({ status: 200 })), {
-      getUri: (requestConfig: { url?: string }) => `https://other.test${requestConfig.url}`,
-    });
+    const axios = Object.assign(
+      createFakeAxios(() => ({ status: 200 })),
+      {
+        getUri: (requestConfig: { url?: string }) =>
+          `https://other.test${requestConfig.url}`,
+      },
+    );
     attachAuthToAxios(auth, axios as unknown as AxiosLike);
     await axios.request(config({ url: '/relative' }));
     expect(axios.sent[0]?.headers).toEqual({});
@@ -411,7 +495,9 @@ describe('attachAuthToAxios', () => {
 describe('кэши запросов', () => {
   it('TanStack: кэш сбрасывается при выходе и смене пользователя, но не при входе', async () => {
     const { auth } = await createSignedIn({
-      strategy: { login: vi.fn(async () => makeGrant('boris', makeUser('boris'))) },
+      strategy: {
+        login: vi.fn(async () => makeGrant('boris', makeUser('boris'))),
+      },
     });
     const client = { clear: vi.fn() };
     bindAuthToQueryClient(auth, client);

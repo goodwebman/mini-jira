@@ -1,4 +1,5 @@
 import type { ChangePasswordBody, Me, UpdateMeBody } from '@gwmt/contracts';
+
 import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
@@ -17,11 +18,18 @@ export async function getMe(deps: AppDeps, userId: string): Promise<Me> {
 }
 
 const emailTaken = () =>
-  new AppError('EMAIL_TAKEN', { fields: { email: 'Этот email уже зарегистрирован' } });
+  new AppError('EMAIL_TAKEN', {
+    fields: { email: 'Этот email уже зарегистрирован' },
+  });
 
-export async function updateMe(deps: AppDeps, userId: string, body: UpdateMeBody): Promise<Me> {
+export async function updateMe(
+  deps: AppDeps,
+  userId: string,
+  body: UpdateMeBody,
+): Promise<Me> {
   const user = await requireUser(deps, userId);
-  if (Object.values(body).every((value) => value === undefined)) return toMe(user);
+  if (Object.values(body).every((value) => value === undefined))
+    return toMe(user);
 
   if (body.email !== undefined) {
     const owner = await authRepo.findUserByEmail(deps.db, body.email);
@@ -29,7 +37,10 @@ export async function updateMe(deps: AppDeps, userId: string, body: UpdateMeBody
   }
 
   try {
-    const updated = await repo.updateUser(deps.db, userId, { ...body, updatedAt: deps.now() });
+    const updated = await repo.updateUser(deps.db, userId, {
+      ...body,
+      updatedAt: deps.now(),
+    });
     if (!updated) throw new AppError('ACCESS_TOKEN_INVALID');
     return toMe(updated);
   } catch (err) {
@@ -57,7 +68,9 @@ export async function changePassword(
       body.currentPassword !== undefined &&
       (await verifyPassword(body.currentPassword, user.passwordHash));
     if (!matches) {
-      throw new AppError('WRONG_PASSWORD', { fields: { currentPassword: 'Неверный пароль' } });
+      throw new AppError('WRONG_PASSWORD', {
+        fields: { currentPassword: 'Неверный пароль' },
+      });
     }
   }
 

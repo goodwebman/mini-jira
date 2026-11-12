@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { loadEnv } from '../src/lib/env.js';
 
 const valid = {
@@ -20,31 +21,41 @@ describe('loadEnv', () => {
   });
 
   it('называет плохую переменную, но не её значение', () => {
-    expect(() => loadEnv({ ...valid, JWT_ACCESS_SECRET: 'short-secret-value' })).toThrow(
-      'JWT_ACCESS_SECRET',
-    );
-    expect(() => loadEnv({ ...valid, JWT_ACCESS_SECRET: 'short-secret-value' })).not.toThrow(
-      'short-secret-value',
-    );
+    expect(() =>
+      loadEnv({ ...valid, JWT_ACCESS_SECRET: 'short-secret-value' }),
+    ).toThrow('JWT_ACCESS_SECRET');
+    expect(() =>
+      loadEnv({ ...valid, JWT_ACCESS_SECRET: 'short-secret-value' }),
+    ).not.toThrow('short-secret-value');
   });
 
   it('считает длину секрета в байтах', () => {
-    expect(loadEnv({ ...valid, JWT_ACCESS_SECRET: 'я'.repeat(16) }).JWT_ACCESS_SECRET).toHaveLength(
-      16,
-    );
+    expect(
+      loadEnv({ ...valid, JWT_ACCESS_SECRET: 'я'.repeat(16) })
+        .JWT_ACCESS_SECRET,
+    ).toHaveLength(16);
   });
 
-  it.each(['https://gwmt-web.vercel.app/', 'https://gwmt-web.vercel.app/path', 'nope'])(
-    'APP_URL %s отклоняется',
-    (APP_URL) => {
-      expect(() => loadEnv({ ...valid, APP_URL })).toThrow('APP_URL');
-    },
-  );
+  it.each([
+    'https://gwmt-web.vercel.app/',
+    'https://gwmt-web.vercel.app/path',
+    'nope',
+  ])('APP_URL %s отклоняется', (APP_URL) => {
+    expect(() => loadEnv({ ...valid, APP_URL })).toThrow('APP_URL');
+  });
 
   it('требует все переменные', () => {
-    expect(() => loadEnv({ ...valid, GITHUB_CLIENT_ID: undefined })).toThrow('GITHUB_CLIENT_ID');
-    expect(() => loadEnv({ ...valid, SALT_SECRET: 'short' })).toThrow('SALT_SECRET');
-    expect(() => loadEnv({ ...valid, GOOGLE_CLIENT_ID: undefined })).toThrow('GOOGLE_CLIENT_ID');
-    expect(() => loadEnv({ ...valid, GOOGLE_CLIENT_SECRET: '' })).toThrow('GOOGLE_CLIENT_SECRET');
+    expect(() => loadEnv({ ...valid, GITHUB_CLIENT_ID: undefined })).toThrow(
+      'GITHUB_CLIENT_ID',
+    );
+    expect(() => loadEnv({ ...valid, SALT_SECRET: 'short' })).toThrow(
+      'SALT_SECRET',
+    );
+    expect(() => loadEnv({ ...valid, GOOGLE_CLIENT_ID: undefined })).toThrow(
+      'GOOGLE_CLIENT_ID',
+    );
+    expect(() => loadEnv({ ...valid, GOOGLE_CLIENT_SECRET: '' })).toThrow(
+      'GOOGLE_CLIENT_SECRET',
+    );
   });
 });

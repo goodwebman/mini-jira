@@ -1,4 +1,5 @@
 import type { UserSearchResponse } from '@gwmt/contracts';
+
 import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import { findMemberRole } from '../boards/repo.js';
@@ -15,6 +16,9 @@ export async function searchUsers(
     if (role !== 'admin') throw new AppError('ROLE_FORBIDDEN');
   }
   return {
-    items: await repo.searchUsers(deps.db, userId, { q: query.q ?? '', excludeBoardId }),
+    items: await repo.searchUsers(deps.db, userId, {
+      q: query.q ?? '',
+      excludeBoardId,
+    }),
   };
 }

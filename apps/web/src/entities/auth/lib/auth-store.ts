@@ -3,7 +3,9 @@ import type { AuthEvent, AuthState, Unsubscribe } from './types';
 /** После такого события кэши с данными пользователя нужно сбросить. */
 export function isSessionBoundary<TUser>(event: AuthEvent<TUser>): boolean {
   return (
-    event.type === 'logout' || event.type === 'kick' || (event.type === 'login' && event.identityChanged)
+    event.type === 'logout' ||
+    event.type === 'kick' ||
+    (event.type === 'login' && event.identityChanged)
   );
 }
 
@@ -63,7 +65,10 @@ export class AuthStore<TUser> {
 
   // Упавший подписчик не должен ломать выход и остальных подписчиков. Вложенные вызовы
   // встают в очередь, чтобы все видели события в одном порядке.
-  #deliver<TListener>(listeners: TListener[], call: (listener: TListener) => void): void {
+  #deliver<TListener>(
+    listeners: TListener[],
+    call: (listener: TListener) => void,
+  ): void {
     this.#deliveries.push(() => {
       for (const listener of listeners) {
         try {

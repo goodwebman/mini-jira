@@ -5,7 +5,10 @@ export type { UseControllableStateArgs } from './use-controllable-state';
 export { useEscape } from './use-escape';
 export type { UseEscapeOptions } from './use-escape';
 export { useFloatingPosition } from './use-floating-position';
-export type { FloatingElementRef, UseFloatingPositionArgs } from './use-floating-position';
+export type {
+  FloatingElementRef,
+  UseFloatingPositionArgs,
+} from './use-floating-position';
 export { useFocusTrap } from './use-focus-trap';
 export { useIsomorphicLayoutEffect } from './use-isomorphic-layout-effect';
 export { useMediaQuery } from './use-media-query';

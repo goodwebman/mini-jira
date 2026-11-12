@@ -1,4 +1,5 @@
 import type { MyTaskStats, NavSummary } from '@gwmt/contracts';
+
 import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import * as boardsRepo from '../boards/repo.js';
@@ -21,7 +22,8 @@ export async function getNavSummary(
   ) {
     throw new AppError('BOARD_NOT_FOUND');
   }
-  const boardId = requestedBoardId ?? (await tasksRepo.findLatestBoardId(deps.db, userId));
+  const boardId =
+    requestedBoardId ?? (await tasksRepo.findLatestBoardId(deps.db, userId));
 
   const [boardsTotal, counts, next] = await Promise.all([
     tasksRepo.countBoards(deps.db, userId),
@@ -47,7 +49,12 @@ export async function getNavSummary(
 
   return {
     boardsTotal,
-    board: { id: board.id, name: board.name, sprintNumber: sprint.number, statusCounts },
+    board: {
+      id: board.id,
+      name: board.name,
+      sprintNumber: sprint.number,
+      statusCounts,
+    },
     myTasks,
     kpi: {
       sprintNumber: sprint.number,
@@ -59,7 +66,10 @@ export async function getNavSummary(
   };
 }
 
-export async function getTaskStats(deps: AppDeps, userId: string): Promise<MyTaskStats> {
+export async function getTaskStats(
+  deps: AppDeps,
+  userId: string,
+): Promise<MyTaskStats> {
   const [counts, next] = await Promise.all([
     tasksRepo.countMyTasks(deps.db, userId, {}),
     tasksRepo.listMyOpenTasks(deps.db, userId, STATS_NEXT_LIMIT),
@@ -68,6 +78,10 @@ export async function getTaskStats(deps: AppDeps, userId: string): Promise<MyTas
     open: counts.openCount,
     closed: counts.count - counts.openCount,
     totalSp: counts.spTenths / 10,
-    nextOpen: next.map((task) => ({ key: task.key, title: task.title, priority: task.priority })),
+    nextOpen: next.map((task) => ({
+      key: task.key,
+      title: task.title,
+      priority: task.priority,
+    })),
   };
 }

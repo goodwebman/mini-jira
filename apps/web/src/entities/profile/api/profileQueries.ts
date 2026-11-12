@@ -1,7 +1,14 @@
-import { meSchema, myTaskStatsSchema, navSummaryQuerySchema, navSummarySchema } from '@gwmt/contracts';
+import {
+  meSchema,
+  myTaskStatsSchema,
+  navSummaryQuerySchema,
+  navSummarySchema,
+} from '@gwmt/contracts';
 import { queryOptions } from '@tanstack/react-query';
-import type { NavSummaryQuery } from '../model';
+
 import { apiClient, withQuery } from '@/shared/api';
+
+import type { NavSummaryQuery } from '../model';
 
 export function navSummaryPath(params: NavSummaryQuery = {}): string {
   return withQuery('/me/nav-summary', navSummaryQuerySchema.parse(params));
@@ -13,19 +20,27 @@ export async function fetchProfile(signal?: AbortSignal) {
 }
 
 /** GET `/me/nav-summary`. Без boardId сервер выбирает последнюю доску. */
-export async function fetchNavSummary(params: NavSummaryQuery = {}, signal?: AbortSignal) {
-  return apiClient.get<unknown>(navSummaryPath(params), { signal }).then(navSummarySchema.parse);
+export async function fetchNavSummary(
+  params: NavSummaryQuery = {},
+  signal?: AbortSignal,
+) {
+  return apiClient
+    .get<unknown>(navSummaryPath(params), { signal })
+    .then(navSummarySchema.parse);
 }
 
 /** GET `/me/task-stats`. */
 export async function fetchMyTaskStats(signal?: AbortSignal) {
-  return apiClient.get<unknown>('/me/task-stats', { signal }).then(myTaskStatsSchema.parse);
+  return apiClient
+    .get<unknown>('/me/task-stats', { signal })
+    .then(myTaskStatsSchema.parse);
 }
 
 export const profileQueryKeys = {
   all: ['profile'] as const,
   detail: ['profile', 'detail'] as const,
-  navSummary: (params: NavSummaryQuery = {}) => ['profile', 'nav-summary', navSummaryQuerySchema.parse(params)] as const,
+  navSummary: (params: NavSummaryQuery = {}) =>
+    ['profile', 'nav-summary', navSummaryQuerySchema.parse(params)] as const,
   taskStats: ['profile', 'task-stats'] as const,
 };
 

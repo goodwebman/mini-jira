@@ -10,6 +10,7 @@ import {
   updateMemberBodySchema,
 } from '@gwmt/contracts';
 import { createRoute } from '@hono/zod-openapi';
+
 import { TAG } from '../../lib/api-docs.js';
 import type { AppDeps } from '../../lib/context.js';
 import {
@@ -46,7 +47,8 @@ export function boardsRoutes(deps: AppDeps) {
       operationId: 'listBoards',
       tags: boardTags,
       summary: 'Доски пользователя',
-      description: 'Без пагинации, по названию. Видны только доски, где пользователь участник.',
+      description:
+        'Без пагинации, по названию. Видны только доски, где пользователь участник.',
       security: bearerAuth,
       request: { query: boardsQuerySchema },
       responses: {
@@ -54,7 +56,11 @@ export function boardsRoutes(deps: AppDeps) {
         ...errors({ 401: ACCESS_ERRORS, 422: ['VALIDATION_ERROR'] }),
       },
     }),
-    async (c) => c.json(await service.listBoards(deps, c.get('userId'), c.req.valid('query')), 200),
+    async (c) =>
+      c.json(
+        await service.listBoards(deps, c.get('userId'), c.req.valid('query')),
+        200,
+      ),
   );
 
   router.openapi(
@@ -79,7 +85,11 @@ export function boardsRoutes(deps: AppDeps) {
         }),
       },
     }),
-    async (c) => c.json(await service.createBoard(deps, c.get('userId'), c.req.valid('json')), 201),
+    async (c) =>
+      c.json(
+        await service.createBoard(deps, c.get('userId'), c.req.valid('json')),
+        201,
+      ),
   );
 
   router.openapi(
@@ -89,7 +99,8 @@ export function boardsRoutes(deps: AppDeps) {
       operationId: 'getBoard',
       tags: boardTags,
       summary: 'Деталь доски',
-      description: 'Источник участников для чипов, селектов и экрана участников.',
+      description:
+        'Источник участников для чипов, селектов и экрана участников.',
       security: bearerAuth,
       middleware: [member],
       request: { params: boardIdParamSchema },
@@ -98,7 +109,11 @@ export function boardsRoutes(deps: AppDeps) {
         ...errors(boardErrors),
       },
     }),
-    async (c) => c.json(await service.getBoardDetail(deps, c.get('boardId'), c.get('userId')), 200),
+    async (c) =>
+      c.json(
+        await service.getBoardDetail(deps, c.get('boardId'), c.get('userId')),
+        200,
+      ),
   );
 
   router.openapi(
@@ -115,7 +130,12 @@ export function boardsRoutes(deps: AppDeps) {
       responses: { 204: { description: 'Готово' }, ...errors(boardErrors) },
     }),
     async (c) => {
-      await repo.addFavorite(deps.db, c.get('boardId'), c.get('userId'), deps.now());
+      await repo.addFavorite(
+        deps.db,
+        c.get('boardId'),
+        c.get('userId'),
+        deps.now(),
+      );
       return c.body(null, 204);
     },
   );
@@ -149,15 +169,27 @@ export function boardsRoutes(deps: AppDeps) {
       description: 'Только `admin`.',
       security: bearerAuth,
       middleware: [member, manageMembers],
-      request: { params: boardIdParamSchema, body: jsonBody(addMemberBodySchema) },
+      request: {
+        params: boardIdParamSchema,
+        body: jsonBody(addMemberBodySchema),
+      },
       responses: {
         201: jsonResponse(boardMemberSchema, 'Участник добавлен'),
-        ...errors({ ...memberErrors, 409: ['ALREADY_MEMBER'], 422: ['VALIDATION_ERROR'] }),
+        ...errors({
+          ...memberErrors,
+          409: ['ALREADY_MEMBER'],
+          422: ['VALIDATION_ERROR'],
+        }),
       },
     }),
     async (c) =>
       c.json(
-        await service.addMember(deps, c.get('boardId'), c.get('userId'), c.req.valid('json')),
+        await service.addMember(
+          deps,
+          c.get('boardId'),
+          c.get('userId'),
+          c.req.valid('json'),
+        ),
         201,
       ),
   );
@@ -173,10 +205,16 @@ export function boardsRoutes(deps: AppDeps) {
         'Только `admin`. Свою роль поменять нельзя, поэтому на доске всегда остаётся администратор. Новая роль действует сразу, в том числе для уже выданных токенов.',
       security: bearerAuth,
       middleware: [member, manageMembers],
-      request: { params: boardMemberParamSchema, body: jsonBody(updateMemberBodySchema) },
+      request: {
+        params: boardMemberParamSchema,
+        body: jsonBody(updateMemberBodySchema),
+      },
       responses: {
         200: jsonResponse(boardMemberSchema, 'Роль изменена'),
-        ...errors({ ...memberErrors, 422: ['VALIDATION_ERROR', 'CANNOT_CHANGE_OWN_ROLE'] }),
+        ...errors({
+          ...memberErrors,
+          422: ['VALIDATION_ERROR', 'CANNOT_CHANGE_OWN_ROLE'],
+        }),
       },
     }),
     async (c) =>

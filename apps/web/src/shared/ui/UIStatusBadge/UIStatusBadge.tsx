@@ -1,6 +1,12 @@
-import { forwardRef, memo, type HTMLAttributes } from 'react';
+import { type HTMLAttributes, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { STATUS_DOT_CLASS, STATUS_TINT_CLASS, type UITaskStatus } from './status.styles';
+
+import {
+  STATUS_DOT_CLASS,
+  STATUS_TINT_CLASS,
+  type UITaskStatus,
+} from './status.styles';
 
 export interface IUIStatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {
   readonly testId?: string;
@@ -28,7 +34,10 @@ const UIStatusBadgeBase = forwardRef<HTMLSpanElement, IUIStatusBadgeProps>(
       )}
       {...props}
     >
-      <span aria-hidden="true" className={cn('size-[8px] rounded-full', STATUS_DOT_CLASS[status])} />
+      <span
+        aria-hidden='true'
+        className={cn('size-[8px] rounded-full', STATUS_DOT_CLASS[status])}
+      />
       {children}
     </span>
   ),

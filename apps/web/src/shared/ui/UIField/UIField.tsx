@@ -1,8 +1,17 @@
-import { forwardRef, memo, useId, useMemo, type HTMLAttributes, type ReactNode } from 'react';
+import {
+  type HTMLAttributes,
+  type ReactNode,
+  forwardRef,
+  memo,
+  useId,
+  useMemo,
+} from 'react';
+
 import { cn } from '@/shared/lib/cn';
 import { UILabel } from '@/shared/ui/UILabel';
-import { FieldContext } from './field-context';
+
 import { FieldError } from './FieldError';
+import { FieldContext } from './field-context';
 
 export interface IUIFieldProps extends HTMLAttributes<HTMLDivElement> {
   readonly testId?: string;
@@ -33,16 +42,30 @@ export interface IUIFieldProps extends HTMLAttributes<HTMLDivElement> {
  */
 const UIFieldBase = forwardRef<HTMLDivElement, IUIFieldProps>(
   (
-    { className, testId, label, labelAside, optional, hint, error, controlId, disabled, children, ...props },
+    {
+      className,
+      testId,
+      label,
+      labelAside,
+      optional,
+      hint,
+      error,
+      controlId,
+      disabled,
+      children,
+      ...props
+    },
     ref,
   ) => {
     const generatedId = useId();
     const id = controlId ?? generatedId;
     const invalid = error != null && error !== false && error !== '';
     const hintId = hint != null ? `${id}-hint` : undefined;
-    const errorText = typeof error === 'string' && error.length > 0 ? error : undefined;
+    const errorText =
+      typeof error === 'string' && error.length > 0 ? error : undefined;
     const errorId = errorText ? `${id}-error` : undefined;
-    const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
+    const describedBy =
+      [hintId, errorId].filter(Boolean).join(' ') || undefined;
 
     const context = useMemo(
       () => ({ controlId: id, describedBy, invalid, disabled }),
@@ -57,21 +80,23 @@ const UIFieldBase = forwardRef<HTMLDivElement, IUIFieldProps>(
         {...props}
       >
         {label != null && (
-          <div className="flex items-baseline justify-between gap-3">
+          <div className='flex items-baseline justify-between gap-3'>
             <UILabel htmlFor={id} optional={optional}>
               {label}
             </UILabel>
             {labelAside}
           </div>
         )}
-        <FieldContext.Provider value={context}>{children}</FieldContext.Provider>
+        <FieldContext.Provider value={context}>
+          {children}
+        </FieldContext.Provider>
         {hint != null && (
-          <span id={hintId} className="text-small text-muted-foreground">
+          <span id={hintId} className='text-small text-muted-foreground'>
             {hint}
           </span>
         )}
         {errorText && (
-          <FieldError id={errorId} className="mt-0">
+          <FieldError id={errorId} className='mt-0'>
             {errorText}
           </FieldError>
         )}

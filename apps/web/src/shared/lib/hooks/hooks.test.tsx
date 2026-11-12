@@ -1,6 +1,14 @@
-import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { useRef, useState } from 'react';
+
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { useControllableState } from './use-controllable-state';
 import { useEscape } from './use-escape';
 import { useFocusTrap } from './use-focus-trap';
@@ -13,9 +21,12 @@ const pressEscape = () => fireEvent.keyDown(document.body, { key: 'Escape' });
 describe('useEscape', () => {
   it('вызывает callback только когда включён', () => {
     const callback = vi.fn();
-    const { rerender } = renderHook(({ enabled }) => useEscape(callback, enabled), {
-      initialProps: { enabled: false },
-    });
+    const { rerender } = renderHook(
+      ({ enabled }) => useEscape(callback, enabled),
+      {
+        initialProps: { enabled: false },
+      },
+    );
     pressEscape();
     expect(callback).not.toHaveBeenCalled();
     rerender({ enabled: true });
@@ -41,7 +52,9 @@ describe('useEscape', () => {
   it('новый callback не меняет порядок слоёв', () => {
     const lower = vi.fn();
     const upper = vi.fn();
-    const bottom = renderHook(({ fn }) => useEscape(fn), { initialProps: { fn: () => {} } });
+    const bottom = renderHook(({ fn }) => useEscape(fn), {
+      initialProps: { fn: () => {} },
+    });
     renderHook(() => useEscape(upper));
 
     bottom.rerender({ fn: lower });
@@ -66,7 +79,7 @@ describe('useEscape', () => {
     renderHook(() => useEscape(callback));
     render(
       <input
-        aria-label="поле"
+        aria-label='поле'
         onKeyDown={(event) => {
           event.preventDefault();
         }}
@@ -81,20 +94,42 @@ function Trap({ autoFocusInput = false }: { autoFocusInput?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => { setOpen(!open); }}>триггер</button>
-      {open && <TrapBody autoFocusInput={autoFocusInput} onClose={() => { setOpen(false); }} />}
+      <button
+        type='button'
+        onClick={() => {
+          setOpen(!open);
+        }}
+      >
+        триггер
+      </button>
+      {open && (
+        <TrapBody
+          autoFocusInput={autoFocusInput}
+          onClose={() => {
+            setOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }
 
-function TrapBody({ autoFocusInput, onClose }: { autoFocusInput: boolean; onClose: () => void }) {
+function TrapBody({
+  autoFocusInput,
+  onClose,
+}: {
+  autoFocusInput: boolean;
+  onClose: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useFocusTrap(ref, true);
   return (
-    <div ref={ref} tabIndex={-1} data-testid="trap">
-      <button type="button" data-focus-skip="" onClick={onClose}>крестик</button>
-      <input aria-label="первое" />
-      <input aria-label="второе" autoFocus={autoFocusInput} />
+    <div ref={ref} tabIndex={-1} data-testid='trap'>
+      <button type='button' data-focus-skip='' onClick={onClose}>
+        крестик
+      </button>
+      <input aria-label='первое' />
+      <input aria-label='второе' autoFocus={autoFocusInput} />
     </div>
   );
 }
@@ -150,7 +185,9 @@ function Outside({ onOutside }: { onOutside: () => void }) {
   return (
     <>
       <div ref={ref}>внутри</div>
-      <button ref={ignored} type="button">игнор</button>
+      <button ref={ignored} type='button'>
+        игнор
+      </button>
       <span>снаружи</span>
     </>
   );
@@ -176,17 +213,26 @@ describe('useScrollLock', () => {
   });
 
   it('блокирует скролл и восстанавливает его', () => {
-    const { rerender } = renderHook(({ active }) => { useScrollLock(active); }, {
-      initialProps: { active: true },
-    });
+    const { rerender } = renderHook(
+      ({ active }) => {
+        useScrollLock(active);
+      },
+      {
+        initialProps: { active: true },
+      },
+    );
     expect(document.body.style.overflow).toBe('hidden');
     rerender({ active: false });
     expect(document.body.style.overflow).toBe('');
   });
 
   it('вложенные блокировки снимаются только после последней', () => {
-    const outer = renderHook(() => { useScrollLock(true); });
-    const inner = renderHook(() => { useScrollLock(true); });
+    const outer = renderHook(() => {
+      useScrollLock(true);
+    });
+    const inner = renderHook(() => {
+      useScrollLock(true);
+    });
     inner.unmount();
     expect(document.body.style.overflow).toBe('hidden');
     outer.unmount();
@@ -202,14 +248,18 @@ describe('useMediaQuery', () => {
       get matches() {
         return query.includes('large') ? !state.matches : state.matches;
       },
-      addEventListener: (_: string, listener: () => void) => listeners.add(listener),
-      removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
+      addEventListener: (_: string, listener: () => void) =>
+        listeners.add(listener),
+      removeEventListener: (_: string, listener: () => void) =>
+        listeners.delete(listener),
     }));
     return {
       listeners,
       set: (value: boolean) => {
         state.matches = value;
-        listeners.forEach((listener) => { listener(); });
+        listeners.forEach((listener) => {
+          listener();
+        });
       },
     };
   };
@@ -220,9 +270,13 @@ describe('useMediaQuery', () => {
 
   it('обновляется по событию и отписывается', () => {
     const media = stubMatchMedia();
-    const { result, unmount } = renderHook(() => useMediaQuery('(min-width: 1px)'));
+    const { result, unmount } = renderHook(() =>
+      useMediaQuery('(min-width: 1px)'),
+    );
     expect(result.current).toBe(false);
-    act(() => { media.set(true); });
+    act(() => {
+      media.set(true);
+    });
     expect(result.current).toBe(true);
     unmount();
     expect(media.listeners.size).toBe(0);
@@ -230,9 +284,12 @@ describe('useMediaQuery', () => {
 
   it('сразу реагирует на смену самого запроса', () => {
     stubMatchMedia();
-    const { result, rerender } = renderHook(({ query }) => useMediaQuery(query), {
-      initialProps: { query: 'small' },
-    });
+    const { result, rerender } = renderHook(
+      ({ query }) => useMediaQuery(query),
+      {
+        initialProps: { query: 'small' },
+      },
+    );
     expect(result.current).toBe(false);
     rerender({ query: 'large' });
     expect(result.current).toBe(true);
@@ -242,8 +299,12 @@ describe('useMediaQuery', () => {
 describe('useControllableState', () => {
   it('uncontrolled: хранит значение сам и зовёт onChange', () => {
     const onChange = vi.fn();
-    const { result } = renderHook(() => useControllableState({ defaultValue: false, onChange }));
-    act(() => { result.current[1](true); });
+    const { result } = renderHook(() =>
+      useControllableState({ defaultValue: false, onChange }),
+    );
+    act(() => {
+      result.current[1](true);
+    });
     expect(result.current[0]).toBe(true);
     expect(onChange).toHaveBeenCalledWith(true);
   });
@@ -253,7 +314,9 @@ describe('useControllableState', () => {
     const { result } = renderHook(() =>
       useControllableState({ value: false, defaultValue: true, onChange }),
     );
-    act(() => { result.current[1](true); });
+    act(() => {
+      result.current[1](true);
+    });
     expect(result.current[0]).toBe(false);
     expect(onChange).toHaveBeenCalledWith(true);
   });

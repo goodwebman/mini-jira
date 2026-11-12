@@ -1,6 +1,7 @@
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { Slot, type ISlotProps } from '@/shared/lib/dom';
+import { type ISlotProps, Slot } from '@/shared/lib/dom';
 
 export interface IUIBottomNavProps extends HTMLAttributes<HTMLElement> {
   readonly testId?: string;
@@ -19,7 +20,10 @@ const UIBottomNavRootBase = forwardRef<HTMLElement, IUIBottomNavProps>(
     <nav
       ref={ref}
       data-name={testId ? `UIBottomNav-${testId}` : 'UIBottomNav'}
-      className={cn('flex h-[64px] flex-none border-t border-border bg-surface sm:hidden', className)}
+      className={cn(
+        'flex h-[64px] flex-none border-t border-border bg-surface sm:hidden',
+        className,
+      )}
       {...props}
     />
   ),
@@ -37,7 +41,7 @@ const UIBottomNavItemBase = forwardRef<HTMLElement, IUIBottomNavItemProps>(
     <Slot
       ref={ref}
       aria-current={active ? 'page' : undefined}
-      data-name="UIBottomNavItem"
+      data-name='UIBottomNavItem'
       className={cn(
         'flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] text-caption font-medium text-foreground no-underline focus-ring',
         '[&_svg]:size-icon-lg aria-[current=page]:font-semibold aria-[current=page]:text-primary-hover',

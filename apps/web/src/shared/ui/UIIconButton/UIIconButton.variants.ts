@@ -11,7 +11,8 @@ export const iconButtonVariants = cva(
       variant: {
         ghost: 'text-foreground hover:bg-muted',
         muted: 'text-muted-foreground hover:bg-muted hover:text-foreground',
-        secondary: 'border border-border-strong bg-surface text-foreground hover:bg-muted',
+        secondary:
+          'border border-border-strong bg-surface text-foreground hover:bg-muted',
         primary:
           'bg-primary text-primary-foreground hover:bg-primary-hover disabled:bg-border disabled:text-muted-foreground',
       },

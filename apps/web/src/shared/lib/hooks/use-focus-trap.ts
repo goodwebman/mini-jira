@@ -1,4 +1,5 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { type RefObject, useEffect, useState } from 'react';
+
 import { createLayerStack } from '@/shared/lib/dom/layer-stack';
 
 const trapLayers = createLayerStack();
@@ -14,7 +15,9 @@ const FOCUSABLE_SELECTOR = [
 ].join(',');
 
 function getFocusable(root: HTMLElement): HTMLElement[] {
-  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+  ).filter(
     (element) =>
       !element.closest('[inert]') &&
       (typeof element.checkVisibility !== 'function' ||
@@ -27,7 +30,9 @@ function focusInitial(root: HTMLElement): void {
     return; // уже сработал autoFocus внутри
   }
   const explicit = root.querySelector<HTMLElement>('[data-autofocus]');
-  const first = getFocusable(root).find((element) => !element.hasAttribute('data-focus-skip'));
+  const first = getFocusable(root).find(
+    (element) => !element.hasAttribute('data-focus-skip'),
+  );
   (explicit ?? first ?? root).focus();
 }
 
@@ -42,7 +47,10 @@ function focusInitial(root: HTMLElement): void {
  * @param ref контейнер
  * @param active включена ли ловушка
  */
-export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean): void {
+export function useFocusTrap(
+  ref: RefObject<HTMLElement | null>,
+  active: boolean,
+): void {
   // Снимок на рендере: к моменту эффекта autoFocus уже мог увести фокус внутрь контейнера
   const [focusedOnMount] = useState<Element | null>(() =>
     typeof document === 'undefined' ? null : document.activeElement,
@@ -78,7 +86,10 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean
       const current = document.activeElement;
       const outside = !node.contains(current);
 
-      if (event.shiftKey && (current === first || current === node || outside)) {
+      if (
+        event.shiftKey &&
+        (current === first || current === node || outside)
+      ) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && (current === last || outside)) {

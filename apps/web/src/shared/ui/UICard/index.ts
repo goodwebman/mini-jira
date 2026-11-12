@@ -1,4 +1,3 @@
-import { UICardRoot } from './UICardRoot';
 import {
   UICardContent,
   UICardDescription,
@@ -6,6 +5,7 @@ import {
   UICardHeader,
   UICardTitle,
 } from './UICardParts';
+import { UICardRoot } from './UICardRoot';
 
 export const UICard = Object.assign(UICardRoot, {
   Header: UICardHeader,

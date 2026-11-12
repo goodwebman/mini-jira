@@ -1,10 +1,14 @@
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '@/shared/lib/cn';
-import { UIIcons } from '@/shared/ui/icons';
-import { UIButton, type IUIButtonProps } from '@/shared/ui/UIButton';
-import { UIIconButton } from '@/shared/ui/UIIconButton';
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
 
-export interface IUIPageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+import { cn } from '@/shared/lib/cn';
+import { type IUIButtonProps, UIButton } from '@/shared/ui/UIButton';
+import { UIIconButton } from '@/shared/ui/UIIconButton';
+import { UIIcons } from '@/shared/ui/icons';
+
+export interface IUIPageHeaderProps extends Omit<
+  HTMLAttributes<HTMLElement>,
+  'title'
+> {
   readonly testId?: string;
   readonly title: ReactNode;
   /** Подпись под заголовком. */
@@ -30,7 +34,20 @@ export interface IUIPageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 't
  * />
  */
 const UIPageHeaderRootBase = forwardRef<HTMLElement, IUIPageHeaderProps>(
-  ({ className, testId, title, caption, onBack, backLabel = 'Назад', onTitleClick, actions, ...props }, ref) => (
+  (
+    {
+      className,
+      testId,
+      title,
+      caption,
+      onBack,
+      backLabel = 'Назад',
+      onTitleClick,
+      actions,
+      ...props
+    },
+    ref,
+  ) => (
     <header
       ref={ref}
       data-name={testId ? `UIPageHeader-${testId}` : 'UIPageHeader'}
@@ -41,27 +58,29 @@ const UIPageHeaderRootBase = forwardRef<HTMLElement, IUIPageHeaderProps>(
       {...props}
     >
       {onBack && (
-        <UIIconButton label={backLabel} onClick={onBack} className="-ml-[10px]">
+        <UIIconButton label={backLabel} onClick={onBack} className='-ml-[10px]'>
           <UIIcons.ArrowLeft />
         </UIIconButton>
       )}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <h1 className="m-0 text-heading font-semibold tracking-title">
+      <div className='flex min-w-0 flex-1 flex-col'>
+        <h1 className='m-0 text-heading font-semibold tracking-title'>
           {onTitleClick ? (
             <button
-              type="button"
+              type='button'
               onClick={onTitleClick}
-              className="inline-flex max-w-full cursor-pointer items-center gap-1 rounded-[2px] focus-ring"
+              className='inline-flex max-w-full cursor-pointer items-center gap-1 rounded-[2px] focus-ring'
             >
-              <span className="truncate">{title}</span>
-              <UIIcons.ChevronDown className="size-icon-lg" />
+              <span className='truncate'>{title}</span>
+              <UIIcons.ChevronDown className='size-icon-lg' />
             </button>
           ) : (
-            <span className="block truncate">{title}</span>
+            <span className='block truncate'>{title}</span>
           )}
         </h1>
         {caption != null && (
-          <span className="truncate text-caption text-muted-foreground">{caption}</span>
+          <span className='truncate text-caption text-muted-foreground'>
+            {caption}
+          </span>
         )}
       </div>
       {actions}
@@ -77,17 +96,18 @@ export interface IUIPageHeaderActionProps extends IUIButtonProps {
 }
 
 /** Главное действие шапки. На телефоне остаётся только иконка, подпись читает скринридер. */
-const UIPageHeaderActionBase = forwardRef<HTMLButtonElement, IUIPageHeaderActionProps>(
-  ({ className, icon, label, ...props }, ref) => (
-    <UIButton
-      ref={ref}
-      className={cn('shrink-0 pl-2 pr-3 max-sm:w-control max-sm:px-0', className)}
-      {...props}
-    >
-      {icon}
-      <span className="max-sm:sr-only">{label}</span>
-    </UIButton>
-  ),
-);
+const UIPageHeaderActionBase = forwardRef<
+  HTMLButtonElement,
+  IUIPageHeaderActionProps
+>(({ className, icon, label, ...props }, ref) => (
+  <UIButton
+    ref={ref}
+    className={cn('shrink-0 pl-2 pr-3 max-sm:w-control max-sm:px-0', className)}
+    {...props}
+  >
+    {icon}
+    <span className='max-sm:sr-only'>{label}</span>
+  </UIButton>
+));
 UIPageHeaderActionBase.displayName = 'UIPageHeaderAction';
 export const UIPageHeaderAction = memo(UIPageHeaderActionBase);

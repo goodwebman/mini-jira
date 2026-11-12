@@ -1,5 +1,7 @@
 import { createRef } from 'react';
+
 import { describe, expect, it, vi } from 'vitest';
+
 import { mergeRefs } from './merge-refs';
 
 describe('mergeRefs', () => {

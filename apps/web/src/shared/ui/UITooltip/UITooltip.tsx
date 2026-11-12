@@ -1,4 +1,7 @@
 import {
+  type ReactElement,
+  type ReactNode,
+  type RefObject,
   cloneElement,
   forwardRef,
   isValidElement,
@@ -7,12 +10,10 @@ import {
   useEffect,
   useId,
   useRef,
-  type ReactElement,
-  type ReactNode,
-  type RefObject,
 } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { Portal, type Placement } from '@/shared/lib/dom';
+import { type Placement, Portal } from '@/shared/lib/dom';
 import {
   useControllableState,
   useEscape,
@@ -46,18 +47,30 @@ interface TooltipBubbleProps {
   readonly gutter: number;
 }
 
-function TooltipBubble({ id, content, anchorRef, placement, gutter }: TooltipBubbleProps) {
+function TooltipBubble({
+  id,
+  content,
+  anchorRef,
+  placement,
+  gutter,
+}: TooltipBubbleProps) {
   const bubbleRef = useRef<HTMLDivElement>(null);
-  useFloatingPosition({ anchorRef, floatingRef: bubbleRef, open: true, placement, gutter });
+  useFloatingPosition({
+    anchorRef,
+    floatingRef: bubbleRef,
+    open: true,
+    placement,
+    gutter,
+  });
 
   return (
     <Portal>
       <div
         ref={bubbleRef}
         id={id}
-        role="tooltip"
-        data-name="UITooltipContent"
-        className="invisible fixed left-0 top-0 z-60 max-w-[320px] rounded-control border border-border bg-surface px-3 py-2 text-body text-foreground shadow-popover"
+        role='tooltip'
+        data-name='UITooltipContent'
+        className='invisible fixed left-0 top-0 z-60 max-w-[320px] rounded-control border border-border bg-surface px-3 py-2 text-body text-foreground shadow-popover'
       >
         {content}
       </div>
@@ -74,7 +87,20 @@ function TooltipBubble({ id, content, anchorRef, placement, gutter }: TooltipBub
  * </UITooltip>
  */
 const UITooltipBase = forwardRef<HTMLSpanElement, IUITooltipProps>(
-  ({ testId, children, className, content, placement = 'top', gutter = 6, delay = 300, open, onOpenChange }, ref) => {
+  (
+    {
+      testId,
+      children,
+      className,
+      content,
+      placement = 'top',
+      gutter = 6,
+      delay = 300,
+      open,
+      onOpenChange,
+    },
+    ref,
+  ) => {
     const [isOpen, setOpen] = useControllableState({
       value: open,
       defaultValue: false,
@@ -82,10 +108,13 @@ const UITooltipBase = forwardRef<HTMLSpanElement, IUITooltipProps>(
     });
     const anchorRef = useRef<HTMLSpanElement>(null);
     const mergedRef = useMergedRefs(anchorRef, ref);
-    const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+      undefined,
+    );
     const tooltipId = useId();
 
-    const visible = isOpen && content != null && content !== false && content !== '';
+    const visible =
+      isOpen && content != null && content !== false && content !== '';
 
     const show = () => {
       clearTimeout(timerRef.current);
@@ -112,9 +141,12 @@ const UITooltipBase = forwardRef<HTMLSpanElement, IUITooltipProps>(
     // aria-describedby на самом триггере: с обёртки скринридер описание не прочитает
     const anchored =
       visible && isValidElement(children)
-        ? cloneElement(children as ReactElement<{ 'aria-describedby'?: string }>, {
-            'aria-describedby': tooltipId,
-          })
+        ? cloneElement(
+            children as ReactElement<{ 'aria-describedby'?: string }>,
+            {
+              'aria-describedby': tooltipId,
+            },
+          )
         : children;
 
     return (

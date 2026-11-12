@@ -1,4 +1,5 @@
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 import { UIBrand } from '@/shared/ui/UIBrand';
 
@@ -24,7 +25,18 @@ export interface IUISideNavProps extends HTMLAttributes<HTMLElement> {
  * </UISideNav>
  */
 const UISideNavRootBase = forwardRef<HTMLElement, IUISideNavProps>(
-  ({ className, testId, brand, footer, navLabel = 'Основная навигация', children, ...props }, ref) => (
+  (
+    {
+      className,
+      testId,
+      brand,
+      footer,
+      navLabel = 'Основная навигация',
+      children,
+      ...props
+    },
+    ref,
+  ) => (
     <aside
       ref={ref}
       data-name={testId ? `UISideNav-${testId}` : 'UISideNav'}
@@ -34,13 +46,13 @@ const UISideNavRootBase = forwardRef<HTMLElement, IUISideNavProps>(
       )}
       {...props}
     >
-      <div className="flex min-h-avatar-md flex-none items-center justify-center gap-2 p-1 lg:justify-start">
-        {brand ?? <UIBrand nameClassName="hidden lg:inline" />}
+      <div className='flex min-h-avatar-md flex-none items-center justify-center gap-2 p-1 lg:justify-start'>
+        {brand ?? <UIBrand nameClassName='hidden lg:inline' />}
       </div>
       {/* Скролл на случай низкого окна. -m-1 p-1 — запас, чтобы скролл не резал кольцо фокуса */}
       <nav
         aria-label={navLabel}
-        className="-m-1 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1 scrollbar-thin"
+        className='-m-1 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1 scrollbar-thin'
       >
         {children}
       </nav>

@@ -1,8 +1,17 @@
-import { memo, useState, type PointerEvent } from 'react';
+import { type PointerEvent, memo, useState } from 'react';
+
 import { cn } from '@/shared/lib/cn';
+
 import { ChartAxes } from './ChartAxes';
-import { clampIndex, createPlot, gridPath, maxOf, seriesColor, type ChartPlot } from './chart-utils';
 import { UIChartTooltip } from './UIChartTooltip';
+import {
+  type ChartPlot,
+  clampIndex,
+  createPlot,
+  gridPath,
+  maxOf,
+  seriesColor,
+} from './chart-utils';
 import { useChartBox } from './use-chart-box';
 
 export interface IUIBarChartSeries {
@@ -32,7 +41,12 @@ const BAR_RADIUS = 4;
 const MIN_SLOTS = 6;
 
 /** Столбец со скруглением сверху. */
-function barPath(plot: ChartPlot, x: number, barWidth: number, value: number): string {
+function barPath(
+  plot: ChartPlot,
+  x: number,
+  barWidth: number,
+  value: number,
+): string {
   if (value <= 0) {
     return '';
   }
@@ -85,21 +99,33 @@ function UIBarChartBase({
       top: Math.round(22 * unit),
       bottom: Math.round(24 * unit),
     },
-    Math.max(...series.map(({ values }) => maxOf(values)), average?.value ?? 0, 0),
+    Math.max(
+      ...series.map(({ values }) => maxOf(values)),
+      average?.value ?? 0,
+      0,
+    ),
   );
 
   const slot = plot.plotWidth / Math.max(count, MIN_SLOTS);
   const barCount = Math.max(1, series.length);
-  const barWidth = Math.min(Math.round(24 * unit), Math.floor((slot * 0.6) / barCount));
+  const barWidth = Math.min(
+    Math.round(24 * unit),
+    Math.floor((slot * 0.6) / barCount),
+  );
   const groupWidth = barCount * barWidth + (barCount - 1) * BAR_GAP;
-  const groupX = (index: number) => plot.margin.left + slot * index + (slot - groupWidth) / 2;
-  const barX = (index: number, bar: number) => groupX(index) + bar * (barWidth + BAR_GAP);
-  const slotCenter = (index: number) => plot.margin.left + slot * index + slot / 2;
+  const groupX = (index: number) =>
+    plot.margin.left + slot * index + (slot - groupWidth) / 2;
+  const barX = (index: number, bar: number) =>
+    groupX(index) + bar * (barWidth + BAR_GAP);
+  const slotCenter = (index: number) =>
+    plot.margin.left + slot * index + slot / 2;
 
   const active = hovered != null && hovered < count ? hovered : null;
-  const highlighted = highlightIndex != null && highlightIndex < count ? highlightIndex : null;
+  const highlighted =
+    highlightIndex != null && highlightIndex < count ? highlightIndex : null;
   const labelBar = series.length - 1;
-  const highlightedValue = highlighted != null ? series[labelBar]?.values[highlighted] : undefined;
+  const highlightedValue =
+    highlighted != null ? series[labelBar]?.values[highlighted] : undefined;
   // Над выделенным столбцом своя подпись: подпись средней уводим на другой край
   const averageOnLeft = highlighted != null && highlighted >= count / 2;
 
@@ -108,16 +134,18 @@ function UIBarChartBase({
       return;
     }
     const rect = event.currentTarget.getBoundingClientRect();
-    const index = Math.floor((event.clientX - rect.left - plot.margin.left) / slot);
+    const index = Math.floor(
+      (event.clientX - rect.left - plot.margin.left) / slot,
+    );
     setHovered(clampIndex(index, count));
   };
 
   return (
     <div
       ref={ref}
-      role="img"
+      role='img'
       aria-label={ariaLabel}
-      data-name="UIBarChart"
+      data-name='UIBarChart'
       className={cn('relative w-full touch-pan-y', className)}
       style={{ height }}
       onPointerMove={handlePointerMove}
@@ -126,24 +154,32 @@ function UIBarChartBase({
       }}
     >
       <svg
-        aria-hidden="true"
+        aria-hidden='true'
         viewBox={`0 0 ${String(width)} ${String(height)}`}
-        className="absolute inset-0 block size-full overflow-visible"
+        className='absolute inset-0 block size-full overflow-visible'
       >
-        <path d={gridPath(plot)} fill="none" stroke="var(--border)" strokeWidth={1} />
+        <path
+          d={gridPath(plot)}
+          fill='none'
+          stroke='var(--border)'
+          strokeWidth={1}
+        />
         {highlighted != null && (
           <rect
             x={plot.margin.left + slot * highlighted}
             y={plot.margin.top}
             width={slot}
             height={plot.plotHeight}
-            fill="var(--chart-band)"
+            fill='var(--chart-band)'
           />
         )}
         {series.map((item, bar) =>
           item.values.slice(0, count).map((value, index) => {
             const base = seriesColor(bar, item.color);
-            const muted = highlighted != null && index !== highlighted && item.mutedColor != null;
+            const muted =
+              highlighted != null &&
+              index !== highlighted &&
+              item.mutedColor != null;
             return (
               <path
                 key={`${item.name}-${String(index)}`}
@@ -156,10 +192,10 @@ function UIBarChartBase({
         {average != null && (
           <path
             d={`M${String(plot.margin.left)} ${String(plot.y(average.value))}H${String(plot.margin.left + plot.plotWidth)}`}
-            fill="none"
-            stroke="var(--foreground)"
+            fill='none'
+            stroke='var(--foreground)'
             strokeWidth={1.5}
-            strokeDasharray="5 4"
+            strokeDasharray='5 4'
           />
         )}
       </svg>
@@ -175,17 +211,19 @@ function UIBarChartBase({
         }))}
       />
 
-      {highlighted != null && highlightedValue != null && highlightedValue > 0 && (
-        <span
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-caption font-semibold text-foreground"
-          style={{
-            left: barX(highlighted, labelBar) + barWidth / 2,
-            top: plot.y(highlightedValue) - Math.round(9 * unit),
-          }}
-        >
-          {formatValue(highlightedValue)}
-        </span>
-      )}
+      {highlighted != null &&
+        highlightedValue != null &&
+        highlightedValue > 0 && (
+          <span
+            className='pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-caption font-semibold text-foreground'
+            style={{
+              left: barX(highlighted, labelBar) + barWidth / 2,
+              top: plot.y(highlightedValue) - Math.round(9 * unit),
+            }}
+          >
+            {formatValue(highlightedValue)}
+          </span>
+        )}
 
       {average != null && (
         <span
@@ -194,7 +232,9 @@ function UIBarChartBase({
             !averageOnLeft && '-translate-x-full',
           )}
           style={{
-            left: averageOnLeft ? plot.margin.left : plot.margin.left + plot.plotWidth,
+            left: averageOnLeft
+              ? plot.margin.left
+              : plot.margin.left + plot.plotWidth,
             top: plot.y(average.value) - Math.round(10 * unit),
           }}
         >

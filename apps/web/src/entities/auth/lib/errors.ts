@@ -48,7 +48,10 @@ export interface AuthErrorOptions {
 
 export type AuthErrorBodyReader = (
   body: unknown,
-) => Pick<AuthErrorOptions, 'message' | 'serverCode' | 'details'> | null | undefined;
+) =>
+  | Pick<AuthErrorOptions, 'message' | 'serverCode' | 'details'>
+  | null
+  | undefined;
 
 interface ResponseWithBody {
   readonly status: number;
@@ -59,7 +62,9 @@ interface ResponseWithBody {
 // Ошибки HTTP-клиентов держат config.headers с токеном: положить их в cause значит отправить токен в логи.
 function safeCause(cause: unknown): unknown {
   if (!(cause instanceof Error)) return undefined;
-  return 'config' in cause || 'request' in cause || 'response' in cause ? undefined : cause;
+  return 'config' in cause || 'request' in cause || 'response' in cause
+    ? undefined
+    : cause;
 }
 
 function codeForStatus(status: number): AuthErrorCode {
@@ -89,7 +94,9 @@ export class AuthError extends Error {
   readonly details: unknown;
 
   constructor(code: AuthErrorCode, options: AuthErrorOptions = {}) {
-    super(options.message ?? DEFAULT_MESSAGES[code], { cause: safeCause(options.cause) });
+    super(options.message ?? DEFAULT_MESSAGES[code], {
+      cause: safeCause(options.cause),
+    });
     this.code = code;
     this.status = options.status;
     this.serverCode = options.serverCode;
@@ -137,7 +144,8 @@ export class AuthError extends Error {
   }
 }
 
-export const isAuthError = (error: unknown): error is AuthError => error instanceof AuthError;
+export const isAuthError = (error: unknown): error is AuthError =>
+  error instanceof AuthError;
 
 function readStatus(error: object): number | undefined {
   const source = error as {
@@ -146,7 +154,9 @@ function readStatus(error: object): number | undefined {
     response?: { status?: unknown } | null;
   };
   const value = source.status ?? source.statusCode ?? source.response?.status;
-  return typeof value === 'number' && value >= 100 && value < 600 ? value : undefined;
+  return typeof value === 'number' && value >= 100 && value < 600
+    ? value
+    : undefined;
 }
 
 /** Приводит что угодно к `AuthError`. Статус ищет по форме объекта: fetch, axios, свой клиент. */
@@ -154,10 +164,15 @@ export function toAuthError(error: unknown): AuthError {
   if (error instanceof AuthError) return error;
   if (typeof error === 'object' && error !== null) {
     const { name } = error as { name?: unknown };
-    if (name === 'AbortError') return new AuthError('aborted', { cause: error });
-    if (name === 'TimeoutError') return new AuthError('timeout', { cause: error });
+    if (name === 'AbortError')
+      return new AuthError('aborted', { cause: error });
+    if (name === 'TimeoutError')
+      return new AuthError('timeout', { cause: error });
     const status = readStatus(error);
-    if (status !== undefined) return AuthError.fromStatus(status, { cause: error });
+    if (status !== undefined)
+      return AuthError.fromStatus(status, { cause: error });
   }
-  return new AuthError(error instanceof TypeError ? 'network' : 'unknown', { cause: error });
+  return new AuthError(error instanceof TypeError ? 'network' : 'unknown', {
+    cause: error,
+  });
 }

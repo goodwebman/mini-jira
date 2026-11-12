@@ -1,4 +1,5 @@
-import { forwardRef, memo, type HTMLAttributes } from 'react';
+import { type HTMLAttributes, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 export interface IUISkeletonProps extends HTMLAttributes<HTMLDivElement> {
@@ -12,7 +13,7 @@ const UISkeletonBase = forwardRef<HTMLDivElement, IUISkeletonProps>(
   ({ className, testId, ...props }, ref) => (
     <div
       ref={ref}
-      aria-hidden="true"
+      aria-hidden='true'
       data-name={testId ? `UISkeleton-${testId}` : 'UISkeleton'}
       className={cn(
         'animate-shimmer rounded-control bg-[linear-gradient(90deg,var(--muted)_25%,var(--column)_50%,var(--muted)_75%)] bg-size-[200%_100%]',

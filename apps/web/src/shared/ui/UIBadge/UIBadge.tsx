@@ -1,6 +1,9 @@
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
+
 import type { VariantProps } from 'class-variance-authority';
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
+
 import { cn } from '@/shared/lib/cn';
+
 import { badgeVariants } from './UIBadge.variants';
 
 export interface IUIBadgeProps
@@ -26,7 +29,7 @@ const UIBadgeBase = forwardRef<HTMLSpanElement, IUIBadgeProps>(
       {...props}
     >
       {icon}
-      <span className="truncate">{children}</span>
+      <span className='truncate'>{children}</span>
     </span>
   ),
 );

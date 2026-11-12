@@ -79,16 +79,35 @@ Access живёт 15 минут, отдаётся в теле ответа и х
 
 export const API_DOCUMENT = {
   openapi: '3.1.0',
-  info: { title: 'goodWebManTasks API', version: '1.0.0', description: OVERVIEW },
-  servers: [{ url: '/', description: 'Тот же домен, с которого открыт фронт или документация' }],
+  info: {
+    title: 'goodWebManTasks API',
+    version: '1.0.0',
+    description: OVERVIEW,
+  },
+  servers: [
+    {
+      url: '/',
+      description: 'Тот же домен, с которого открыт фронт или документация',
+    },
+  ],
   tags: [
-    { name: TAG.auth, description: 'Вход по паролю, через GitHub и Google, регистрация, ротация refresh' },
+    {
+      name: TAG.auth,
+      description:
+        'Вход по паролю, через GitHub и Google, регистрация, ротация refresh',
+    },
     { name: TAG.me, description: 'Текущий пользователь и его сводки' },
     { name: TAG.users, description: 'Поиск людей' },
     { name: TAG.boards, description: 'Доски и избранное' },
     { name: TAG.members, description: 'Участники доски и их роли' },
-    { name: TAG.sprints, description: 'Спринты меняются сами, вручную управлять ими нельзя' },
-    { name: TAG.tasks, description: 'Задачи, статусы, запрет брать в работу, пауза' },
+    {
+      name: TAG.sprints,
+      description: 'Спринты меняются сами, вручную управлять ими нельзя',
+    },
+    {
+      name: TAG.tasks,
+      description: 'Задачи, статусы, запрет брать в работу, пауза',
+    },
     { name: TAG.links, description: 'Связи между задачами и комментарии' },
     { name: TAG.service, description: 'Проверка работоспособности' },
   ],

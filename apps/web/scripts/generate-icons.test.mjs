@@ -3,10 +3,10 @@
  * Vitest не подхватывает .mjs напрямую — запускается через node:test:
  *   `npm run icons:test`
  */
-import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { test } from 'node:test';
 
-import { toPascal, parseSvg, attrsToJsx } from './generate-icons.mjs';
+import { attrsToJsx, parseSvg, toPascal } from './generate-icons.mjs';
 
 test('toPascal: kebab → PascalCase', () => {
   assert.equal(toPascal('chevron-down'), 'ChevronDown');

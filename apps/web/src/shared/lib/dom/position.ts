@@ -61,7 +61,12 @@ function toPlacement(side: Side, align: Align): Placement {
   return (align === 'center' ? side : `${side}-${align}`) as Placement;
 }
 
-function alignOnAxis(start: number, length: number, size: number, align: Align): number {
+function alignOnAxis(
+  start: number,
+  length: number,
+  size: number,
+  align: Align,
+): number {
   if (align === 'start') return start;
   if (align === 'end') return start + length - size;
   return start + length / 2 - size / 2;
@@ -78,7 +83,10 @@ function place(
 
   if (side === 'top' || side === 'bottom') {
     return {
-      top: side === 'top' ? anchor.top - floating.height - gutter : anchor.bottom + gutter,
+      top:
+        side === 'top'
+          ? anchor.top - floating.height - gutter
+          : anchor.bottom + gutter,
       left: alignOnAxis(anchor.left, anchor.width, floating.width, align),
       placement,
     };
@@ -86,7 +94,10 @@ function place(
 
   return {
     top: alignOnAxis(anchor.top, anchor.height, floating.height, align),
-    left: side === 'left' ? anchor.left - floating.width - gutter : anchor.right + gutter,
+    left:
+      side === 'left'
+        ? anchor.left - floating.width - gutter
+        : anchor.right + gutter,
     placement,
   };
 }
@@ -142,7 +153,13 @@ export function computePosition(
   const oppositeSide = OPPOSITE_SIDE[side];
 
   const preferred = place(anchor, floating, side, align, gutter);
-  const preferredOverflow = mainAxisOverflow(preferred, floating, side, viewport, viewportPadding);
+  const preferredOverflow = mainAxisOverflow(
+    preferred,
+    floating,
+    side,
+    viewport,
+    viewportPadding,
+  );
 
   const flipped = place(anchor, floating, oppositeSide, align, gutter);
   const flippedOverflow = mainAxisOverflow(
@@ -157,7 +174,15 @@ export function computePosition(
 
   return {
     placement: best.placement,
-    top: clamp(best.top, viewportPadding, viewport.height - floating.height - viewportPadding),
-    left: clamp(best.left, viewportPadding, viewport.width - floating.width - viewportPadding),
+    top: clamp(
+      best.top,
+      viewportPadding,
+      viewport.height - floating.height - viewportPadding,
+    ),
+    left: clamp(
+      best.left,
+      viewportPadding,
+      viewport.width - floating.width - viewportPadding,
+    ),
   };
 }

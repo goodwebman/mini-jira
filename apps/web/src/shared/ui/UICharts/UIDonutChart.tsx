@@ -1,5 +1,7 @@
-import { memo, type ReactNode } from 'react';
+import { type ReactNode, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
+
 import { seriesColor } from './chart-utils';
 
 export interface IUIDonutSegment {
@@ -55,35 +57,57 @@ function buildArcs(segments: readonly IUIDonutSegment[]) {
  * @example
  * <UIDonutChart ariaLabel="Закрыто 42%" value="42%" caption="закрыто" segments={byStatus} />
  */
-function UIDonutChartBase({ ariaLabel, segments, value, caption, className }: IUIDonutChartProps) {
+function UIDonutChartBase({
+  ariaLabel,
+  segments,
+  value,
+  caption,
+  className,
+}: IUIDonutChartProps) {
   const arcs = buildArcs(segments);
 
   return (
     <div
-      role="img"
+      role='img'
       aria-label={ariaLabel}
-      data-name="UIDonutChart"
+      data-name='UIDonutChart'
       className={cn('relative size-donut flex-none', className)}
     >
-      <svg aria-hidden="true" viewBox="0 0 180 180" className="absolute inset-0 block size-full">
+      <svg
+        aria-hidden='true'
+        viewBox='0 0 180 180'
+        className='absolute inset-0 block size-full'
+      >
         <circle
           cx={CENTER}
           cy={CENTER}
           r={RADIUS}
-          fill="none"
-          stroke="var(--muted)"
+          fill='none'
+          stroke='var(--muted)'
           strokeWidth={STROKE_WIDTH}
         />
         {arcs.map((arc) => (
-          <path key={arc.key} d={arc.path} fill="none" stroke={arc.color} strokeWidth={STROKE_WIDTH} />
+          <path
+            key={arc.key}
+            d={arc.path}
+            fill='none'
+            stroke={arc.color}
+            strokeWidth={STROKE_WIDTH}
+          />
         ))}
       </svg>
       {(value != null || caption != null) && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className='absolute inset-0 flex flex-col items-center justify-center'>
           {value != null && (
-            <span className="text-metric font-semibold tracking-display tabular-nums">{value}</span>
+            <span className='text-metric font-semibold tracking-display tabular-nums'>
+              {value}
+            </span>
           )}
-          {caption != null && <span className="text-caption text-muted-foreground">{caption}</span>}
+          {caption != null && (
+            <span className='text-caption text-muted-foreground'>
+              {caption}
+            </span>
+          )}
         </div>
       )}
     </div>

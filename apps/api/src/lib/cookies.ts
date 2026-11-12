@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+
 import type { Env } from './env.js';
 
 const REFRESH_COOKIE = 'gwmt_refresh';
@@ -28,7 +29,12 @@ const oauthOptions = (env: Env, provider: string) =>
 
 export const readRefreshCookie = (c: Context) => getCookie(c, REFRESH_COOKIE);
 
-export function setRefreshCookie(c: Context, token: string, remember: boolean, env: Env) {
+export function setRefreshCookie(
+  c: Context,
+  token: string,
+  remember: boolean,
+  env: Env,
+) {
   setCookie(c, REFRESH_COOKIE, token, {
     ...refreshOptions(env),
     ...(remember ? { maxAge: REFRESH_MAX_AGE_SEC } : {}),
@@ -41,7 +47,12 @@ export function clearRefreshCookie(c: Context, env: Env) {
 
 export const readOAuthCookie = (c: Context) => getCookie(c, OAUTH_COOKIE);
 
-export function setOAuthCookie(c: Context, value: string, env: Env, provider: string) {
+export function setOAuthCookie(
+  c: Context,
+  value: string,
+  env: Env,
+  provider: string,
+) {
   setCookie(c, OAUTH_COOKIE, value, {
     ...oauthOptions(env, provider),
     maxAge: OAUTH_MAX_AGE_SEC,

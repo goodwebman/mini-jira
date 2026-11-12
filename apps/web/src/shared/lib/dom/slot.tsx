@@ -1,11 +1,12 @@
 import {
-  cloneElement,
-  forwardRef,
-  isValidElement,
   type AnchorHTMLAttributes,
   type ElementType,
   type ReactElement,
+  cloneElement,
+  forwardRef,
+  isValidElement,
 } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 /** Элемент, в который кит подставит свои классы и контент, например `<Link to="/boards" />`. */

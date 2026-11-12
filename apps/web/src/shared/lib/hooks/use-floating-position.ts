@@ -1,4 +1,5 @@
-import { computePosition, type Placement } from '@/shared/lib/dom/position';
+import { type Placement, computePosition } from '@/shared/lib/dom/position';
+
 import { useIsomorphicLayoutEffect } from './use-isomorphic-layout-effect';
 
 /** Ковариантная ссылка: принимает ref любого конкретного тега без каста. */
@@ -65,7 +66,8 @@ export function useFloatingPosition({
     // capture: скролл не всплывает, а ловить надо любой родительский контейнер
     window.addEventListener('scroll', update, true);
     window.addEventListener('resize', update);
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    const observer =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
     observer?.observe(anchor);
     observer?.observe(floating);
 

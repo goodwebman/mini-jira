@@ -1,6 +1,7 @@
 // @vitest-environment node
 import type { Me } from '@gwmt/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { authApi, fetchMe } from './auth-api';
 
 const context = { signal: new AbortController().signal };
@@ -29,13 +30,22 @@ const json = (body: unknown, init: ResponseInit = {}) =>
     headers: { 'Content-Type': 'application/json', ...init.headers },
   });
 
-const apiError = (code: string, message: string, fields?: Record<string, string>) => ({
+const apiError = (
+  code: string,
+  message: string,
+  fields?: Record<string, string>,
+) => ({
   error: { code, message, requestId: 'r1', ...(fields ? { fields } : {}) },
 });
 
 async function sha256Hex(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(text),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('');
 }
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -77,7 +87,10 @@ describe('вход и регистрация', () => {
       password: login.password,
       remember: true,
     });
-    expect(tokens).toEqual({ accessToken: AUTH_RESPONSE.accessToken, user: ME });
+    expect(tokens).toEqual({
+      accessToken: AUTH_RESPONSE.accessToken,
+      user: ME,
+    });
   });
 
   it('подпись считается от email ровно как в теле, в формате сервера', async () => {
@@ -87,7 +100,9 @@ describe('вход и регистрация', () => {
     const timestamp = headers.get('fastify-timestamp') ?? '';
     expect(headers.get('fastify-version')).toBe('1.2.3');
     expect(Math.abs(Date.now() - Number(timestamp))).toBeLessThan(5_000);
-    expect(headers.get('fastify-token')).toBe(await sha256Hex(`build-salt${login.email}${timestamp}`));
+    expect(headers.get('fastify-token')).toBe(
+      await sha256Hex(`build-salt${login.email}${timestamp}`),
+    );
   });
 
   it('регистрация идёт на /auth/register', async () => {
@@ -107,7 +122,9 @@ describe('вход и регистрация', () => {
 
   it('неверный пароль: код и текст сервера', async () => {
     fetchMock.mockResolvedValue(
-      json(apiError('INVALID_CREDENTIALS', 'Неверный email или пароль'), { status: 401 }),
+      json(apiError('INVALID_CREDENTIALS', 'Неверный email или пароль'), {
+        status: 401,
+      }),
     );
     await expect(authApi.login(login, context)).rejects.toMatchObject({
       code: 'unauthorized',
@@ -118,9 +135,14 @@ describe('вход и регистрация', () => {
 
   it('ошибки полей доступны форме', async () => {
     fetchMock.mockResolvedValue(
-      json(apiError('VALIDATION_ERROR', 'Проверьте поля', { email: 'Введите корректный email' }), {
-        status: 422,
-      }),
+      json(
+        apiError('VALIDATION_ERROR', 'Проверьте поля', {
+          email: 'Введите корректный email',
+        }),
+        {
+          status: 422,
+        },
+      ),
     );
     await expect(authApi.login(login, context)).rejects.toMatchObject({
       code: 'bad_request',
@@ -143,18 +165,24 @@ describe('вход и регистрация', () => {
 
   it('нет соли в сборке: понятная ошибка, запрос не уходит', async () => {
     vi.stubEnv('VITE_AUTH_SALT', '');
-    await expect(authApi.login(login, context)).rejects.toMatchObject({ code: 'misconfigured' });
+    await expect(authApi.login(login, context)).rejects.toMatchObject({
+      code: 'misconfigured',
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('ответ не по контракту не превращается в сессию', async () => {
     fetchMock.mockResolvedValue(json({ accessToken: 'x' }));
-    await expect(authApi.login(login, context)).rejects.toMatchObject({ code: 'bad_response' });
+    await expect(authApi.login(login, context)).rejects.toMatchObject({
+      code: 'bad_response',
+    });
   });
 
   it('не JSON (страница прокси) тоже', async () => {
     fetchMock.mockResolvedValue(new Response('<html>'));
-    await expect(authApi.login(login, context)).rejects.toMatchObject({ code: 'bad_response' });
+    await expect(authApi.login(login, context)).rejects.toMatchObject({
+      code: 'bad_response',
+    });
   });
 });
 
@@ -162,7 +190,11 @@ describe('refresh', () => {
   it('использует API URL из env и отправляет refresh-cookie', async () => {
     vi.stubEnv('VITE_API_URL', 'https://api.example.com/api/v1/');
     fetchMock.mockResolvedValue(json(AUTH_RESPONSE));
-    await authApi.refresh({ ...context, accessToken: null, refreshToken: null });
+    await authApi.refresh({
+      ...context,
+      accessToken: null,
+      refreshToken: null,
+    });
     expect(lastCall().url).toBe('https://api.example.com/api/v1/auth/refresh');
     expect(lastCall().init?.credentials).toBe('include');
   });
@@ -175,18 +207,22 @@ describe('refresh', () => {
     expect(lastCall().init?.body).toBeUndefined();
   });
 
-  it.each(['REFRESH_MISSING', 'REFRESH_INVALID', 'REFRESH_EXPIRED', 'REFRESH_REUSED'])(
-    '%s: сессии больше нет',
-    async (code) => {
-      fetchMock.mockResolvedValue(json(apiError(code, 'x'), { status: 401 }));
-      await expect(
-        authApi.refresh({ ...context, accessToken: null, refreshToken: null }),
-      ).rejects.toMatchObject({ code: 'unauthorized', serverCode: code });
-    },
-  );
+  it.each([
+    'REFRESH_MISSING',
+    'REFRESH_INVALID',
+    'REFRESH_EXPIRED',
+    'REFRESH_REUSED',
+  ])('%s: сессии больше нет', async (code) => {
+    fetchMock.mockResolvedValue(json(apiError(code, 'x'), { status: 401 }));
+    await expect(
+      authApi.refresh({ ...context, accessToken: null, refreshToken: null }),
+    ).rejects.toMatchObject({ code: 'unauthorized', serverCode: code });
+  });
 
   it('403 от проверки Origin не считается концом сессии', async () => {
-    fetchMock.mockResolvedValue(json(apiError('FORBIDDEN_ORIGIN', 'x'), { status: 403 }));
+    fetchMock.mockResolvedValue(
+      json(apiError('FORBIDDEN_ORIGIN', 'x'), { status: 403 }),
+    );
     await expect(
       authApi.refresh({ ...context, accessToken: null, refreshToken: null }),
     ).rejects.toMatchObject({ code: 'forbidden' });
@@ -205,20 +241,30 @@ describe('logout', () => {
 describe('fetchMe', () => {
   it('ходит авторизованным fetch', async () => {
     const authFetch = vi.fn(async () => json(ME));
-    await expect(fetchMe({ fetch: authFetch, ...context })).resolves.toEqual(ME);
-    expect(authFetch).toHaveBeenCalledWith('/api/v1/me', { signal: context.signal });
+    await expect(fetchMe({ fetch: authFetch, ...context })).resolves.toEqual(
+      ME,
+    );
+    expect(authFetch).toHaveBeenCalledWith('/api/v1/me', {
+      signal: context.signal,
+    });
   });
 
   it('ответ не по контракту отвергается', async () => {
     const authFetch = vi.fn(async () => json({ id: 'u1' }));
-    await expect(fetchMe({ fetch: authFetch, ...context })).rejects.toMatchObject({
+    await expect(
+      fetchMe({ fetch: authFetch, ...context }),
+    ).rejects.toMatchObject({
       code: 'bad_response',
     });
   });
 
   it('401 превращается в ошибку', async () => {
-    const authFetch = vi.fn(async () => json(apiError('ACCESS_TOKEN_EXPIRED', 'x'), { status: 401 }));
-    await expect(fetchMe({ fetch: authFetch, ...context })).rejects.toMatchObject({
+    const authFetch = vi.fn(async () =>
+      json(apiError('ACCESS_TOKEN_EXPIRED', 'x'), { status: 401 }),
+    );
+    await expect(
+      fetchMe({ fetch: authFetch, ...context }),
+    ).rejects.toMatchObject({
       code: 'unauthorized',
     });
   });

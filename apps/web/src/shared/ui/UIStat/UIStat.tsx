@@ -1,4 +1,5 @@
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 import { UICard } from '@/shared/ui/UICard';
 import { UIProgress } from '@/shared/ui/UIProgress';
@@ -24,23 +25,29 @@ const UIStatBase = forwardRef<HTMLDivElement, IUIStatProps>(
   ({ className, testId, label, value, sub, progress, ...props }, ref) => (
     <UICard
       ref={ref}
-      padding="sm"
+      padding='sm'
       testId={testId ? `stat-${testId}` : 'stat'}
       className={cn('gap-1', className)}
       {...props}
     >
-      <p className="m-0 text-small font-medium text-muted-foreground">{label}</p>
-      <div className="text-metric font-semibold tracking-display tabular-nums">{value}</div>
+      <p className='m-0 text-small font-medium text-muted-foreground'>
+        {label}
+      </p>
+      <div className='text-metric font-semibold tracking-display tabular-nums'>
+        {value}
+      </div>
       {progress != null && (
         <UIProgress
           value={progress}
-          size="sm"
-          track="border"
-          color="var(--status-done)"
-          className="my-[2px]"
+          size='sm'
+          track='border'
+          color='var(--status-done)'
+          className='my-[2px]'
         />
       )}
-      {sub != null && <div className="text-caption text-muted-foreground">{sub}</div>}
+      {sub != null && (
+        <div className='text-caption text-muted-foreground'>{sub}</div>
+      )}
     </UICard>
   ),
 );

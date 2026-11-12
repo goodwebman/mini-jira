@@ -1,11 +1,11 @@
 import type { Env } from '../../lib/env.js';
 import {
-  displayName,
+  type OAuthClient,
   OAuthFlowError,
+  type OAuthIdentity,
+  displayName,
   oauthCallbackUrl,
   readOAuthJson,
-  type OAuthClient,
-  type OAuthIdentity,
 } from './oauth.js';
 
 const API_HEADERS = {
@@ -23,10 +23,15 @@ function authorizeUrl(env: Env, state: string): string {
 }
 
 async function fetchIdentity(env: Env, code: string): Promise<OAuthIdentity> {
-  const { access_token: accessToken } = await readOAuthJson<{ access_token?: string }>(
+  const { access_token: accessToken } = await readOAuthJson<{
+    access_token?: string;
+  }>(
     await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         client_id: env.GITHUB_CLIENT_ID,
         client_secret: env.GITHUB_CLIENT_SECRET,
@@ -43,7 +48,9 @@ async function fetchIdentity(env: Env, code: string): Promise<OAuthIdentity> {
       readOAuthJson<{ id: number; login: string; name: string | null }>(r),
     ),
     fetch('https://api.github.com/user/emails', { headers }).then((r) =>
-      readOAuthJson<{ email: string; primary: boolean; verified: boolean }[]>(r),
+      readOAuthJson<{ email: string; primary: boolean; verified: boolean }[]>(
+        r,
+      ),
     ),
   ]);
 

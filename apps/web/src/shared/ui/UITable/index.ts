@@ -1,4 +1,3 @@
-import { UITableRoot } from './UITableRoot';
 import {
   UITableBody,
   UITableCell,
@@ -7,6 +6,7 @@ import {
   UITableRow,
   UITableRowLink,
 } from './UITableParts';
+import { UITableRoot } from './UITableRoot';
 
 export const UITable = Object.assign(UITableRoot, {
   Head: UITableHead,

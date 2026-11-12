@@ -1,4 +1,10 @@
-import type { BoardRole, TaskLinkType, TaskPriority, TaskRole, TaskStatus } from './enums.js';
+import type {
+  BoardRole,
+  TaskLinkType,
+  TaskPriority,
+  TaskRole,
+  TaskStatus,
+} from './enums.js';
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   todo: 'К работе',

@@ -1,9 +1,15 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AuthError } from './errors';
-import { AuthStore, isSessionBoundary } from './auth-store';
+
 import { AuthService } from './auth-service';
+import { AuthStore, isSessionBoundary } from './auth-store';
+import { AuthError } from './errors';
 import {
+  SELF_ORIGIN,
+  TARGET,
+  TestBrowser,
+  type TestGrant,
+  type TestUser,
   createAuth,
   createServer,
   createSignedIn,
@@ -12,21 +18,19 @@ import {
   flush,
   makeGrant,
   makeUser,
-  SELF_ORIGIN,
-  TARGET,
-  TestBrowser,
-  type TestGrant,
-  type TestUser,
 } from './testing/test-kit';
 import type { AuthPersistence, PersistedSession } from './types';
 
-const unauthorized = () => AuthError.fromStatus(401, { serverCode: 'REFRESH_EXPIRED' });
+const unauthorized = () =>
+  AuthError.fromStatus(401, { serverCode: 'REFRESH_EXPIRED' });
 const networkDown = () => new TypeError('Failed to fetch');
 
 describe('async session boundaries', () => {
   it('logout cancels a pending login after bootstrap has resolved to guest', async () => {
     const grant = deferred<TestGrant>();
-    const { auth, strategy } = createAuth({ strategy: { login: vi.fn(() => grant.promise) } });
+    const { auth, strategy } = createAuth({
+      strategy: { login: vi.fn(() => grant.promise) },
+    });
     await auth.bootstrap();
     expect(auth.getSnapshot().status).toBe('guest');
     const result = auth.login({}).catch((error: unknown) => error);
@@ -53,26 +57,35 @@ describe('async session boundaries', () => {
     auth.destroy();
   });
 
-  it.each(['logout', 'destroy'] as const)('does not redirect after %s during SSO login', async (action) => {
-    const redirect = deferred<{ redirectTo: string }>();
-    const { auth, platform } = createAuth({ strategy: { login: vi.fn(() => redirect.promise) } });
-    const outcome = auth.login({}).catch((error: unknown) => error);
-    await flush();
-    const stopped = auth[action]();
-    redirect.resolve({ redirectTo: '/sso' });
-    expect(await outcome).toMatchObject({ code: 'session_changed' });
-    await stopped;
-    expect(platform.navigated).toEqual([]);
-    auth.destroy();
-  });
+  it.each(['logout', 'destroy'] as const)(
+    'does not redirect after %s during SSO login',
+    async (action) => {
+      const redirect = deferred<{ redirectTo: string }>();
+      const { auth, platform } = createAuth({
+        strategy: { login: vi.fn(() => redirect.promise) },
+      });
+      const outcome = auth.login({}).catch((error: unknown) => error);
+      await flush();
+      const stopped = auth[action]();
+      redirect.resolve({ redirectTo: '/sso' });
+      expect(await outcome).toMatchObject({ code: 'session_changed' });
+      await stopped;
+      expect(platform.navigated).toEqual([]);
+      auth.destroy();
+    },
+  );
 
   it('keeps orphan cleanup inside the session lock', async () => {
     const login = deferred<TestGrant>();
     const cleanup = deferred();
     const browser = new TestBrowser();
-    const a = createAuth({ browser, strategy: {
-      login: vi.fn(() => login.promise), logout: vi.fn(() => cleanup.promise),
-    } });
+    const a = createAuth({
+      browser,
+      strategy: {
+        login: vi.fn(() => login.promise),
+        logout: vi.fn(() => cleanup.promise),
+      },
+    });
     const first = a.auth.login({}).catch((error: unknown) => error);
     await flush();
     a.auth.destroy();
@@ -130,17 +143,20 @@ describe('холодный старт', () => {
     expect(eventTypes()).toEqual(['ready']);
   });
 
-  it.each([401, 403])('%i на холодном старте: гость, без kick', async (status) => {
-    const { auth, eventTypes } = createAuth({
-      strategy: {
-        restore: vi.fn(async () => {
-          throw AuthError.fromStatus(status);
-        }),
-      },
-    });
-    expect((await auth.bootstrap()).status).toBe('guest');
-    expect(eventTypes()).toEqual(['ready']);
-  });
+  it.each([401, 403])(
+    '%i на холодном старте: гость, без kick',
+    async (status) => {
+      const { auth, eventTypes } = createAuth({
+        strategy: {
+          restore: vi.fn(async () => {
+            throw AuthError.fromStatus(status);
+          }),
+        },
+      });
+      expect((await auth.bootstrap()).status).toBe('guest');
+      expect(eventTypes()).toEqual(['ready']);
+    },
+  );
 
   it('сеть упала: статус остаётся unknown с ошибкой, ready не приходит', async () => {
     const { auth, eventTypes } = createAuth({
@@ -169,7 +185,10 @@ describe('холодный старт', () => {
 
     await vi.advanceTimersByTimeAsync(2_000);
 
-    expect(auth.getSnapshot()).toMatchObject({ status: 'authenticated', error: null });
+    expect(auth.getSnapshot()).toMatchObject({
+      status: 'authenticated',
+      error: null,
+    });
     expect(eventTypes()).toEqual(['ready']);
   });
 
@@ -187,7 +206,9 @@ describe('холодный старт', () => {
 
   it('запрос до bootstrap сам запускает его и дожидается сессии', async () => {
     const gate = deferred<TestGrant | null>();
-    const { auth } = createAuth({ strategy: { restore: vi.fn(() => gate.promise) } });
+    const { auth } = createAuth({
+      strategy: { restore: vi.fn(() => gate.promise) },
+    });
     const server = createServer('t1');
 
     const request = auth.execute(TARGET, server.send);
@@ -227,7 +248,9 @@ describe('снимок состояния', () => {
 
   it('секрет не виден ни в снимке, ни в JSON сервиса', async () => {
     const { auth } = await createSignedIn({ token: 'super-secret-token' });
-    expect(JSON.stringify(auth.getSnapshot())).not.toContain('super-secret-token');
+    expect(JSON.stringify(auth.getSnapshot())).not.toContain(
+      'super-secret-token',
+    );
     expect(JSON.stringify(auth)).not.toContain('super-secret-token');
   });
 
@@ -250,19 +273,27 @@ describe('обработка 401', () => {
     });
     const server = createServer('renewed-token');
 
-    const requests = Array.from({ length: 5 }, () => auth.execute(TARGET, server.send));
+    const requests = Array.from({ length: 5 }, () =>
+      auth.execute(TARGET, server.send),
+    );
     await flush();
     expect(strategy.renew).toHaveBeenCalledTimes(1);
 
     gate.resolve(makeGrant('renewed-token'));
-    await expect(Promise.all(requests)).resolves.toEqual(Array(5).fill({ status: 200 }));
-    expect(server.received.filter((value) => value === 'Bearer renewed-token')).toHaveLength(5);
+    await expect(Promise.all(requests)).resolves.toEqual(
+      Array(5).fill({ status: 200 }),
+    );
+    expect(
+      server.received.filter((value) => value === 'Bearer renewed-token'),
+    ).toHaveLength(5);
     expect(strategy.renew).toHaveBeenCalledTimes(1);
   });
 
   it('запрос, начатый во время refresh, ждёт его и уходит с новым токеном', async () => {
     const gate = deferred<TestGrant>();
-    const { auth } = await createSignedIn({ strategy: { renew: vi.fn(() => gate.promise) } });
+    const { auth } = await createSignedIn({
+      strategy: { renew: vi.fn(() => gate.promise) },
+    });
     const server = createServer('renewed-token');
     const first = auth.execute(TARGET, server.send);
     await flush();
@@ -315,7 +346,10 @@ describe('обработка 401', () => {
     expect(results).toEqual(Array(3).fill({ status: 401 }));
     expect(auth.getSnapshot()).toMatchObject({ status: 'guest', user: null });
     expect(eventTypes()).toEqual(['kick']);
-    expect(events[0]).toMatchObject({ reason: 'unauthorized', origin: 'local' });
+    expect(events[0]).toMatchObject({
+      reason: 'unauthorized',
+      origin: 'local',
+    });
   });
 
   it('сеть упала на refresh: сессия жива, ошибка повторяемая', async () => {
@@ -328,11 +362,16 @@ describe('обработка 401', () => {
     });
     const server = createServer();
 
-    const failure = await auth.execute(TARGET, server.send).catch((error: unknown) => error);
+    const failure = await auth
+      .execute(TARGET, server.send)
+      .catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(AuthError);
     expect((failure as AuthError).retryable).toBe(true);
-    expect(auth.getSnapshot()).toMatchObject({ status: 'authenticated', phase: 'idle' });
+    expect(auth.getSnapshot()).toMatchObject({
+      status: 'authenticated',
+      phase: 'idle',
+    });
     expect(auth.getSnapshot().error?.code).toBe('network');
     expect(eventTypes()).toEqual([]);
   });
@@ -350,7 +389,9 @@ describe('обработка 401', () => {
     expect(renew).toHaveBeenCalledTimes(1);
 
     browser.advance(2_000);
-    await expect(auth.execute(TARGET, server.send)).resolves.toEqual({ status: 200 });
+    await expect(auth.execute(TARGET, server.send)).resolves.toEqual({
+      status: 200,
+    });
     expect(renew).toHaveBeenCalledTimes(2);
     expect(auth.getSnapshot().error).toBeNull();
   });
@@ -358,7 +399,9 @@ describe('обработка 401', () => {
   it('пауза берётся из Retry-After', async () => {
     const renew = vi
       .fn<() => Promise<TestGrant>>()
-      .mockRejectedValueOnce(AuthError.fromStatus(429, { retryAfterMs: 60_000 }))
+      .mockRejectedValueOnce(
+        AuthError.fromStatus(429, { retryAfterMs: 60_000 }),
+      )
       .mockResolvedValue(makeGrant('renewed-token'));
     const { auth, browser } = await createSignedIn({ strategy: { renew } });
     const server = createServer('renewed-token');
@@ -377,7 +420,9 @@ describe('обработка 401', () => {
     const { auth, strategy, eventTypes } = await createSignedIn();
     const server = createServer();
 
-    await expect(auth.execute(TARGET, server.send)).resolves.toEqual({ status: 401 });
+    await expect(auth.execute(TARGET, server.send)).resolves.toEqual({
+      status: 401,
+    });
 
     expect(server.send).toHaveBeenCalledTimes(2);
     expect(strategy.renew).toHaveBeenCalledTimes(1);
@@ -385,7 +430,9 @@ describe('обработка 401', () => {
   });
 
   it('стратегия без renew: 401 сразу закрывает сессию', async () => {
-    const { auth, eventTypes } = await createSignedIn({ strategy: { renew: undefined } });
+    const { auth, eventTypes } = await createSignedIn({
+      strategy: { renew: undefined },
+    });
     const server = createServer();
     await auth.execute(TARGET, server.send);
     expect(server.send).toHaveBeenCalledTimes(1);
@@ -434,7 +481,8 @@ describe('обработка 401', () => {
     let sends = 0;
     const result = await auth.execute(TARGET, async () => {
       sends += 1;
-      if (sends === 1) throw Object.assign(new Error('401'), { response: { status: 401 } });
+      if (sends === 1)
+        throw Object.assign(new Error('401'), { response: { status: 401 } });
       return { status: 200 };
     });
     expect(result).toEqual({ status: 200 });
@@ -492,7 +540,9 @@ describe('обновление токена заранее', () => {
     });
     const server = createServer('first-token');
     browser.advance(TTL - 10_000);
-    await expect(auth.execute(TARGET, server.send)).resolves.toEqual({ status: 200 });
+    await expect(auth.execute(TARGET, server.send)).resolves.toEqual({
+      status: 200,
+    });
   });
 
   it('refresh упал и токен просрочен: запрос не отправляется, ошибка повторяемая', async () => {
@@ -506,7 +556,9 @@ describe('обновление токена заранее', () => {
     });
     const server = createServer('first-token');
     browser.advance(TTL + 1);
-    await expect(auth.execute(TARGET, server.send)).rejects.toMatchObject({ code: 'network' });
+    await expect(auth.execute(TARGET, server.send)).rejects.toMatchObject({
+      code: 'network',
+    });
     expect(server.send).not.toHaveBeenCalled();
     expect(auth.getSnapshot().status).toBe('authenticated');
   });
@@ -514,7 +566,9 @@ describe('обновление токена заранее', () => {
   it('нулевой TTL от сервера не превращает каждый запрос в refresh', async () => {
     const { auth, strategy } = await createSignedIn({
       ttlMs: 0,
-      strategy: { renew: vi.fn(async () => makeGrant('renewed-token', makeUser(), 0)) },
+      strategy: {
+        renew: vi.fn(async () => makeGrant('renewed-token', makeUser(), 0)),
+      },
     });
     const server = createServer('first-token', 'renewed-token');
     await auth.execute(TARGET, server.send);
@@ -541,7 +595,9 @@ describe('отмена и таймауты', () => {
     const server = createServer('renewed-token');
     const controller = new AbortController();
 
-    const cancelled = auth.execute(TARGET, server.send, { signal: controller.signal });
+    const cancelled = auth.execute(TARGET, server.send, {
+      signal: controller.signal,
+    });
     const other = auth.execute(TARGET, server.send);
     await flush();
 
@@ -570,7 +626,9 @@ describe('отмена и таймауты', () => {
     });
     const server = createServer();
 
-    const request = auth.execute(TARGET, server.send).catch((error: unknown) => error);
+    const request = auth
+      .execute(TARGET, server.send)
+      .catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(1_000);
 
     expect(await request).toMatchObject({ code: 'timeout', retryable: true });
@@ -612,7 +670,9 @@ describe('отмена и таймауты', () => {
 describe('сессия сменилась, пока шла операция', () => {
   it('выход во время refresh: сессия не воскресает', async () => {
     const gate = deferred<TestGrant>();
-    const { auth } = await createSignedIn({ strategy: { renew: vi.fn(() => gate.promise) } });
+    const { auth } = await createSignedIn({
+      strategy: { renew: vi.fn(() => gate.promise) },
+    });
     const request = auth.execute(TARGET, createServer().send);
     await flush();
 
@@ -704,7 +764,10 @@ describe('сессия сменилась, пока шла операция', ()
     slow.resolve({ status: 401 });
 
     await expect(late).resolves.toEqual({ status: 401 });
-    expect(auth.getSnapshot()).toMatchObject({ status: 'authenticated', user: { id: 'boris' } });
+    expect(auth.getSnapshot()).toMatchObject({
+      status: 'authenticated',
+      user: { id: 'boris' },
+    });
     expect(eventTypes()).not.toContain('kick');
   });
 
@@ -729,7 +792,9 @@ describe('сессия сменилась, пока шла операция', ()
 
   it('destroy во время входа: сессия на сервере закрывается', async () => {
     const gate = deferred<TestGrant>();
-    const { auth, strategy } = createAuth({ strategy: { login: vi.fn(() => gate.promise) } });
+    const { auth, strategy } = createAuth({
+      strategy: { login: vi.fn(() => gate.promise) },
+    });
     const login = auth.login({});
     await flush();
     auth.destroy();
@@ -743,7 +808,9 @@ describe('сессия сменилась, пока шла операция', ()
 
   it('вход не отменяется тем, что параллельно закончилось восстановление сессии', async () => {
     const restore = deferred<TestGrant | null>();
-    const { auth } = createAuth({ strategy: { restore: vi.fn(() => restore.promise) } });
+    const { auth } = createAuth({
+      strategy: { restore: vi.fn(() => restore.promise) },
+    });
     void auth.bootstrap();
     const login = auth.login({});
     restore.resolve(null);
@@ -752,7 +819,9 @@ describe('сессия сменилась, пока шла операция', ()
 
   it('refresh вернул другого пользователя: граница сессии, старые запросы не повторяются', async () => {
     const { auth, events } = await createSignedIn({
-      strategy: { renew: vi.fn(async () => makeGrant('boris-token', makeUser('boris'))) },
+      strategy: {
+        renew: vi.fn(async () => makeGrant('boris-token', makeUser('boris'))),
+      },
     });
     const server = createServer('boris-token');
 
@@ -773,7 +842,11 @@ describe('вход', () => {
     const { auth, eventTypes } = createAuth();
     await auth.bootstrap();
     const state = await auth.login({ email: 'a@b.c' });
-    expect(state).toMatchObject({ status: 'authenticated', phase: 'idle', user: makeUser() });
+    expect(state).toMatchObject({
+      status: 'authenticated',
+      phase: 'idle',
+      user: makeUser(),
+    });
     expect(eventTypes()).toEqual(['ready', 'login']);
   });
 
@@ -781,7 +854,9 @@ describe('вход', () => {
     const { auth, eventTypes } = createAuth({
       strategy: {
         login: vi.fn(async () => {
-          throw AuthError.fromStatus(401, { serverCode: 'INVALID_CREDENTIALS' });
+          throw AuthError.fromStatus(401, {
+            serverCode: 'INVALID_CREDENTIALS',
+          });
         }),
       },
     });
@@ -792,7 +867,10 @@ describe('вход', () => {
       serverCode: 'INVALID_CREDENTIALS',
     });
 
-    expect(auth.getSnapshot()).toMatchObject({ status: 'guest', phase: 'idle' });
+    expect(auth.getSnapshot()).toMatchObject({
+      status: 'guest',
+      phase: 'idle',
+    });
     expect(eventTypes()).toEqual(['ready']);
   });
 
@@ -810,7 +888,9 @@ describe('вход', () => {
 
   it('двойной клик по кнопке: один запрос', async () => {
     const gate = deferred<TestGrant>();
-    const { auth, strategy } = createAuth({ strategy: { login: vi.fn(() => gate.promise) } });
+    const { auth, strategy } = createAuth({
+      strategy: { login: vi.fn(() => gate.promise) },
+    });
     const a = auth.login({});
     const b = auth.login({});
     expect(a).toBe(b);
@@ -821,16 +901,26 @@ describe('вход', () => {
 
   it('вход другим пользователем поверх сессии отмечается как смена личности', async () => {
     const { auth, events } = await createSignedIn({
-      strategy: { login: vi.fn(async () => makeGrant('boris-token', makeUser('boris'))) },
+      strategy: {
+        login: vi.fn(async () => makeGrant('boris-token', makeUser('boris'))),
+      },
     });
     await auth.login({});
-    expect(events.at(-1)).toMatchObject({ type: 'login', identityChanged: true });
+    expect(events.at(-1)).toMatchObject({
+      type: 'login',
+      identityChanged: true,
+    });
   });
 
   it('без identify смена личности считается случившейся', async () => {
-    const { auth, events } = await createSignedIn({ config: { identify: undefined } });
+    const { auth, events } = await createSignedIn({
+      config: { identify: undefined },
+    });
     await auth.login({});
-    expect(events.at(-1)).toMatchObject({ type: 'login', identityChanged: true });
+    expect(events.at(-1)).toMatchObject({
+      type: 'login',
+      identityChanged: true,
+    });
   });
 
   it('ответ без пользователя догружает профиль', async () => {
@@ -854,11 +944,15 @@ describe('вход', () => {
 
   it('редирект: браузер уводится, сессия не меняется', async () => {
     const { auth, platform } = createAuth({
-      strategy: { login: vi.fn(async () => ({ redirectTo: '/api/auth/google/start' })) },
+      strategy: {
+        login: vi.fn(async () => ({ redirectTo: '/api/auth/google/start' })),
+      },
     });
     await auth.bootstrap();
     const state = await auth.login({});
-    expect(platform.navigated).toEqual([`${SELF_ORIGIN}/api/auth/google/start`]);
+    expect(platform.navigated).toEqual([
+      `${SELF_ORIGIN}/api/auth/google/start`,
+    ]);
     expect(state).toMatchObject({ status: 'guest', phase: 'redirecting' });
   });
 
@@ -870,38 +964,54 @@ describe('вход', () => {
     platform.navigate = () => {
       throw new AuthError('misconfigured');
     };
-    await expect(auth.login({})).rejects.toMatchObject({ code: 'misconfigured' });
+    await expect(auth.login({})).rejects.toMatchObject({
+      code: 'misconfigured',
+    });
     expect(auth.getSnapshot().phase).toBe('idle');
   });
 
   it('свой клиент без статуса в результате не ломает конвейер', async () => {
     const { auth, strategy } = await createSignedIn();
-    await expect(auth.execute(TARGET, async () => 'plain-text')).resolves.toBe('plain-text');
+    await expect(auth.execute(TARGET, async () => 'plain-text')).resolves.toBe(
+      'plain-text',
+    );
     expect(strategy.renew).not.toHaveBeenCalled();
   });
 
   it('редирект на чужой адрес запрещён', async () => {
     const { auth, platform } = createAuth({
-      strategy: { login: vi.fn(async () => ({ redirectTo: 'https://evil.test/phish' })) },
+      strategy: {
+        login: vi.fn(async () => ({ redirectTo: 'https://evil.test/phish' })),
+      },
     });
     await auth.bootstrap();
-    await expect(auth.login({})).rejects.toMatchObject({ code: 'misconfigured' });
+    await expect(auth.login({})).rejects.toMatchObject({
+      code: 'misconfigured',
+    });
     expect(platform.navigated).toEqual([]);
     expect(auth.getSnapshot().phase).toBe('idle');
   });
 
   it('javascript: в редиректе запрещён', async () => {
     const { auth, platform } = createAuth({
-      strategy: { login: vi.fn(async () => ({ redirectTo: 'javascript:alert(1)' })) },
+      strategy: {
+        login: vi.fn(async () => ({ redirectTo: 'javascript:alert(1)' })),
+      },
     });
     await auth.bootstrap();
-    await expect(auth.login({})).rejects.toMatchObject({ code: 'misconfigured' });
+    await expect(auth.login({})).rejects.toMatchObject({
+      code: 'misconfigured',
+    });
     expect(platform.navigated).toEqual([]);
   });
 
   it('провайдер SSO разрешается через redirectOrigins', async () => {
     const { auth, platform } = createAuth({
-      strategy: { login: vi.fn(async () => ({ redirectTo: 'https://sso.corp.test/start' })) },
+      strategy: {
+        login: vi.fn(async () => ({
+          redirectTo: 'https://sso.corp.test/start',
+        })),
+      },
       config: { redirectOrigins: ['https://sso.corp.test'] },
     });
     await auth.bootstrap();
@@ -927,7 +1037,9 @@ describe('выход', () => {
 
   it('новые запросы после выхода идут без токена, пока сервер ещё думает', async () => {
     const gate = deferred();
-    const { auth } = await createSignedIn({ strategy: { logout: vi.fn(() => gate.promise) } });
+    const { auth } = await createSignedIn({
+      strategy: { logout: vi.fn(() => gate.promise) },
+    });
     void auth.logout();
     const server = createServer();
     await auth.execute(TARGET, server.send);
@@ -987,7 +1099,9 @@ describe('выход', () => {
     const reloaded = createAuth({ browser, strategy: { logout, restore } });
     const state = await reloaded.auth.bootstrap();
 
-    expect(logout).toHaveBeenCalledWith(expect.objectContaining({ credentials: null }));
+    expect(logout).toHaveBeenCalledWith(
+      expect.objectContaining({ credentials: null }),
+    );
     expect(state.status).toBe('authenticated');
     expect(restore).toHaveBeenCalledTimes(1);
     expect(browser.markers.size).toBe(0);
@@ -1105,14 +1219,22 @@ describe('куда уходят реквизиты', () => {
   it('чужой origin: без заголовков и без ожидания сессии', async () => {
     const { auth, strategy } = createAuth();
     const send = vi.fn(async () => ({ status: 200 }));
-    await auth.execute({ url: 'https://cdn.other.test/a.json', method: 'GET' }, send);
-    expect(send.mock.calls[0]).toEqual([expect.objectContaining({ headers: {} })]);
+    await auth.execute(
+      { url: 'https://cdn.other.test/a.json', method: 'GET' },
+      send,
+    );
+    expect(send.mock.calls[0]).toEqual([
+      expect.objectContaining({ headers: {} }),
+    ]);
     expect(strategy.restore).not.toHaveBeenCalled();
   });
 
   it('401 с чужого origin не трогает сессию', async () => {
     const { auth, strategy, eventTypes } = await createSignedIn();
-    await auth.execute({ url: 'https://other.test/x', method: 'GET' }, async () => ({ status: 401 }));
+    await auth.execute(
+      { url: 'https://other.test/x', method: 'GET' },
+      async () => ({ status: 401 }),
+    );
     expect(strategy.renew).not.toHaveBeenCalled();
     expect(eventTypes()).toEqual([]);
   });
@@ -1121,21 +1243,33 @@ describe('куда уходят реквизиты', () => {
     const { auth } = await createSignedIn();
     const send = vi.fn(async () => ({ status: 200 }));
     await auth.execute({ url: 'http://app.test/api', method: 'GET' }, send);
-    expect(send.mock.calls[0]).toEqual([expect.objectContaining({ headers: {} })]);
+    expect(send.mock.calls[0]).toEqual([
+      expect.objectContaining({ headers: {} }),
+    ]);
   });
 
   it('поддомен доверенного origin считается чужим', async () => {
     const { auth } = await createSignedIn();
     const send = vi.fn(async () => ({ status: 200 }));
-    await auth.execute({ url: 'https://evil.app.test/api', method: 'GET' }, send);
-    expect(send.mock.calls[0]).toEqual([expect.objectContaining({ headers: {} })]);
+    await auth.execute(
+      { url: 'https://evil.app.test/api', method: 'GET' },
+      send,
+    );
+    expect(send.mock.calls[0]).toEqual([
+      expect.objectContaining({ headers: {} }),
+    ]);
   });
 
   it('доменное имя с доверенным origin в начале не проходит', async () => {
     const { auth } = await createSignedIn();
     const send = vi.fn(async () => ({ status: 200 }));
-    await auth.execute({ url: 'https://app.test.evil.io/api', method: 'GET' }, send);
-    expect(send.mock.calls[0]).toEqual([expect.objectContaining({ headers: {} })]);
+    await auth.execute(
+      { url: 'https://app.test.evil.io/api', method: 'GET' },
+      send,
+    );
+    expect(send.mock.calls[0]).toEqual([
+      expect.objectContaining({ headers: {} }),
+    ]);
   });
 
   it('относительный URL относится к своему origin', async () => {
@@ -1146,9 +1280,14 @@ describe('куда уходят реквизиты', () => {
   });
 
   it('явно разрешённый origin получает токен', async () => {
-    const { auth } = await createSignedIn({ config: { trustedOrigins: ['https://api.test'] } });
+    const { auth } = await createSignedIn({
+      config: { trustedOrigins: ['https://api.test'] },
+    });
     const server = createServer('first-token');
-    await auth.execute({ url: 'https://api.test/x', method: 'GET' }, server.send);
+    await auth.execute(
+      { url: 'https://api.test/x', method: 'GET' },
+      server.send,
+    );
     expect(server.received).toEqual(['Bearer first-token']);
   });
 
@@ -1167,20 +1306,28 @@ describe('куда уходят реквизиты', () => {
     ['мусор', 'not a url'],
   ])('опасная настройка trustedOrigins (%s) падает сразу', (_, origin) => {
     expect(
-      () => new AuthService({ strategy: createStrategy(), trustedOrigins: [origin] }),
+      () =>
+        new AuthService({
+          strategy: createStrategy(),
+          trustedOrigins: [origin],
+        }),
     ).toThrow(AuthError);
   });
 
   it('неверный baseUrl падает сразу', () => {
-    expect(() => new AuthService({ strategy: createStrategy(), baseUrl: 'not a url' })).toThrow(
-      AuthError,
-    );
+    expect(
+      () =>
+        new AuthService({ strategy: createStrategy(), baseUrl: 'not a url' }),
+    ).toThrow(AuthError);
   });
 
   it('http на localhost разрешён для разработки', () => {
     expect(
       () =>
-        new AuthService({ strategy: createStrategy(), trustedOrigins: ['http://localhost:3000'] }),
+        new AuthService({
+          strategy: createStrategy(),
+          trustedOrigins: ['http://localhost:3000'],
+        }),
     ).not.toThrow();
   });
 
@@ -1225,7 +1372,11 @@ describe('несколько вкладок', () => {
     await a.auth.execute(TARGET, createServer().send);
     await flush();
 
-    expect(b.events[0]).toMatchObject({ type: 'kick', origin: 'remote', reason: 'unauthorized' });
+    expect(b.events[0]).toMatchObject({
+      type: 'kick',
+      origin: 'remote',
+      reason: 'unauthorized',
+    });
     expect(b.auth.getSnapshot().status).toBe('guest');
   });
 
@@ -1235,7 +1386,10 @@ describe('несколько вкладок', () => {
     const b = createAuth({
       browser,
       strategy: {
-        restore: vi.fn<() => Promise<TestGrant | null>>().mockResolvedValueOnce(null).mockResolvedValue(makeGrant('own-token')),
+        restore: vi
+          .fn<() => Promise<TestGrant | null>>()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValue(makeGrant('own-token')),
       },
     });
     await a.auth.bootstrap();
@@ -1252,7 +1406,9 @@ describe('несколько вкладок', () => {
     const browser = new TestBrowser();
     const a = await createSignedIn({
       browser,
-      strategy: { login: vi.fn(async () => makeGrant('boris-a', makeUser('boris'))) },
+      strategy: {
+        login: vi.fn(async () => makeGrant('boris-a', makeUser('boris'))),
+      },
     });
     const b = await createSignedIn({
       browser,
@@ -1328,7 +1484,9 @@ describe('несколько вкладок', () => {
       active -= 1;
       return makeGrant('t');
     });
-    const tabs = Array.from({ length: 4 }, () => createAuth({ browser, strategy: { restore } }));
+    const tabs = Array.from({ length: 4 }, () =>
+      createAuth({ browser, strategy: { restore } }),
+    );
     await Promise.all(tabs.map((tab) => tab.auth.bootstrap()));
     expect(restore).toHaveBeenCalledTimes(4);
     expect(peak).toBe(1);
@@ -1349,27 +1507,42 @@ describe('несколько вкладок', () => {
     expect(JSON.stringify(sent)).not.toMatch(/token|secret/);
   });
 
-  it.each([null, 'x', 42, {}, { type: 'kick' }, { type: 'login', identity: 5 }, { type: 'nope' }])(
-    'мусор в канале (%j) игнорируется',
-    async (garbage) => {
-      const browser = new TestBrowser();
-      const { auth } = await createSignedIn({ browser });
-      browser.openChannel('test:tabs').post(garbage);
-      await flush();
-      expect(auth.getSnapshot().status).toBe('authenticated');
-    },
-  );
+  it.each([
+    null,
+    'x',
+    42,
+    {},
+    { type: 'kick' },
+    { type: 'login', identity: 5 },
+    { type: 'nope' },
+  ])('мусор в канале (%j) игнорируется', async (garbage) => {
+    const browser = new TestBrowser();
+    const { auth } = await createSignedIn({ browser });
+    browser.openChannel('test:tabs').post(garbage);
+    await flush();
+    expect(auth.getSnapshot().status).toBe('authenticated');
+  });
 
   it('занятая блокировка даёт unknown с таймаутом без обхода очереди', async () => {
     vi.useFakeTimers();
     const browser = new TestBrowser();
-    void browser.locks.run('test:session', () => new Promise(() => undefined), 60_000);
-    const { auth, strategy } = createAuth({ browser, config: { operationTimeoutMs: 1_000 } });
+    void browser.locks.run(
+      'test:session',
+      () => new Promise(() => undefined),
+      60_000,
+    );
+    const { auth, strategy } = createAuth({
+      browser,
+      config: { operationTimeoutMs: 1_000 },
+    });
 
     const boot = auth.bootstrap();
     await vi.advanceTimersByTimeAsync(10_000);
 
-    await expect(boot).resolves.toMatchObject({ status: 'unknown', error: { code: 'timeout' } });
+    await expect(boot).resolves.toMatchObject({
+      status: 'unknown',
+      error: { code: 'timeout' },
+    });
     expect(strategy.restore).not.toHaveBeenCalled();
     auth.destroy();
   });
@@ -1442,14 +1615,20 @@ describe('данные пользователя', () => {
 
   it('patchUser устойчив к __proto__', async () => {
     const { auth } = await createSignedIn();
-    auth.patchUser(JSON.parse('{"__proto__":{"isAdmin":true}}') as Partial<TestUser>);
+    auth.patchUser(
+      JSON.parse('{"__proto__":{"isAdmin":true}}') as Partial<TestUser>,
+    );
     expect(({} as { isAdmin?: boolean }).isAdmin).toBeUndefined();
-    expect((auth.getSnapshot().user as unknown as { isAdmin?: boolean }).isAdmin).toBeUndefined();
+    expect(
+      (auth.getSnapshot().user as unknown as { isAdmin?: boolean }).isAdmin,
+    ).toBeUndefined();
   });
 
   it('refreshUser обновляет данные, параллельные вызовы объединяются', async () => {
     const fetchUser = vi.fn(async () => makeUser('anna', 'Свежая'));
-    const { auth, eventTypes } = await createSignedIn({ config: { fetchUser } });
+    const { auth, eventTypes } = await createSignedIn({
+      config: { fetchUser },
+    });
     const a = auth.refreshUser();
     const b = auth.refreshUser();
     expect(a).toBe(b);
@@ -1468,7 +1647,10 @@ describe('данные пользователя', () => {
       },
     });
     await auth.refreshUser();
-    expect(auth.getSnapshot()).toMatchObject({ status: 'authenticated', user: makeUser() });
+    expect(auth.getSnapshot()).toMatchObject({
+      status: 'authenticated',
+      user: makeUser(),
+    });
     expect(eventTypes()).toEqual([]);
   });
 
@@ -1504,7 +1686,8 @@ describe('данные пользователя', () => {
     const { auth, eventTypes } = await createSignedIn({
       config: {
         fetchUser: async () => makeUser('anna', 'deleted'),
-        assessUser: (user) => (user.name === 'deleted' ? 'account_deleted' : null),
+        assessUser: (user) =>
+          user.name === 'deleted' ? 'account_deleted' : null,
       },
     });
     await auth.refreshUser();
@@ -1535,7 +1718,9 @@ describe('данные пользователя', () => {
   it('поллинг у гостя ничего не делает', async () => {
     vi.useFakeTimers();
     const fetchUser = vi.fn(async () => makeUser());
-    const { auth } = createAuth({ config: { fetchUser, pollIntervalMs: 1_000 } });
+    const { auth } = createAuth({
+      config: { fetchUser, pollIntervalMs: 1_000 },
+    });
     await auth.bootstrap();
     auth.startPolling();
     await vi.advanceTimersByTimeAsync(3_000);
@@ -1577,7 +1762,9 @@ describe('данные пользователя', () => {
 });
 
 describe('хранилище между запусками', () => {
-  function createPersistence(initial: PersistedSession<string, TestUser> | null = null) {
+  function createPersistence(
+    initial: PersistedSession<string, TestUser> | null = null,
+  ) {
     const log: string[] = [];
     let record = initial;
     const persistence: AuthPersistence<string, TestUser> = {
@@ -1599,7 +1786,9 @@ describe('хранилище между запусками', () => {
     const { persistence } = createPersistence(stored);
     const { auth, strategy } = createAuth({ config: { persistence } });
     await auth.bootstrap();
-    expect(strategy.restore).toHaveBeenCalledWith(expect.objectContaining({ stored }));
+    expect(strategy.restore).toHaveBeenCalledWith(
+      expect.objectContaining({ stored }),
+    );
   });
 
   it('вход и обновление профиля сохраняются одной записью', async () => {
@@ -1609,7 +1798,10 @@ describe('хранилище между запусками', () => {
     await auth.login({});
     auth.patchUser({ name: 'Анна' });
     await flush();
-    expect(read()).toMatchObject({ credentials: 'login-token', user: { name: 'Анна' } });
+    expect(read()).toMatchObject({
+      credentials: 'login-token',
+      user: { name: 'Анна' },
+    });
   });
 
   it('выход стирает запись', async () => {
@@ -1678,7 +1870,9 @@ describe('destroy', () => {
   it('после него запросы и вход отвергаются', async () => {
     const { auth } = await createSignedIn();
     auth.destroy();
-    await expect(auth.prepare(TARGET)).rejects.toMatchObject({ code: 'destroyed' });
+    await expect(auth.prepare(TARGET)).rejects.toMatchObject({
+      code: 'destroyed',
+    });
     await expect(auth.login({})).rejects.toMatchObject({ code: 'destroyed' });
   });
 

@@ -5,7 +5,10 @@ export type { IUIBarChartProps, IUIBarChartSeries } from './UIBarChart';
 export { UIChartLegend } from './UIChartLegend';
 export type { IUIChartLegendItem, IUIChartLegendProps } from './UIChartLegend';
 export { UIChartTooltip } from './UIChartTooltip';
-export type { IUIChartTooltipProps, IUIChartTooltipRow } from './UIChartTooltip';
+export type {
+  IUIChartTooltipProps,
+  IUIChartTooltipRow,
+} from './UIChartTooltip';
 export { UIDonutChart } from './UIDonutChart';
 export type { IUIDonutChartProps, IUIDonutSegment } from './UIDonutChart';
 export { UILineChart } from './UILineChart';

@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+
 import { createSalt, createSaltToken } from './lib/salt.js';
 
 // Заголовки для ручной проверки входа в Swagger и curl: npm run salt -- anna@example.com
@@ -13,4 +14,6 @@ const timestamp = String(Date.now());
 
 console.log(`fastify-version: ${version}`);
 console.log(`fastify-timestamp: ${timestamp}`);
-console.log(`fastify-token: ${createSaltToken(createSalt(version, secret), email, timestamp)}`);
+console.log(
+  `fastify-token: ${createSaltToken(createSalt(version, secret), email, timestamp)}`,
+);

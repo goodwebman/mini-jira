@@ -32,12 +32,16 @@ export function seriesColor(index: number, color: string | undefined): string {
 const round = (value: number): number => Number(value.toFixed(1));
 
 /** Круглые деления оси Y: 1, 2, 5, 10, 20, 50… Для SP шаг всегда целый. */
-export function niceScale(max: number, targetTicks = 4): { top: number; step: number } {
+export function niceScale(
+  max: number,
+  targetTicks = 4,
+): { top: number; step: number } {
   const safeMax = Number.isFinite(max) && max > 0 ? max : 1;
   const rough = safeMax / targetTicks;
   const magnitude = 10 ** Math.floor(Math.log10(rough));
   const normalized = rough / magnitude;
-  const nice = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const nice =
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
   const step = Math.max(1, Math.round(nice * magnitude));
   return { step, top: Math.ceil(safeMax / step) * step };
 }
@@ -76,7 +80,10 @@ export function pointX(plot: ChartPlot, index: number, count: number): number {
 
 export function gridPath(plot: ChartPlot): string {
   return plot.ticks
-    .map((tick) => `M${String(plot.margin.left)} ${String(plot.y(tick))}H${String(plot.margin.left + plot.plotWidth)}`)
+    .map(
+      (tick) =>
+        `M${String(plot.margin.left)} ${String(plot.y(tick))}H${String(plot.margin.left + plot.plotWidth)}`,
+    )
     .join('');
 }
 
@@ -116,11 +123,16 @@ export function clampIndex(index: number, count: number): number {
 }
 
 export function maxOf(values: readonly (number | null)[]): number {
-  return values.reduce<number>((max, value) => (value != null && value > max ? value : max), 0);
+  return values.reduce<number>(
+    (max, value) => (value != null && value > max ? value : max),
+    0,
+  );
 }
 
 /** Последний индекс, где хотя бы у одной серии есть значение. */
-export function lastDefinedIndex(series: readonly { values: readonly (number | null)[] }[]): number {
+export function lastDefinedIndex(
+  series: readonly { values: readonly (number | null)[] }[],
+): number {
   return series.reduce((last, { values }) => {
     const index = values.findLastIndex((value) => value != null);
     return Math.max(last, index);

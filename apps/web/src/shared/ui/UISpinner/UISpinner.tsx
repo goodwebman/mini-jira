@@ -1,6 +1,7 @@
 import { forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { UIIcons, type IUIIconProps } from '@/shared/ui/icons';
+import { type IUIIconProps, UIIcons } from '@/shared/ui/icons';
 
 export interface IUISpinnerProps extends IUIIconProps {
   readonly testId?: string;
@@ -8,13 +9,19 @@ export interface IUISpinnerProps extends IUIIconProps {
 
 /** Индикатор загрузки. Размер задаётся классом: `size-icon-sm`, `size-[32px]`. */
 const UISpinnerBase = forwardRef<SVGSVGElement, IUISpinnerProps>(
-  ({ className, testId, 'aria-label': ariaLabel = 'Загрузка', ...props }, ref) => (
+  (
+    { className, testId, 'aria-label': ariaLabel = 'Загрузка', ...props },
+    ref,
+  ) => (
     <UIIcons.Spinner
       ref={ref}
-      role="status"
+      role='status'
       aria-label={ariaLabel}
       data-name={testId ? `UISpinner-${testId}` : 'UISpinner'}
-      className={cn('size-icon-lg animate-spin text-muted-foreground', className)}
+      className={cn(
+        'size-icon-lg animate-spin text-muted-foreground',
+        className,
+      )}
       {...props}
     />
   ),

@@ -8,7 +8,9 @@ const noop = () => undefined;
  * Окружение без браузера: SSR, Node, тесты. На сервере создавайте отдельный
  * `AuthService` на каждый запрос: общий экземпляр отдаст токен одного пользователя другому.
  */
-export function createMemoryPlatform(options: { origin?: string | null } = {}): AuthPlatform {
+export function createMemoryPlatform(
+  options: { origin?: string | null } = {},
+): AuthPlatform {
   const markers = new Set<string>();
   const locks = new LocalLocks();
 
@@ -21,7 +23,9 @@ export function createMemoryPlatform(options: { origin?: string | null } = {}): 
     onResume: () => noop,
     onOnline: () => noop,
     navigate: () => {
-      throw new AuthError('misconfigured', { message: 'Редирект недоступен вне браузера' });
+      throw new AuthError('misconfigured', {
+        message: 'Редирект недоступен вне браузера',
+      });
     },
     markers: {
       has: (key) => markers.has(key),

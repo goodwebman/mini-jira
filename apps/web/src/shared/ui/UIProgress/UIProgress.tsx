@@ -1,5 +1,12 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-import { forwardRef, memo, type CSSProperties, type HTMLAttributes } from 'react';
+import {
+  type CSSProperties,
+  type HTMLAttributes,
+  forwardRef,
+  memo,
+} from 'react';
+
+import { type VariantProps, cva } from 'class-variance-authority';
+
 import { cn } from '@/shared/lib/cn';
 
 const trackVariants = cva('w-full overflow-hidden rounded-full', {
@@ -33,11 +40,24 @@ export interface IUIProgressProps
 /** Полоса прогресса. Значение за пределами 0…max не ломает ширину. */
 const UIProgressBase = forwardRef<HTMLDivElement, IUIProgressProps>(
   (
-    { className, testId, value, max = 100, size, track, color = 'var(--primary)', ariaLabel = 'Прогресс', ...props },
+    {
+      className,
+      testId,
+      value,
+      max = 100,
+      size,
+      track,
+      color = 'var(--primary)',
+      ariaLabel = 'Прогресс',
+      ...props
+    },
     ref,
   ) => {
     const safeMax = max > 0 ? max : 100;
-    const clamped = Math.min(safeMax, Math.max(0, Number.isFinite(value) ? value : 0));
+    const clamped = Math.min(
+      safeMax,
+      Math.max(0, Number.isFinite(value) ? value : 0),
+    );
     const indicator: CSSProperties = {
       width: `${String((clamped / safeMax) * 100)}%`,
       backgroundColor: color,
@@ -46,7 +66,7 @@ const UIProgressBase = forwardRef<HTMLDivElement, IUIProgressProps>(
     return (
       <div
         ref={ref}
-        role="progressbar"
+        role='progressbar'
         aria-label={ariaLabel}
         aria-valuemin={0}
         aria-valuemax={safeMax}
@@ -55,7 +75,10 @@ const UIProgressBase = forwardRef<HTMLDivElement, IUIProgressProps>(
         className={cn(trackVariants({ size, track }), className)}
         {...props}
       >
-        <div className="h-full rounded-full transition-[width] duration-300 ease-out" style={indicator} />
+        <div
+          className='h-full rounded-full transition-[width] duration-300 ease-out'
+          style={indicator}
+        />
       </div>
     );
   },

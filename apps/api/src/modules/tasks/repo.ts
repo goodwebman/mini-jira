@@ -1,5 +1,6 @@
 import type { BoardRole, TaskRole, TaskStatus } from '@gwmt/contracts';
 import {
+  type SQL,
   and,
   asc,
   desc,
@@ -11,19 +12,19 @@ import {
   notInArray,
   or,
   sql,
-  type SQL,
 } from 'drizzle-orm';
-import { alias, type AnyPgColumn } from 'drizzle-orm/pg-core';
+import { type AnyPgColumn, alias } from 'drizzle-orm/pg-core';
+
 import type { Db } from '../../db/client.js';
 import {
   boardMembers,
   boards,
-  sprints,
   sprintTasks,
+  sprints,
   taskComments,
   taskLinks,
-  tasks,
   taskStatusIntervals,
+  tasks,
   users,
 } from '../../db/schema.js';
 import { containsPattern } from '../../lib/search.js';
@@ -55,14 +56,24 @@ const cardColumns = {
     join tasks blocker on blocker.id = link.target_task_id
     where link.task_id = ${tasks.id} and link.type = 'blockedBy' and blocker.status <> 'done'
   ))`,
-  author: { id: author.id, name: author.name, job: author.job, colorIndex: author.colorIndex },
+  author: {
+    id: author.id,
+    name: author.name,
+    job: author.job,
+    colorIndex: author.colorIndex,
+  },
   reviewer: {
     id: reviewer.id,
     name: reviewer.name,
     job: reviewer.job,
     colorIndex: reviewer.colorIndex,
   },
-  tester: { id: tester.id, name: tester.name, job: tester.job, colorIndex: tester.colorIndex },
+  tester: {
+    id: tester.id,
+    name: tester.name,
+    job: tester.job,
+    colorIndex: tester.colorIndex,
+  },
   designer: {
     id: designer.id,
     name: designer.name,
@@ -82,7 +93,10 @@ const cardQuery = (db: Db) =>
 
 export type TaskCardRow = Awaited<ReturnType<typeof cardQuery>>[number];
 
-export async function findCard(db: Db, taskId: string): Promise<TaskCardRow | null> {
+export async function findCard(
+  db: Db,
+  taskId: string,
+): Promise<TaskCardRow | null> {
   const [row] = await cardQuery(db).where(eq(tasks.id, taskId));
   return row ?? null;
 }
@@ -124,7 +138,10 @@ export function listTaskLinks(db: Db, taskId: string, userId: string) {
     .innerJoin(boards, eq(boards.id, tasks.boardId))
     .leftJoin(
       boardMembers,
-      and(eq(boardMembers.boardId, tasks.boardId), eq(boardMembers.userId, userId)),
+      and(
+        eq(boardMembers.boardId, tasks.boardId),
+        eq(boardMembers.userId, userId),
+      ),
     )
     .where(eq(taskLinks.taskId, taskId))
     .orderBy(asc(taskLinks.createdAt), asc(tasks.key));
@@ -144,7 +161,11 @@ export function listTaskComments(db: Db, taskId: string) {
     .orderBy(asc(taskComments.createdAt), asc(taskComments.id));
 }
 
-export function listAssigneeOptions(db: Db, boardId: number, currentPeople: string[]) {
+export function listAssigneeOptions(
+  db: Db,
+  boardId: number,
+  currentPeople: string[],
+) {
   return db
     .select(userBriefColumns)
     .from(users)
@@ -155,7 +176,12 @@ export function listAssigneeOptions(db: Db, boardId: number, currentPeople: stri
           db
             .select({ id: boardMembers.userId })
             .from(boardMembers)
-            .where(and(eq(boardMembers.boardId, boardId), ne(boardMembers.role, 'guest'))),
+            .where(
+              and(
+                eq(boardMembers.boardId, boardId),
+                ne(boardMembers.role, 'guest'),
+              ),
+            ),
         ),
         inArray(users.id, currentPeople),
       ),
@@ -163,11 +189,20 @@ export function listAssigneeOptions(db: Db, boardId: number, currentPeople: stri
     .orderBy(asc(users.name));
 }
 
-export async function listMemberRoles(db: Db, boardId: number, userIds: string[]) {
+export async function listMemberRoles(
+  db: Db,
+  boardId: number,
+  userIds: string[],
+) {
   const rows = await db
     .select({ userId: boardMembers.userId, role: boardMembers.role })
     .from(boardMembers)
-    .where(and(eq(boardMembers.boardId, boardId), inArray(boardMembers.userId, userIds)));
+    .where(
+      and(
+        eq(boardMembers.boardId, boardId),
+        inArray(boardMembers.userId, userIds),
+      ),
+    );
   return new Map<string, BoardRole>(rows.map((row) => [row.userId, row.role]));
 }
 
@@ -177,24 +212,41 @@ export async function takeNextTaskNumber(db: Db, boardId: number) {
     .update(boards)
     .set({ taskSeq: sql`${boards.taskSeq} + 1` })
     .where(eq(boards.id, boardId))
-    .returning({ number: boards.taskSeq, boardKey: boards.key, timezone: boards.timezone });
+    .returning({
+      number: boards.taskSeq,
+      boardKey: boards.key,
+      timezone: boards.timezone,
+    });
   if (!row) throw new Error('board not found');
   return row;
 }
 
 export async function insertTask(db: Db, values: typeof tasks.$inferInsert) {
-  const [task] = await db.insert(tasks).values(values).returning({ id: tasks.id });
+  const [task] = await db
+    .insert(tasks)
+    .values(values)
+    .returning({ id: tasks.id });
   if (!task) throw new Error('task was not created');
   return task.id;
 }
 
-export async function addTaskToSprint(db: Db, sprintId: string, taskId: string, addedAt: Date) {
+export async function addTaskToSprint(
+  db: Db,
+  sprintId: string,
+  taskId: string,
+  addedAt: Date,
+) {
   await db.insert(sprintTasks).values({ sprintId, taskId, addedAt });
 }
 
 export async function insertInterval(
   db: Db,
-  values: { taskId: string; status: TaskStatus; enteredAt: Date; changedBy: string },
+  values: {
+    taskId: string;
+    status: TaskStatus;
+    enteredAt: Date;
+    changedBy: string;
+  },
 ) {
   await db.insert(taskStatusIntervals).values(values);
 }
@@ -211,21 +263,40 @@ export async function closeOpenInterval(
       leftAt,
       pausedSec: sql`${taskStatusIntervals.pausedSec} + ${extraPausedSec}`,
     })
-    .where(and(eq(taskStatusIntervals.taskId, taskId), isNull(taskStatusIntervals.leftAt)));
+    .where(
+      and(
+        eq(taskStatusIntervals.taskId, taskId),
+        isNull(taskStatusIntervals.leftAt),
+      ),
+    );
 }
 
-export async function addPauseToOpenInterval(db: Db, taskId: string, seconds: number) {
+export async function addPauseToOpenInterval(
+  db: Db,
+  taskId: string,
+  seconds: number,
+) {
   await db
     .update(taskStatusIntervals)
     .set({ pausedSec: sql`${taskStatusIntervals.pausedSec} + ${seconds}` })
-    .where(and(eq(taskStatusIntervals.taskId, taskId), isNull(taskStatusIntervals.leftAt)));
+    .where(
+      and(
+        eq(taskStatusIntervals.taskId, taskId),
+        isNull(taskStatusIntervals.leftAt),
+      ),
+    );
 }
 
 export async function firstWorkStartedAt(db: Db, taskId: string) {
   const [row] = await db
     .select({ enteredAt: taskStatusIntervals.enteredAt })
     .from(taskStatusIntervals)
-    .where(and(eq(taskStatusIntervals.taskId, taskId), ne(taskStatusIntervals.status, 'todo')))
+    .where(
+      and(
+        eq(taskStatusIntervals.taskId, taskId),
+        ne(taskStatusIntervals.status, 'todo'),
+      ),
+    )
     .orderBy(asc(taskStatusIntervals.enteredAt))
     .limit(1);
   return row?.enteredAt ?? null;
@@ -304,7 +375,10 @@ export async function findLinkTarget(db: Db, key: string, userId: string) {
     .innerJoin(boards, eq(boards.id, tasks.boardId))
     .leftJoin(
       boardMembers,
-      and(eq(boardMembers.boardId, tasks.boardId), eq(boardMembers.userId, userId)),
+      and(
+        eq(boardMembers.boardId, tasks.boardId),
+        eq(boardMembers.userId, userId),
+      ),
     )
     .where(eq(tasks.key, key));
   return row ?? null;
@@ -314,7 +388,10 @@ export async function findLinkTarget(db: Db, key: string, userId: string) {
  * Обе стороны одним запросом и в постоянном порядке строк: встречные запросы A-B и B-A
  * блокируют строки одинаково и не приходят к взаимной блокировке.
  */
-export async function insertLinkPair(db: Db, rows: (typeof taskLinks.$inferInsert)[]) {
+export async function insertLinkPair(
+  db: Db,
+  rows: (typeof taskLinks.$inferInsert)[],
+) {
   const ordered = rows.toSorted((a, b) => a.taskId.localeCompare(b.taskId));
   const inserted = await db
     .insert(taskLinks)
@@ -335,7 +412,10 @@ export async function deleteLinkPair(db: Db, taskId: string, targetId: string) {
     );
 }
 
-export async function insertComment(db: Db, values: typeof taskComments.$inferInsert) {
+export async function insertComment(
+  db: Db,
+  values: typeof taskComments.$inferInsert,
+) {
   const [comment] = await db.insert(taskComments).values(values).returning();
   if (!comment) throw new Error('comment was not created');
   return comment;
@@ -344,7 +424,11 @@ export async function insertComment(db: Db, values: typeof taskComments.$inferIn
 export function searchTasks(
   db: Db,
   userId: string,
-  query: { q?: string | undefined; excludeLinkedTo?: string | undefined; limit: number },
+  query: {
+    q?: string | undefined;
+    excludeLinkedTo?: string | undefined;
+    limit: number;
+  },
 ) {
   const { q, excludeLinkedTo, limit } = query;
   return db
@@ -359,12 +443,20 @@ export function searchTasks(
     .innerJoin(boards, eq(boards.id, tasks.boardId))
     .innerJoin(
       boardMembers,
-      and(eq(boardMembers.boardId, tasks.boardId), eq(boardMembers.userId, userId)),
+      and(
+        eq(boardMembers.boardId, tasks.boardId),
+        eq(boardMembers.userId, userId),
+      ),
     )
     .where(
       and(
         inArray(boardMembers.role, ['admin', 'worker']),
-        q ? or(ilike(tasks.title, containsPattern(q)), ilike(tasks.key, containsPattern(q))) : undefined,
+        q
+          ? or(
+              ilike(tasks.title, containsPattern(q)),
+              ilike(tasks.key, containsPattern(q)),
+            )
+          : undefined,
         excludeLinkedTo ? ne(tasks.key, excludeLinkedTo) : undefined,
         excludeLinkedTo
           ? notInArray(
@@ -429,7 +521,10 @@ const myTasksFrom = (db: Db, userId: string) =>
     .innerJoin(boards, eq(boards.id, tasks.boardId))
     .innerJoin(
       boardMembers,
-      and(eq(boardMembers.boardId, tasks.boardId), eq(boardMembers.userId, userId)),
+      and(
+        eq(boardMembers.boardId, tasks.boardId),
+        eq(boardMembers.userId, userId),
+      ),
     );
 
 export type MyTaskRow = Awaited<ReturnType<typeof myTasksFrom>>[number];
@@ -440,11 +535,19 @@ export interface MyTasksFilter {
   role?: TaskRole | undefined;
 }
 
-function myTasksCondition(userId: string, filter: MyTasksFilter): SQL | undefined {
+function myTasksCondition(
+  userId: string,
+  filter: MyTasksFilter,
+): SQL | undefined {
   const { q, status, role } = filter;
   return and(
     isParticipant(userId),
-    q ? or(ilike(tasks.title, containsPattern(q)), ilike(tasks.key, containsPattern(q))) : undefined,
+    q
+      ? or(
+          ilike(tasks.title, containsPattern(q)),
+          ilike(tasks.key, containsPattern(q)),
+        )
+      : undefined,
     status ? eq(tasks.status, status) : undefined,
     role ? eq(ROLE_COLUMN[role], userId) : undefined,
   );
@@ -464,7 +567,11 @@ export function listMyTasks(
     .offset(offset);
 }
 
-export async function countMyTasks(db: Db, userId: string, filter: MyTasksFilter) {
+export async function countMyTasks(
+  db: Db,
+  userId: string,
+  filter: MyTasksFilter,
+) {
   const [row] = await db
     .select({
       count: sql<number>`count(*)::int`,
@@ -475,7 +582,10 @@ export async function countMyTasks(db: Db, userId: string, filter: MyTasksFilter
     .from(tasks)
     .innerJoin(
       boardMembers,
-      and(eq(boardMembers.boardId, tasks.boardId), eq(boardMembers.userId, userId)),
+      and(
+        eq(boardMembers.boardId, tasks.boardId),
+        eq(boardMembers.userId, userId),
+      ),
     )
     .where(myTasksCondition(userId, filter));
   return row ?? { count: 0, spTenths: 0, openCount: 0, openSpTenths: 0 };

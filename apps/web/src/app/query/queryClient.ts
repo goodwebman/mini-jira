@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+
 import { shouldRetryQuery } from '@/entities/auth/lib';
 import { ApiError } from '@/shared/api';
 
@@ -9,7 +10,13 @@ export function createQueryClient(): QueryClient {
       queries: {
         staleTime: 30_000,
         retry: (failureCount, error) => {
-          if (error instanceof ApiError && error.status >= 400 && error.status < 500 && error.status !== 429) return false;
+          if (
+            error instanceof ApiError &&
+            error.status >= 400 &&
+            error.status < 500 &&
+            error.status !== 429
+          )
+            return false;
           return shouldRetryQuery(failureCount, error, 1);
         },
       },

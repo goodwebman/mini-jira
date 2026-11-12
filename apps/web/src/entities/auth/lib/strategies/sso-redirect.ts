@@ -14,7 +14,11 @@ export interface SsoRedirectOptions<TProvider extends string> {
 }
 
 function isSsoInput(input: unknown): input is SsoLoginInput {
-  return typeof input === 'object' && input !== null && typeof (input as SsoLoginInput).sso === 'string';
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    typeof (input as SsoLoginInput).sso === 'string'
+  );
 }
 
 /**
@@ -22,23 +26,43 @@ function isSsoInput(input: unknown): input is SsoLoginInput {
  * (паттерн BFF, рекомендован IETF для браузерных приложений): фронт лишь уводит пользователя
  * на сервер, а по возвращении `bootstrap()` поднимает сессию по cookie.
  */
-export function withSsoRedirect<TCredentials, TUser, TLoginInput, TProvider extends string = string>(
+export function withSsoRedirect<
+  TCredentials,
+  TUser,
+  TLoginInput,
+  TProvider extends string = string,
+>(
   strategy: AuthStrategy<TCredentials, TUser, TLoginInput>,
   options: SsoRedirectOptions<TProvider>,
-): AuthStrategy<TCredentials, TUser, TLoginInput | (SsoLoginInput & { sso: TProvider })> {
+): AuthStrategy<
+  TCredentials,
+  TUser,
+  TLoginInput | (SsoLoginInput & { sso: TProvider })
+> {
   return {
     name: `${strategy.name}+sso`,
     restore: (context) => strategy.restore(context),
     decorate: (credentials, target) => strategy.decorate(credentials, target),
     login: async (input, context) => {
-      if (!isSsoInput(input)) return strategy.login(input as TLoginInput, context);
-      const returnTo = sanitizeReturnTo(input.returnTo, options.defaultReturnTo);
+      if (!isSsoInput(input))
+        return strategy.login(input as TLoginInput, context);
+      const returnTo = sanitizeReturnTo(
+        input.returnTo,
+        options.defaultReturnTo,
+      );
       return { redirectTo: options.buildUrl(input.sso as TProvider, returnTo) };
     },
-    ...(strategy.renew ? { renew: (context) => strategy.renew?.(context) as never } : {}),
-    ...(strategy.logout ? { logout: async (context) => strategy.logout?.(context) } : {}),
+    ...(strategy.renew
+      ? { renew: (context) => strategy.renew?.(context) as never }
+      : {}),
+    ...(strategy.logout
+      ? { logout: async (context) => strategy.logout?.(context) }
+      : {}),
     ...(strategy.assess
-      ? { assess: (response, credentials) => strategy.assess?.(response, credentials) as never }
+      ? {
+          assess: (response, credentials) =>
+            strategy.assess?.(response, credentials) as never,
+        }
       : {}),
   };
 }

@@ -1,4 +1,7 @@
 import {
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
   cloneElement,
   forwardRef,
   isValidElement,
@@ -6,12 +9,10 @@ import {
   useId,
   useMemo,
   useRef,
-  type MouseEvent,
-  type ReactNode,
-  type RefObject,
 } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { Portal, type Placement } from '@/shared/lib/dom';
+import { type Placement, Portal } from '@/shared/lib/dom';
 import {
   useControllableState,
   useEscape,
@@ -69,7 +70,13 @@ function PopoverPanel({
   const panelRef = useRef<HTMLDivElement>(null);
   const ignoreRefs = useMemo(() => [anchorRef], [anchorRef]);
 
-  useFloatingPosition({ anchorRef, floatingRef: panelRef, open: true, placement, gutter });
+  useFloatingPosition({
+    anchorRef,
+    floatingRef: panelRef,
+    open: true,
+    placement,
+    gutter,
+  });
   useFocusTrap(panelRef, true);
   useEscape(onClose);
   useOutsideClick(panelRef, onClose, { ignoreRefs });
@@ -79,10 +86,10 @@ function PopoverPanel({
       <div
         ref={panelRef}
         id={id}
-        role="dialog"
+        role='dialog'
         aria-label={ariaLabel}
         tabIndex={-1}
-        data-name="UIPopoverContent"
+        data-name='UIPopoverContent'
         className={cn(
           'invisible fixed left-0 top-0 z-60 min-w-[192px] rounded-block border border-border bg-surface p-4 text-foreground shadow-popover outline-none',
           className,
@@ -102,7 +109,17 @@ function PopoverPanel({
  */
 const UIPopoverBase = forwardRef<HTMLDivElement, IUIPopoverProps>(
   (
-    { testId, trigger, children, open, onOpenChange, placement = 'bottom-start', gutter = 8, className, ariaLabel = 'Всплывающее окно' },
+    {
+      testId,
+      trigger,
+      children,
+      open,
+      onOpenChange,
+      placement = 'bottom-start',
+      gutter = 8,
+      className,
+      ariaLabel = 'Всплывающее окно',
+    },
     ref,
   ) => {
     const [isOpen, setOpen] = useControllableState({
@@ -130,7 +147,7 @@ const UIPopoverBase = forwardRef<HTMLDivElement, IUIPopoverProps>(
       <div
         ref={mergedRef}
         data-name={testId ? `UIPopover-${testId}` : 'UIPopover'}
-        className="inline-flex"
+        className='inline-flex'
       >
         {triggerElement}
         {isOpen && (

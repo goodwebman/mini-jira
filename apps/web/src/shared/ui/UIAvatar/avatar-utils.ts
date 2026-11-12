@@ -1,4 +1,11 @@
-export const AVATAR_TINTS = ['blue', 'orange', 'green', 'violet', 'gray', 'pink'] as const;
+export const AVATAR_TINTS = [
+  'blue',
+  'orange',
+  'green',
+  'violet',
+  'gray',
+  'pink',
+] as const;
 
 export type UIAvatarTint = (typeof AVATAR_TINTS)[number];
 

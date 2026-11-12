@@ -1,10 +1,25 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-import { forwardRef, memo, useId, useRef, type HTMLAttributes, type ReactNode } from 'react';
+import {
+  type HTMLAttributes,
+  type ReactNode,
+  forwardRef,
+  memo,
+  useId,
+  useRef,
+} from 'react';
+
+import { type VariantProps, cva } from 'class-variance-authority';
+
 import { cn } from '@/shared/lib/cn';
 import { Portal } from '@/shared/lib/dom';
-import { useEscape, useFocusTrap, useMergedRefs, useScrollLock } from '@/shared/lib/hooks';
-import { UIIcons } from '@/shared/ui/icons';
+import {
+  useEscape,
+  useFocusTrap,
+  useMergedRefs,
+  useScrollLock,
+} from '@/shared/lib/hooks';
 import { UIIconButton } from '@/shared/ui/UIIconButton';
+import { UIIcons } from '@/shared/ui/icons';
+
 import { useDialogContext } from './dialog-context';
 
 const dialogPanelVariants = cva(
@@ -25,7 +40,9 @@ const dialogPanelVariants = cva(
 );
 
 export interface IUIDialogContentProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, 'title'>, VariantProps<typeof dialogPanelVariants> {
+  extends
+    Omit<HTMLAttributes<HTMLDivElement>, 'title'>,
+    VariantProps<typeof dialogPanelVariants> {
   readonly testId?: string;
   /** Заголовок окна. Обязателен: это доступное имя диалога. */
   readonly title: ReactNode;
@@ -44,7 +61,17 @@ export interface IUIDialogContentProps
  */
 const UIDialogContentBase = forwardRef<HTMLDivElement, IUIDialogContentProps>(
   (
-    { className, testId, title, description, size, persistent = false, closeLabel = 'Закрыть', children, ...props },
+    {
+      className,
+      testId,
+      title,
+      description,
+      size,
+      persistent = false,
+      closeLabel = 'Закрыть',
+      children,
+      ...props
+    },
     ref,
   ) => {
     const { close } = useDialogContext();
@@ -59,17 +86,17 @@ const UIDialogContentBase = forwardRef<HTMLDivElement, IUIDialogContentProps>(
 
     return (
       <Portal>
-        <div className="fixed inset-0 z-50 flex items-stretch justify-center sm:items-center sm:p-6">
+        <div className='fixed inset-0 z-50 flex items-stretch justify-center sm:items-center sm:p-6'>
           <div
-            aria-hidden="true"
-            data-name="UIDialogOverlay"
-            className="absolute inset-0 animate-fade-in bg-overlay"
+            aria-hidden='true'
+            data-name='UIDialogOverlay'
+            className='absolute inset-0 animate-fade-in bg-overlay'
             onClick={persistent ? undefined : close}
           />
           <div
             ref={mergedRef}
-            role="dialog"
-            aria-modal="true"
+            role='dialog'
+            aria-modal='true'
             aria-labelledby={titleId}
             aria-describedby={description != null ? descriptionId : undefined}
             tabIndex={-1}
@@ -77,18 +104,25 @@ const UIDialogContentBase = forwardRef<HTMLDivElement, IUIDialogContentProps>(
             className={cn(dialogPanelVariants({ size }), className)}
             {...props}
           >
-            <header className="flex shrink-0 items-center gap-2 border-b border-border py-4 pl-6 pr-4">
-              <div className="min-w-0 flex-1">
-                <h2 id={titleId} className="m-0 text-title font-semibold">
+            <header className='flex shrink-0 items-center gap-2 border-b border-border py-4 pl-6 pr-4'>
+              <div className='min-w-0 flex-1'>
+                <h2 id={titleId} className='m-0 text-title font-semibold'>
                   {title}
                 </h2>
                 {description != null && (
-                  <p id={descriptionId} className="m-0 mt-1 text-small text-muted-foreground">
+                  <p
+                    id={descriptionId}
+                    className='m-0 mt-1 text-small text-muted-foreground'
+                  >
                     {description}
                   </p>
                 )}
               </div>
-              <UIIconButton label={closeLabel} onClick={close} data-focus-skip="">
+              <UIIconButton
+                label={closeLabel}
+                onClick={close}
+                data-focus-skip=''
+              >
                 <UIIcons.X />
               </UIIconButton>
             </header>

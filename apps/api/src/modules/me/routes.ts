@@ -9,6 +9,7 @@ import {
   updateMeBodySchema,
 } from '@gwmt/contracts';
 import { createRoute } from '@hono/zod-openapi';
+
 import { TAG } from '../../lib/api-docs.js';
 import type { AppDeps } from '../../lib/context.js';
 import {
@@ -63,7 +64,11 @@ export function meRoutes(deps: AppDeps) {
         }),
       },
     }),
-    async (c) => c.json(await service.updateMe(deps, c.get('userId'), c.req.valid('json')), 200),
+    async (c) =>
+      c.json(
+        await service.updateMe(deps, c.get('userId'), c.req.valid('json')),
+        200,
+      ),
   );
 
   router.openapi(
@@ -110,11 +115,22 @@ export function meRoutes(deps: AppDeps) {
       request: { query: navSummaryQuerySchema },
       responses: {
         200: jsonResponse(navSummarySchema, 'Сводка'),
-        ...errors({ 401: ACCESS_ERRORS, 404: ['BOARD_NOT_FOUND'], 422: ['VALIDATION_ERROR'] }),
+        ...errors({
+          401: ACCESS_ERRORS,
+          404: ['BOARD_NOT_FOUND'],
+          422: ['VALIDATION_ERROR'],
+        }),
       },
     }),
     async (c) =>
-      c.json(await getNavSummary(deps, c.get('userId'), c.req.valid('query').boardId), 200),
+      c.json(
+        await getNavSummary(
+          deps,
+          c.get('userId'),
+          c.req.valid('query').boardId,
+        ),
+        200,
+      ),
   );
 
   router.openapi(
@@ -124,7 +140,8 @@ export function meRoutes(deps: AppDeps) {
       operationId: 'getMyTaskStats',
       tags,
       summary: 'Статистика задач для профиля',
-      description: 'Учитываются только задачи с досок, где пользователь участник.',
+      description:
+        'Учитываются только задачи с досок, где пользователь участник.',
       security: bearerAuth,
       responses: {
         200: jsonResponse(myTaskStatsSchema, 'Статистика'),
@@ -152,7 +169,11 @@ export function meRoutes(deps: AppDeps) {
         ...errors({ 401: ACCESS_ERRORS, 422: ['VALIDATION_ERROR'] }),
       },
     }),
-    async (c) => c.json(await listMyTasks(deps, c.get('userId'), c.req.valid('query')), 200),
+    async (c) =>
+      c.json(
+        await listMyTasks(deps, c.get('userId'), c.req.valid('query')),
+        200,
+      ),
   );
 
   return router;

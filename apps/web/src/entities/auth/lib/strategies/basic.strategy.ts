@@ -17,13 +17,17 @@ export interface BasicLoginInput {
 
 export interface BasicStrategyOptions<TUser> {
   /** Проверяет реквизиты на сервере. На неверные бросает ошибку со статусом 401. */
-  readonly verify: (authorization: string, context: StrategyContext) => Promise<TUser>;
+  readonly verify: (
+    authorization: string,
+    context: StrategyContext,
+  ) => Promise<TUser>;
 }
 
 /** `btoa` падает на кириллице, поэтому сначала UTF-8 (RFC 7617, charset). */
 function encodeBase64(value: string): string {
   let binary = '';
-  for (const byte of new TextEncoder().encode(value)) binary += String.fromCharCode(byte);
+  for (const byte of new TextEncoder().encode(value))
+    binary += String.fromCharCode(byte);
   return btoa(binary);
 }
 
@@ -32,9 +36,11 @@ function encodeBase64(value: string): string {
  * В памяти держится закодированный заголовок, исходный пароль не сохраняется.
  * После перезагрузки страницы сессии нет: хранить реквизиты негде безопасно.
  */
-export class BasicStrategy<TUser>
-  implements AuthStrategy<BasicCredentials, TUser, BasicLoginInput>
-{
+export class BasicStrategy<TUser> implements AuthStrategy<
+  BasicCredentials,
+  TUser,
+  BasicLoginInput
+> {
   readonly name = 'basic';
   readonly #verify: BasicStrategyOptions<TUser>['verify'];
 
@@ -51,14 +57,22 @@ export class BasicStrategy<TUser>
     context: StrategyContext,
   ): Promise<AuthGrant<BasicCredentials, TUser>> {
     if (username.includes(':')) {
-      throw new AuthError('bad_request', { message: 'Логин Basic не может содержать двоеточие' });
+      throw new AuthError('bad_request', {
+        message: 'Логин Basic не может содержать двоеточие',
+      });
     }
     const authorization = `Basic ${encodeBase64(`${username}:${password}`)}`;
-    return { credentials: { authorization }, user: await this.#verify(authorization, context) };
+    return {
+      credentials: { authorization },
+      user: await this.#verify(authorization, context),
+    };
   }
 
   // `omit` отключает родное окно логина браузера на 401 с `WWW-Authenticate: Basic`.
   decorate({ authorization }: BasicCredentials): AuthDecoration {
-    return { headers: { Authorization: authorization }, credentialsMode: 'omit' };
+    return {
+      headers: { Authorization: authorization },
+      credentialsMode: 'omit',
+    };
   }
 }

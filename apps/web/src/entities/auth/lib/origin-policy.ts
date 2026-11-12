@@ -13,17 +13,25 @@ export interface OriginPolicyOptions {
 
 function normalizeOrigin(entry: string, allowInsecure: boolean): string {
   const invalid = (reason: string) =>
-    new AuthError('misconfigured', { message: `Недопустимый origin "${entry}": ${reason}` });
+    new AuthError('misconfigured', {
+      message: `Недопустимый origin "${entry}": ${reason}`,
+    });
 
-  if (entry.includes('*')) throw invalid('маски запрещены, перечислите origin явно');
+  if (entry.includes('*'))
+    throw invalid('маски запрещены, перечислите origin явно');
   let url: URL;
   try {
     url = new URL(entry);
   } catch {
     throw invalid('это не URL');
   }
-  if (url.origin !== entry) throw invalid('нужен только origin, без пути и слэша на конце');
-  if (url.protocol === 'http:' && !allowInsecure && !LOOPBACK_HOSTS.has(url.hostname)) {
+  if (url.origin !== entry)
+    throw invalid('нужен только origin, без пути и слэша на конце');
+  if (
+    url.protocol === 'http:' &&
+    !allowInsecure &&
+    !LOOPBACK_HOSTS.has(url.hostname)
+  ) {
     throw invalid('токены нельзя отправлять по http');
   }
   return url.origin;
@@ -42,11 +50,15 @@ export class OriginPolicy {
   constructor(options: OriginPolicyOptions) {
     const allowInsecure = options.allowInsecureOrigins ?? false;
     const parse = (entries: readonly string[] | undefined) =>
-      new Set((entries ?? []).map((entry) => normalizeOrigin(entry, allowInsecure)));
+      new Set(
+        (entries ?? []).map((entry) => normalizeOrigin(entry, allowInsecure)),
+      );
     this.#trusted = parse(options.trustedOrigins);
     this.#redirects = parse(options.redirectOrigins);
     if (options.baseUrl !== undefined && !URL.canParse(options.baseUrl)) {
-      throw new AuthError('misconfigured', { message: `Недопустимый baseUrl "${options.baseUrl}"` });
+      throw new AuthError('misconfigured', {
+        message: `Недопустимый baseUrl "${options.baseUrl}"`,
+      });
     }
     this.#baseUrl = options.baseUrl;
     this.#selfOrigin = options.selfOrigin;
@@ -72,12 +84,17 @@ export class OriginPolicy {
 
   isTrusted(url: string): boolean {
     const origin = this.#parse(url)?.origin;
-    return origin !== undefined && (this.#trusted.has(origin) || this.#isOwn(origin));
+    return (
+      origin !== undefined && (this.#trusted.has(origin) || this.#isOwn(origin))
+    );
   }
 
   isAllowedRedirect(url: string): boolean {
     const origin = this.#parse(url)?.origin;
-    return origin !== undefined && (this.#redirects.has(origin) || this.isTrusted(url));
+    return (
+      origin !== undefined &&
+      (this.#redirects.has(origin) || this.isTrusted(url))
+    );
   }
 }
 
@@ -86,11 +103,15 @@ export class OriginPolicy {
  * тем же алгоритмом, что и в браузере: `//evil.com`, `/\evil.com` и `/\t/evil.com` уводят
  * на чужой origin, поэтому отсеиваются. Символы вручную не перебираем, чтобы не разойтись с ним.
  */
-export function sanitizeReturnTo(value: string | null | undefined, fallback = '/'): string {
+export function sanitizeReturnTo(
+  value: string | null | undefined,
+  fallback = '/',
+): string {
   if (typeof value !== 'string' || !value.startsWith('/')) return fallback;
   try {
     const parsed = new URL(value, RETURN_TO_PROBE);
-    if (parsed.origin === RETURN_TO_PROBE) return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    if (parsed.origin === RETURN_TO_PROBE)
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     // Строка вида `//[` не разбирается вовсе.
   }

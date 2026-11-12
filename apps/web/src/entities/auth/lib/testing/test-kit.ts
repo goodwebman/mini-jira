@@ -1,8 +1,19 @@
 import { vi } from 'vitest';
+
 import { AuthService, type AuthServiceConfig } from '../auth-service';
 import { LocalLocks } from '../platform/local-locks';
-import type { AuthChannel, AuthPlatform, AuthResumeInfo } from '../platform/types';
-import type { AuthAttempt, AuthEvent, AuthGrant, AuthStrategy, AuthTarget } from '../types';
+import type {
+  AuthChannel,
+  AuthPlatform,
+  AuthResumeInfo,
+} from '../platform/types';
+import type {
+  AuthAttempt,
+  AuthEvent,
+  AuthGrant,
+  AuthStrategy,
+  AuthTarget,
+} from '../types';
 
 export interface TestUser {
   readonly id: string;
@@ -13,7 +24,10 @@ export type TestGrant = AuthGrant<string, TestUser>;
 export type TestStrategy = AuthStrategy<string, TestUser, unknown>;
 
 export const SELF_ORIGIN = 'https://app.test';
-export const TARGET: AuthTarget = { url: `${SELF_ORIGIN}/api/tasks`, method: 'GET' };
+export const TARGET: AuthTarget = {
+  url: `${SELF_ORIGIN}/api/tasks`,
+  method: 'GET',
+};
 
 export const makeUser = (id = 'anna', name = id): TestUser => ({ id, name });
 
@@ -87,7 +101,8 @@ export class TestBrowser {
       now: () => this.now,
       origin: () => SELF_ORIGIN,
       isVisible: () => platform.visible,
-      withLock: (name, task, { timeoutMs }) => this.locks.run(name, task, timeoutMs),
+      withLock: (name, task, { timeoutMs }) =>
+        this.locks.run(name, task, timeoutMs),
       openChannel: (name) => this.openChannel(name),
       onResume: (listener) => {
         resumeListeners.add(listener);
@@ -119,7 +134,9 @@ export function createStrategy(overrides: Partial<TestStrategy> = {}) {
     name: 'test',
     restore: vi.fn<TestStrategy['restore']>(async () => null),
     login: vi.fn<TestStrategy['login']>(async () => makeGrant('login-token')),
-    renew: vi.fn<NonNullable<TestStrategy['renew']>>(async () => makeGrant('renewed-token')),
+    renew: vi.fn<NonNullable<TestStrategy['renew']>>(async () =>
+      makeGrant('renewed-token'),
+    ),
     logout: vi.fn<NonNullable<TestStrategy['logout']>>(async () => undefined),
     decorate: vi.fn<TestStrategy['decorate']>((token) => ({
       headers: { Authorization: `Bearer ${token}` },
@@ -157,7 +174,10 @@ export function createAuth(
 
 /** Сессия уже поднята на токене `token`. */
 export async function createSignedIn(
-  options: Parameters<typeof createAuth>[0] & { token?: string; ttlMs?: number | null } = {},
+  options: Parameters<typeof createAuth>[0] & {
+    token?: string;
+    ttlMs?: number | null;
+  } = {},
 ) {
   const token = options.token ?? 'first-token';
   const context = createAuth({
@@ -172,7 +192,8 @@ export async function createSignedIn(
   return context;
 }
 
-const authorizationOf = (attempt: AuthAttempt) => attempt.headers.Authorization ?? null;
+const authorizationOf = (attempt: AuthAttempt) =>
+  attempt.headers.Authorization ?? null;
 
 /** Сервер: принимает только перечисленные токены и записывает, что пришло. */
 export function createServer(...acceptedTokens: string[]) {
@@ -181,7 +202,9 @@ export function createServer(...acceptedTokens: string[]) {
   const send = vi.fn(async (attempt: AuthAttempt) => {
     const authorization = authorizationOf(attempt);
     received.push(authorization);
-    return { status: authorization !== null && accepted.has(authorization) ? 200 : 401 };
+    return {
+      status: authorization !== null && accepted.has(authorization) ? 200 : 401,
+    };
   });
   return { send, received };
 }

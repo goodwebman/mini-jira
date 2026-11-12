@@ -1,12 +1,21 @@
+import {
+  type InputHTMLAttributes,
+  type ReactNode,
+  forwardRef,
+  memo,
+} from 'react';
+
 import type { VariantProps } from 'class-variance-authority';
-import { forwardRef, memo, type InputHTMLAttributes, type ReactNode } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 import { FieldError } from '@/shared/ui/UIField/FieldError';
 import { fieldControlVariants } from '@/shared/ui/UIField/field.styles';
 import { useFieldControl } from '@/shared/ui/UIField/use-field-control';
 
 export interface IUIInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof fieldControlVariants> {
+  extends
+    Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>,
+    VariantProps<typeof fieldControlVariants> {
   readonly testId?: string;
   /** Ошибка: строка показывается под полем, `true` — только красная рамка. */
   readonly error?: boolean | string;
@@ -44,9 +53,9 @@ const UIInputBase = forwardRef<HTMLInputElement, IUIInputProps>(
 
     return (
       <div className={cn('w-full min-w-0', wrapperClassName)}>
-        <div className="relative">
+        <div className='relative'>
           {leftSlot != null && (
-            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground">
+            <div className='pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground'>
               {leftSlot}
             </div>
           )}
@@ -68,10 +77,14 @@ const UIInputBase = forwardRef<HTMLInputElement, IUIInputProps>(
             {...props}
           />
           {rightSlot != null && (
-            <div className="absolute inset-y-0 right-1 flex items-center">{rightSlot}</div>
+            <div className='absolute inset-y-0 right-1 flex items-center'>
+              {rightSlot}
+            </div>
           )}
         </div>
-        {control.errorText && <FieldError id={control.errorId}>{control.errorText}</FieldError>}
+        {control.errorText && (
+          <FieldError id={control.errorId}>{control.errorText}</FieldError>
+        )}
       </div>
     );
   },

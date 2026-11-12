@@ -1,11 +1,11 @@
 import type { Env } from '../../lib/env.js';
 import {
-  displayName,
+  type OAuthClient,
   OAuthFlowError,
+  type OAuthIdentity,
+  displayName,
   oauthCallbackUrl,
   readOAuthJson,
-  type OAuthClient,
-  type OAuthIdentity,
 } from './oauth.js';
 
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -35,11 +35,15 @@ function authorizeUrl(env: Env, state: string): string {
  * Правило из документации Google: адрес точно принадлежит владельцу аккаунта только у Gmail
  * и Workspace. У остальных email_verified мог быть выставлен давно, а почта с тех пор сменила владельца.
  */
-const isEmailAuthoritative = (email: string, hostedDomain: string | undefined) =>
-  email.toLowerCase().endsWith('@gmail.com') || Boolean(hostedDomain);
+const isEmailAuthoritative = (
+  email: string,
+  hostedDomain: string | undefined,
+) => email.toLowerCase().endsWith('@gmail.com') || Boolean(hostedDomain);
 
 async function fetchIdentity(env: Env, code: string): Promise<OAuthIdentity> {
-  const { access_token: accessToken } = await readOAuthJson<{ access_token?: string }>(
+  const { access_token: accessToken } = await readOAuthJson<{
+    access_token?: string;
+  }>(
     await fetch(TOKEN_URL, {
       method: 'POST',
       headers: {
@@ -58,12 +62,16 @@ async function fetchIdentity(env: Env, code: string): Promise<OAuthIdentity> {
   if (!accessToken) throw new OAuthFlowError('failed');
 
   const profile = await readOAuthJson<GoogleProfile>(
-    await fetch(USERINFO_URL, { headers: { Authorization: `Bearer ${accessToken}` } }),
+    await fetch(USERINFO_URL, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
   );
   if (!profile.sub) throw new OAuthFlowError('failed');
 
-  const verified = profile.email_verified === true || profile.email_verified === 'true';
-  if (!profile.email || !verified) throw new OAuthFlowError('no_verified_email');
+  const verified =
+    profile.email_verified === true || profile.email_verified === 'true';
+  if (!profile.email || !verified)
+    throw new OAuthFlowError('no_verified_email');
 
   return {
     provider: 'google',
@@ -77,7 +85,13 @@ async function fetchIdentity(env: Env, code: string): Promise<OAuthIdentity> {
 export const googleClient: OAuthClient = {
   provider: 'google',
   label: 'Google',
-  failures: ['denied', 'state_mismatch', 'no_verified_email', 'failed', 'email_not_trusted'],
+  failures: [
+    'denied',
+    'state_mismatch',
+    'no_verified_email',
+    'failed',
+    'email_not_trusted',
+  ],
   failureNote:
     '`google_email_not_trusted` значит, что аккаунт с таким email уже есть, а Google не отвечает за этот адрес ' +
     '(это не Gmail и не Workspace). Нужно войти другим способом.',

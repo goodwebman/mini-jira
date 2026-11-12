@@ -1,8 +1,19 @@
-import { forwardRef, memo, useId, useRef, type HTMLAttributes, type ReactNode } from 'react';
+import {
+  type HTMLAttributes,
+  type ReactNode,
+  forwardRef,
+  memo,
+  useId,
+  useRef,
+} from 'react';
+
 import { cn } from '@/shared/lib/cn';
 import { useEscape, useFocusTrap, useMergedRefs } from '@/shared/lib/hooks';
 
-export interface IUIDrawerProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+export interface IUIDrawerProps extends Omit<
+  HTMLAttributes<HTMLElement>,
+  'title'
+> {
   readonly testId?: string;
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
@@ -28,15 +39,15 @@ const DrawerPanel = forwardRef<HTMLElement, DrawerPanelProps>(
     return (
       <>
         <div
-          aria-hidden="true"
-          data-name="UIDrawerOverlay"
-          className="absolute inset-0 z-30 animate-fade-in bg-overlay-soft"
+          aria-hidden='true'
+          data-name='UIDrawerOverlay'
+          className='absolute inset-0 z-30 animate-fade-in bg-overlay-soft'
           onClick={onClose}
         />
         <section
           ref={mergedRef}
-          role="dialog"
-          aria-modal="true"
+          role='dialog'
+          aria-modal='true'
           aria-labelledby={titleId}
           tabIndex={-1}
           data-name={testId ? `UIDrawer-${testId}` : 'UIDrawer'}
@@ -47,8 +58,8 @@ const DrawerPanel = forwardRef<HTMLElement, DrawerPanelProps>(
           )}
           {...props}
         >
-          <div className="flex items-center gap-2">
-            <h2 id={titleId} className="m-0 flex-1 text-title font-semibold">
+          <div className='flex items-center gap-2'>
+            <h2 id={titleId} className='m-0 flex-1 text-title font-semibold'>
               {title}
             </h2>
             {actions}

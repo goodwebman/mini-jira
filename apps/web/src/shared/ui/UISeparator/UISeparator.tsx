@@ -1,4 +1,5 @@
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 export interface IUISeparatorProps extends HTMLAttributes<HTMLDivElement> {
@@ -17,14 +18,17 @@ const UISeparatorBase = forwardRef<HTMLDivElement, IUISeparatorProps>(
       return (
         <div
           ref={ref}
-          role="separator"
+          role='separator'
           data-name={dataName}
-          className={cn('flex items-center gap-3 text-muted-foreground', className)}
+          className={cn(
+            'flex items-center gap-3 text-muted-foreground',
+            className,
+          )}
           {...props}
         >
-          <span aria-hidden="true" className="h-px flex-1 bg-border" />
+          <span aria-hidden='true' className='h-px flex-1 bg-border' />
           <span>{label}</span>
-          <span aria-hidden="true" className="h-px flex-1 bg-border" />
+          <span aria-hidden='true' className='h-px flex-1 bg-border' />
         </div>
       );
     }
@@ -32,7 +36,7 @@ const UISeparatorBase = forwardRef<HTMLDivElement, IUISeparatorProps>(
     return (
       <div
         ref={ref}
-        role="separator"
+        role='separator'
         aria-orientation={orientation}
         data-name={dataName}
         className={cn(

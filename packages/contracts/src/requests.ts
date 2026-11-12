@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import {
   boardRoleSchema,
   taskLinkTypeSchema,
@@ -31,7 +32,10 @@ const emailField = () => {
 
 const newPasswordField = () => {
   const message = 'Минимум 8 символов';
-  return z.string({ error: message }).min(8, message).max(128, 'Максимум 128 символов');
+  return z
+    .string({ error: message })
+    .min(8, message)
+    .max(128, 'Максимум 128 символов');
 };
 
 const userIdField = (message: string) => z.uuid({ error: message });
@@ -42,8 +46,14 @@ const spField = () => {
     .number({ error: message })
     .gt(0, message)
     .max(999, message)
-    .refine((value) => Math.abs(value * 10 - Math.round(value * 10)) < 1e-9, message)
-    .meta({ multipleOf: 0.1, description: 'Оценка: больше 0, не больше 999, один знак после запятой' });
+    .refine(
+      (value) => Math.abs(value * 10 - Math.round(value * 10)) < 1e-9,
+      message,
+    )
+    .meta({
+      multipleOf: 0.1,
+      description: 'Оценка: больше 0, не больше 999, один знак после запятой',
+    });
 };
 
 const taskTitleField = () => requiredText('Введите название', 255);
@@ -63,7 +73,11 @@ export const loginBodySchema = z
   .object({
     email: emailField(),
     password: z.string({ error: 'Введите пароль' }).min(1, 'Введите пароль'),
-    remember: z.boolean().describe('true: сессия на 30 дней. false: на 1 день и сессионная cookie'),
+    remember: z
+      .boolean()
+      .describe(
+        'true: сессия на 30 дней. false: на 1 день и сессионная cookie',
+      ),
   })
   .meta({ id: 'LoginBody' });
 export type LoginBody = z.infer<typeof loginBodySchema>;
@@ -80,7 +94,10 @@ export type UpdateMeBody = z.infer<typeof updateMeBodySchema>;
 
 export const changePasswordBodySchema = z
   .object({
-    currentPassword: z.string().optional().describe('Не нужен, если hasPassword равен false'),
+    currentPassword: z
+      .string()
+      .optional()
+      .describe('Не нужен, если hasPassword равен false'),
     newPassword: newPasswordField(),
   })
   .meta({ id: 'ChangePasswordBody' });
@@ -94,7 +111,9 @@ export const createBoardBodySchema = z
       .regex(BOARD_KEY_PATTERN, 'Введите ключ')
       .meta({ description: 'Ключ доски, неизменяемый', example: 'GWT' }),
     description: z.string().max(2000, tooLong(2000)).optional(),
-    memberIds: z.array(z.uuid()).describe('Эти люди получат роль worker. Создатель всегда admin'),
+    memberIds: z
+      .array(z.uuid())
+      .describe('Эти люди получат роль worker. Создатель всегда admin'),
   })
   .meta({ id: 'CreateBoardBody' });
 export type CreateBoardBody = z.infer<typeof createBoardBodySchema>;
@@ -116,10 +135,14 @@ export const createTaskBodySchema = z
   .object({
     title: taskTitleField(),
     description: taskDescriptionField().optional(),
-    status: taskStatusSchema.optional().describe('По умолчанию todo. Рабочий создаёт только в todo'),
+    status: taskStatusSchema
+      .optional()
+      .describe('По умолчанию todo. Рабочий создаёт только в todo'),
     priority: taskPrioritySchema.optional().describe('По умолчанию med'),
     sp: spField(),
-    authorId: userIdField('Выберите автора').describe('Кто ведёт задачу. Ему идёт вклад в KPI'),
+    authorId: userIdField('Выберите автора').describe(
+      'Кто ведёт задачу. Ему идёт вклад в KPI',
+    ),
     reviewerId: userIdField('Выберите ревьювера'),
     testerId: z.uuid().nullable().optional(),
     designerId: z.uuid().nullable().optional(),
@@ -141,11 +164,13 @@ export const updateTaskBodySchema = z
   })
   .meta({
     id: 'UpdateTaskBody',
-    description: 'Рабочий может прислать только status, иначе весь запрос отклоняется с 403',
+    description:
+      'Рабочий может прислать только status, иначе весь запрос отклоняется с 403',
   });
 export type UpdateTaskBody = z.infer<typeof updateTaskBodySchema>;
 
-const taskKeyField = () => z.string().regex(TASK_KEY_PATTERN).meta({ example: 'GWT-101' });
+const taskKeyField = () =>
+  z.string().regex(TASK_KEY_PATTERN).meta({ example: 'GWT-101' });
 
 export const createLinkBodySchema = z
   .object({
@@ -170,10 +195,13 @@ export const saltHeadersSchema = z.object({
     example: '1.0.0',
   }),
   'fastify-timestamp': z.string().meta({
-    description: 'Date.now() клиента строкой. Допустимое расхождение с сервером 5 минут',
+    description:
+      'Date.now() клиента строкой. Допустимое расхождение с сервером 5 минут',
     example: '1700000000000',
   }),
-  'fastify-token': z.string().describe('SHA256(salt + email + timestamp), email как в теле запроса'),
+  'fastify-token': z
+    .string()
+    .describe('SHA256(salt + email + timestamp), email как в теле запроса'),
 });
 
 // Параметры пути
@@ -189,7 +217,10 @@ export const boardMemberParamSchema = z.object({
 });
 export const sprintNumberParamSchema = z.object({
   boardId: positiveInt().meta({ description: 'Числовой id доски', example: 9 }),
-  number: positiveInt().meta({ description: 'Номер спринта на доске', example: 14 }),
+  number: positiveInt().meta({
+    description: 'Номер спринта на доске',
+    example: 14,
+  }),
 });
 export const taskKeyParamSchema = z.object({
   key: taskKeyField().describe('Ключ задачи'),
@@ -219,9 +250,14 @@ export const userSearchQuerySchema = z.object({
   q: z
     .string()
     .trim()
-    .refine((value) => value.length === 0 || value.length >= 2, 'Минимум 2 символа')
+    .refine(
+      (value) => value.length === 0 || value.length >= 2,
+      'Минимум 2 символа',
+    )
     .optional()
-    .describe('Вхождение в имя или точный email. Пусто: люди с других моих досок. Иначе минимум 2 символа'),
+    .describe(
+      'Вхождение в имя или точный email. Пусто: люди с других моих досок. Иначе минимум 2 символа',
+    ),
   excludeBoardId: positiveInt()
     .optional()
     .describe('Убрать участников этой доски. Нужна роль admin на ней'),

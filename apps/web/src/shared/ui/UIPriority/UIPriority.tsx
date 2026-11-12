@@ -1,6 +1,7 @@
-import { forwardRef, memo, type HTMLAttributes } from 'react';
+import { type HTMLAttributes, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { UIIcons, type UIIconComponent } from '@/shared/ui/icons';
+import { type UIIconComponent, UIIcons } from '@/shared/ui/icons';
 
 /** Приоритеты задач. Совпадают с `TaskPriority` из @gwmt/contracts. */
 export type UITaskPriority = 'crit' | 'high' | 'med' | 'low';
@@ -49,7 +50,10 @@ const UIPriorityBase = forwardRef<HTMLSpanElement, IUIPriorityProps>(
         )}
         {...props}
       >
-        <Icon className="size-icon-sm" title={children == null ? label : undefined} />
+        <Icon
+          className='size-icon-sm'
+          title={children == null ? label : undefined}
+        />
         {children}
       </span>
     );

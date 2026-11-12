@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-ssr
+coverage
+.vitest
+.vercel
+package-lock.json
+.husky
+# Generated files must stay identical to their generator output.
+apps/web/src/shared/ui/icons/generated
+apps/web/src/shared/ui/icons/registry.ts
+apps/api/drizzle/meta
+docs/openapi.json

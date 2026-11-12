@@ -1,4 +1,5 @@
-import { memo, type CSSProperties, type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 export interface IUIChartLegendItem {
@@ -33,28 +34,44 @@ function LegendMarker({
   if (marker === 'dot' || marker === 'square') {
     return (
       <span
-        aria-hidden="true"
-        className={cn('size-[10px] flex-none', marker === 'dot' ? 'rounded-full' : 'rounded-[3px]')}
+        aria-hidden='true'
+        className={cn(
+          'size-[10px] flex-none',
+          marker === 'dot' ? 'rounded-full' : 'rounded-[3px]',
+        )}
         style={{ backgroundColor: color }}
       />
     );
   }
 
-  const style: CSSProperties = { borderTop: `2px ${LINE_STYLE[marker]} ${color}` };
-  return <span aria-hidden="true" className="h-0 w-[16px] flex-none" style={style} />;
+  const style: CSSProperties = {
+    borderTop: `2px ${LINE_STYLE[marker]} ${color}`,
+  };
+  return (
+    <span aria-hidden='true' className='h-0 w-[16px] flex-none' style={style} />
+  );
 }
 
 /** Легенда графика: нужна при двух и более сериях. */
-function UIChartLegendBase({ items, variant = 'inline', className }: IUIChartLegendProps) {
+function UIChartLegendBase({
+  items,
+  variant = 'inline',
+  className,
+}: IUIChartLegendProps) {
   if (variant === 'list') {
     return (
-      <div data-name="UIChartLegend" className={cn('flex min-w-0 flex-col gap-1', className)}>
+      <div
+        data-name='UIChartLegend'
+        className={cn('flex min-w-0 flex-col gap-1', className)}
+      >
         {items.map((item, index) => (
-          <div key={index} className="flex items-center gap-2 text-small">
+          <div key={index} className='flex items-center gap-2 text-small'>
             <LegendMarker marker={item.marker ?? 'square'} color={item.color} />
-            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            <span className='min-w-0 flex-1 truncate'>{item.label}</span>
             {item.value != null && (
-              <strong className="font-semibold tabular-nums">{item.value}</strong>
+              <strong className='font-semibold tabular-nums'>
+                {item.value}
+              </strong>
             )}
           </div>
         ))}
@@ -64,11 +81,14 @@ function UIChartLegendBase({ items, variant = 'inline', className }: IUIChartLeg
 
   return (
     <div
-      data-name="UIChartLegend"
-      className={cn('flex flex-wrap gap-x-3 gap-y-1 text-caption text-muted-foreground', className)}
+      data-name='UIChartLegend'
+      className={cn(
+        'flex flex-wrap gap-x-3 gap-y-1 text-caption text-muted-foreground',
+        className,
+      )}
     >
       {items.map((item, index) => (
-        <span key={index} className="flex items-center gap-[6px]">
+        <span key={index} className='flex items-center gap-[6px]'>
           <LegendMarker marker={item.marker ?? 'square'} color={item.color} />
           {item.label}
         </span>

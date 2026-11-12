@@ -1,12 +1,22 @@
-import { createAuthFetch, type AuthFetch } from './adapters/fetch';
+import { type AuthFetch, createAuthFetch } from './adapters/fetch';
 import { AuthStore } from './auth-store';
 import { AuthError, toAuthError } from './errors';
-import { abortable, Backoff, SerialQueue, throwIfAborted, withDeadline } from './internal/async';
+import {
+  Backoff,
+  SerialQueue,
+  abortable,
+  throwIfAborted,
+  withDeadline,
+} from './internal/async';
 import { OriginPolicy } from './origin-policy';
 import { detectPlatform } from './platform/browser-platform';
-import type { AuthChannel, AuthPlatform, AuthResumeInfo } from './platform/types';
+import type {
+  AuthChannel,
+  AuthPlatform,
+  AuthResumeInfo,
+} from './platform/types';
 import { describeResponse, describeThrown } from './response-info';
-import { parseTabMessage, type TabMessage } from './tab-messages';
+import { type TabMessage, parseTabMessage } from './tab-messages';
 import type {
   AuthAttempt,
   AuthEvent,
@@ -72,7 +82,8 @@ export interface AuthServiceConfig<TUser, TLoginInput, TCredentials> {
   readonly onListenerError?: (error: unknown) => void;
 }
 
-type RenewalOutcome = { readonly ok: true } | { readonly ok: false; readonly error: AuthError };
+type RenewalOutcome =
+  { readonly ok: true } | { readonly ok: false; readonly error: AuthError };
 
 type SessionEnd =
   | { readonly type: 'logout'; readonly origin: AuthOrigin }
@@ -83,7 +94,8 @@ type SessionEnd =
       readonly error: AuthError | null;
     };
 
-const isRedirect = (value: object): value is AuthRedirect => 'redirectTo' in value;
+const isRedirect = (value: object): value is AuthRedirect =>
+  'redirectTo' in value;
 const sessionChanged = () => new AuthError('session_changed');
 const destroyed = () => new AuthError('destroyed');
 const reportToConsole = (error: unknown) => console.error('[auth]', error);
@@ -174,7 +186,8 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     this.#config = config;
     this.#strategy = config.strategy;
     this.#platform = config.platform ?? detectPlatform();
-    this.#operationTimeoutMs = config.operationTimeoutMs ?? OPERATION_TIMEOUT_MS;
+    this.#operationTimeoutMs =
+      config.operationTimeoutMs ?? OPERATION_TIMEOUT_MS;
     this.#logoutTimeoutMs = config.logoutTimeoutMs ?? LOGOUT_TIMEOUT_MS;
     this.#renewLeewayMs = config.renewLeewayMs ?? RENEW_LEEWAY_MS;
     this.#lockName = `${namespace}:session`;
@@ -201,10 +214,12 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   getSnapshot = (): AuthState<TUser> => this.#store.state;
 
   /** Подписка на снимок. Форма подходит для `useSyncExternalStore`. */
-  subscribe = (listener: () => void): Unsubscribe => this.#store.subscribe(listener);
+  subscribe = (listener: () => void): Unsubscribe =>
+    this.#store.subscribe(listener);
 
   /** Подписка на события: вход, выход, kick. */
-  on = (listener: (event: AuthEvent<TUser>) => void): Unsubscribe => this.#store.on(listener);
+  on = (listener: (event: AuthEvent<TUser>) => void): Unsubscribe =>
+    this.#store.on(listener);
 
   // ---------------------------------------------------------------------------
   // Жизненный цикл
@@ -217,7 +232,8 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   bootstrap = (): Promise<AuthState<TUser>> => {
     if (this.#isDestroyed) return Promise.resolve(this.getSnapshot());
     if (this.#bootstrapRun !== null) return this.#bootstrapRun;
-    if (this.getSnapshot().status !== 'unknown') return Promise.resolve(this.getSnapshot());
+    if (this.getSnapshot().status !== 'unknown')
+      return Promise.resolve(this.getSnapshot());
 
     this.#connect();
     this.#isBootstrapAttempted = true;
@@ -241,7 +257,9 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   };
 
   /** Открыть сессию по реквизитам из внешнего сценария: SMS, QR, второй фактор. */
-  establish = async (grant: AuthGrant<TCredentials, TUser>): Promise<AuthState<TUser>> => {
+  establish = async (
+    grant: AuthGrant<TCredentials, TUser>,
+  ): Promise<AuthState<TUser>> => {
     if (this.#isDestroyed) throw destroyed();
     this.#connect();
     this.#cancelBootstrapRetry();
@@ -274,7 +292,11 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   /** Обновить данные пользователя. Сеть и 403 оставляют старые данные, 401 разбирает конвейер. */
   refreshUser = (): Promise<AuthState<TUser>> => {
     const { fetchUser } = this.#config;
-    if (this.#isDestroyed || !fetchUser || this.getSnapshot().status !== 'authenticated') {
+    if (
+      this.#isDestroyed ||
+      !fetchUser ||
+      this.getSnapshot().status !== 'authenticated'
+    ) {
       return Promise.resolve(this.getSnapshot());
     }
     if (this.#userRefresh !== null) return this.#userRefresh;
@@ -303,9 +325,13 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   /** Обновить профиль после успешной мутации, без запроса. Ключи с `undefined` пропускаются. */
   patchUser = (patch: Partial<TUser>): AuthState<TUser> => {
     const { status, user } = this.getSnapshot();
-    if (this.#isDestroyed || status !== 'authenticated' || user === null) return this.getSnapshot();
-    const defined = Object.entries(patch).filter(([, value]) => value !== undefined);
-    if (defined.length > 0) this.#applyUser({ ...user, ...Object.fromEntries(defined) });
+    if (this.#isDestroyed || status !== 'authenticated' || user === null)
+      return this.getSnapshot();
+    const defined = Object.entries(patch).filter(
+      ([, value]) => value !== undefined,
+    );
+    if (defined.length > 0)
+      this.#applyUser({ ...user, ...Object.fromEntries(defined) });
     return this.getSnapshot();
   };
 
@@ -341,22 +367,28 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   resolveUrl = (url: string): string => this.#policy.resolve(url);
 
   /** Шаг 1: дождаться актуальных реквизитов и получить подпись запроса. */
-  prepare = async (target: AuthTarget, options: PrepareOptions = {}): Promise<AuthAttempt> => {
+  prepare = async (
+    target: AuthTarget,
+    options: PrepareOptions = {},
+  ): Promise<AuthAttempt> => {
     const { signal, skip = false, retryOf } = options;
     if (this.#isDestroyed) throw destroyed();
     throwIfAborted(signal);
-    if (skip || !this.#policy.isTrusted(target.url)) return this.#anonymousAttempt(false);
+    if (skip || !this.#policy.isTrusted(target.url))
+      return this.#anonymousAttempt(false);
 
     await this.#awaitSettledSession(signal);
     if (this.#needsRenewal()) {
       const outcome = await abortable(this.#renew(), signal);
       // Токен ещё действует: refresh упал, а запрос пройдёт. Просроченный смысла слать нет.
-      if (!outcome.ok && this.#credentials !== null && this.#isExpired()) throw outcome.error;
+      if (!outcome.ok && this.#credentials !== null && this.#isExpired())
+        throw outcome.error;
     }
 
     const isRetry = retryOf !== undefined;
     // Повтор чужого запроса от имени нового пользователя хуже, чем ошибка.
-    if (retryOf?.authorized && retryOf.epoch !== this.#epoch) throw sessionChanged();
+    if (retryOf?.authorized && retryOf.epoch !== this.#epoch)
+      throw sessionChanged();
     if (this.#credentials === null) return this.#anonymousAttempt(isRetry);
 
     const epoch = this.#epoch;
@@ -421,10 +453,15 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     const { signal, skip } = options;
     const first = await this.prepare(target, { signal, skip });
     const firstSent = await this.#dispatch(first, send, options);
-    if ((await this.settle(first, firstSent.info, { signal })) === 'done') return firstSent.unwrap();
+    if ((await this.settle(first, firstSent.info, { signal })) === 'done')
+      return firstSent.unwrap();
 
     firstSent.discard();
-    const second = await this.prepare(target, { signal, skip, retryOf: first.ticket });
+    const second = await this.prepare(target, {
+      signal,
+      skip,
+      retryOf: first.ticket,
+    });
     const secondSent = await this.#dispatch(second, send, options);
     await this.settle(second, secondSent.info, { signal });
     return secondSent.unwrap();
@@ -468,7 +505,9 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
       const grant = await this.#exclusive(async () => {
         // Пользователь уже вышел, а сервер не узнал. Поднимать сессию по живой cookie нельзя.
         if (await this.#flushPendingLogout()) return null;
-        return withDeadline(this.#operationTimeoutMs, (signal) => this.#restore(signal));
+        return withDeadline(this.#operationTimeoutMs, (signal) =>
+          this.#restore(signal),
+        );
       });
       if (epoch === this.#epoch) this.#finishRestore(grant);
     } catch (cause) {
@@ -497,12 +536,17 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     this.#scheduleBootstrapRetry();
   }
 
-  async #restore(signal: AbortSignal): Promise<AuthGrant<TCredentials, TUser> | null> {
+  async #restore(
+    signal: AbortSignal,
+  ): Promise<AuthGrant<TCredentials, TUser> | null> {
     const stored = await this.#loadPersisted();
     return this.#strategy.restore({ stored, signal });
   }
 
-  async #loadPersisted(): Promise<PersistedSession<TCredentials, TUser> | null> {
+  async #loadPersisted(): Promise<PersistedSession<
+    TCredentials,
+    TUser
+  > | null> {
     const { persistence } = this.#config;
     if (!persistence) return null;
     try {
@@ -520,7 +564,8 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     this.#store.patch({ phase: 'signing-in', error: null });
     try {
       const result = await this.#exclusive(async () => {
-        if (this.#isDestroyed || signOuts !== this.#signOuts) throw sessionChanged();
+        if (this.#isDestroyed || signOuts !== this.#signOuts)
+          throw sessionChanged();
         const grant = await withDeadline(this.#operationTimeoutMs, (signal) =>
           this.#strategy.login(input, { signal }),
         );
@@ -541,14 +586,17 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
       await this.#storage.idle();
       return this.getSnapshot();
     } catch (cause) {
-      if (this.getSnapshot().phase === 'signing-in') this.#store.patch({ phase: 'idle' });
+      if (this.getSnapshot().phase === 'signing-in')
+        this.#store.patch({ phase: 'idle' });
       throw toAuthError(cause);
     }
   }
 
   #redirect({ redirectTo }: AuthRedirect): AuthState<TUser> {
     if (!this.#policy.isAllowedRedirect(redirectTo)) {
-      throw new AuthError('misconfigured', { message: 'Редирект на недоверенный адрес запрещён' });
+      throw new AuthError('misconfigured', {
+        message: 'Редирект на недоверенный адрес запрещён',
+      });
     }
     // Сначала переход: если он не удался, состояние не должно застрять в redirecting.
     this.#platform.navigate(this.#policy.resolve(redirectTo));
@@ -567,7 +615,8 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   async #runLogout(): Promise<AuthState<TUser>> {
     const { status } = this.getSnapshot();
     const isPending = this.#platform.markers.has(this.#pendingLogoutKey);
-    if (status === 'guest' && !isPending && this.#loginRun === null) return this.getSnapshot();
+    if (status === 'guest' && !isPending && this.#loginRun === null)
+      return this.getSnapshot();
 
     const credentials = this.#credentials;
     this.#signOuts += 1;
@@ -588,7 +637,9 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     const finished = this.#exclusive(() => this.#tryServerLogout(credentials));
     // За блокировкой может стоять зависший refresh. Выход на сервере дойдёт сам, а вызывающего
     // держать долго нельзя: состояние уже сброшено, и приложению пора уводить пользователя.
-    await withDeadline(this.#logoutTimeoutMs, () => finished).catch(() => undefined);
+    await withDeadline(this.#logoutTimeoutMs, () => finished).catch(
+      () => undefined,
+    );
   }
 
   async #tryServerLogout(credentials: TCredentials | null): Promise<boolean> {
@@ -605,7 +656,11 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
 
   /** Возвращает `true`, если выход всё ещё не удалось довести до сервера. */
   async #flushPendingLogout(): Promise<boolean> {
-    if (!this.#strategy.logout || !this.#platform.markers.has(this.#pendingLogoutKey)) return false;
+    if (
+      !this.#strategy.logout ||
+      !this.#platform.markers.has(this.#pendingLogoutKey)
+    )
+      return false;
     return !(await this.#tryServerLogout(null));
   }
 
@@ -618,12 +673,14 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     const previous = this.#currentIdentity();
     const next = user === null ? null : (this.#config.identify?.(user) ?? null);
     // Сравнить нечем, значит считаем, что пользователь сменился: лишний сброс кэша безопаснее.
-    const identityChanged = wasAuthenticated && (previous === null || previous !== next);
+    const identityChanged =
+      wasAuthenticated && (previous === null || previous !== next);
 
     this.#advanceEpoch();
     this.#adoptCredentials(grant);
 
-    const kickReason = user === null ? null : (this.#config.assessUser?.(user) ?? null);
+    const kickReason =
+      user === null ? null : (this.#config.assessUser?.(user) ?? null);
     if (kickReason !== null) {
       this.#kick(kickReason, null, true);
       return;
@@ -638,7 +695,12 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     });
     this.#persist();
     if (announce) {
-      this.#store.emit({ type: 'login', state: this.getSnapshot(), origin, identityChanged });
+      this.#store.emit({
+        type: 'login',
+        state: this.getSnapshot(),
+        origin,
+        identityChanged,
+      });
     }
     this.#announceReady();
     if (user === null) void this.refreshUser();
@@ -654,7 +716,13 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     this.#renewBlockedUntil = 0;
     this.#renewBackoff.reset();
     this.#cancelBootstrapRetry();
-    this.#store.patch({ status: 'guest', phase: 'idle', user: null, error: null, updatedAt: null });
+    this.#store.patch({
+      status: 'guest',
+      phase: 'idle',
+      user: null,
+      error: null,
+      updatedAt: null,
+    });
     const { persistence } = this.#config;
     if (persistence) this.#storage.add(() => persistence.clear());
   }
@@ -691,7 +759,8 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
       return;
     }
     this.#expiresAt = now + ttl;
-    this.#renewAt = now + Math.max(ttl - this.#renewLeewayMs, ttl / 2, MIN_RENEW_DELAY_MS);
+    this.#renewAt =
+      now + Math.max(ttl - this.#renewLeewayMs, ttl / 2, MIN_RENEW_DELAY_MS);
   }
 
   /** Применяет обновлённые реквизиты. Если сменился пользователь, это уже другая сессия. */
@@ -701,7 +770,8 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
       this.#openSession(grant, { origin: 'remote', announce: true });
       return;
     }
-    const kickReason = user === null ? null : (this.#config.assessUser?.(user) ?? null);
+    const kickReason =
+      user === null ? null : (this.#config.assessUser?.(user) ?? null);
     if (kickReason !== null) {
       this.#kick(kickReason, null);
       return;
@@ -740,7 +810,8 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   }
 
   #announceReady(): void {
-    if (this.#isReadyAnnounced || this.getSnapshot().status === 'unknown') return;
+    if (this.#isReadyAnnounced || this.getSnapshot().status === 'unknown')
+      return;
     this.#isReadyAnnounced = true;
     this.#store.emit({ type: 'ready', state: this.getSnapshot() });
   }
@@ -761,7 +832,12 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   // ---------------------------------------------------------------------------
 
   #needsRenewal(): boolean {
-    if (!this.#strategy.renew || this.#credentials === null || this.#renewAt === null) return false;
+    if (
+      !this.#strategy.renew ||
+      this.#credentials === null ||
+      this.#renewAt === null
+    )
+      return false;
     return this.#platform.now() >= this.#renewAt;
   }
 
@@ -772,14 +848,18 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   /** Один refresh на все ждущие запросы. Промис всегда выполняется, а не отклоняется. */
   #renew(): Promise<RenewalOutcome> {
     if (this.#renewal !== null) return this.#renewal;
-    if (this.#renewFailure !== null && this.#platform.now() < this.#renewBlockedUntil) {
+    if (
+      this.#renewFailure !== null &&
+      this.#platform.now() < this.#renewBlockedUntil
+    ) {
       return Promise.resolve({ ok: false, error: this.#renewFailure });
     }
     const epoch = this.#epoch;
     this.#store.patch({ phase: 'renewing' });
     const run = this.#performRenewal(epoch).finally(() => {
       if (this.#renewal === run) this.#renewal = null;
-      if (this.getSnapshot().phase === 'renewing') this.#store.patch({ phase: 'idle' });
+      if (this.getSnapshot().phase === 'renewing')
+        this.#store.patch({ phase: 'idle' });
     });
     this.#renewal = run;
     return run;
@@ -791,7 +871,10 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
       const grant = await this.#exclusive(async () => {
         if (epoch !== this.#epoch) return null;
         return withDeadline(this.#operationTimeoutMs, async (signal) => {
-          const renewed = await this.#strategy.renew?.({ credentials: this.#credentials, signal });
+          const renewed = await this.#strategy.renew?.({
+            credentials: this.#credentials,
+            signal,
+          });
           if (renewed === undefined) throw new AuthError('misconfigured');
           return renewed;
         });
@@ -812,21 +895,28 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
       }
       this.#renewFailure = error;
       this.#renewBlockedUntil =
-        this.#platform.now() + (error.retryAfterMs ?? this.#renewBackoff.next());
+        this.#platform.now() +
+        (error.retryAfterMs ?? this.#renewBackoff.next());
       this.#store.patch({ error });
       return { ok: false, error };
     }
   }
 
-  async #assess(response: AuthResponseInfo, credentials: TCredentials): Promise<AuthVerdict> {
-    if (this.#strategy.assess) return this.#strategy.assess(response, credentials);
+  async #assess(
+    response: AuthResponseInfo,
+    credentials: TCredentials,
+  ): Promise<AuthVerdict> {
+    if (this.#strategy.assess)
+      return this.#strategy.assess(response, credentials);
     if (response.status !== 401) return PASS;
     return this.#strategy.renew ? RENEW : REJECT;
   }
 
   async #awaitSettledSession(signal: AbortSignal | undefined): Promise<void> {
-    if (this.getSnapshot().status === 'unknown' && !this.#isBootstrapAttempted) void this.bootstrap();
-    if (this.#bootstrapRun !== null) await abortable(this.#bootstrapRun, signal);
+    if (this.getSnapshot().status === 'unknown' && !this.#isBootstrapAttempted)
+      void this.bootstrap();
+    if (this.#bootstrapRun !== null)
+      await abortable(this.#bootstrapRun, signal);
     if (this.#resyncRun !== null) await abortable(this.#resyncRun, signal);
     if (this.#renewal !== null) await abortable(this.#renewal, signal);
   }
@@ -834,7 +924,12 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   #anonymousAttempt(isRetry: boolean): AuthAttempt {
     return {
       headers: {},
-      ticket: { authorized: false, epoch: this.#epoch, version: this.#version, isRetry },
+      ticket: {
+        authorized: false,
+        epoch: this.#epoch,
+        version: this.#version,
+        isRetry,
+      },
     };
   }
 
@@ -879,17 +974,27 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     switch (message.type) {
       case 'logout':
         this.#signOuts += 1;
-        if (status !== 'guest') this.#endSession({ type: 'logout', origin: 'remote' });
+        if (status !== 'guest')
+          this.#endSession({ type: 'logout', origin: 'remote' });
         return;
       case 'kick':
         this.#signOuts += 1;
         if (status !== 'guest') {
-          this.#endSession({ type: 'kick', origin: 'remote', reason: message.reason, error: null });
+          this.#endSession({
+            type: 'kick',
+            origin: 'remote',
+            reason: message.reason,
+            error: null,
+          });
         }
         return;
       case 'login':
         // Вошёл тот же пользователь: у этой вкладки свой рабочий токен, сверять нечего.
-        if (status === 'authenticated' && message.identity !== null && message.identity === this.#currentIdentity()) {
+        if (
+          status === 'authenticated' &&
+          message.identity !== null &&
+          message.identity === this.#currentIdentity()
+        ) {
           return;
         }
         void this.#resync();
@@ -903,7 +1008,9 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     this.#renewFailure = null;
     if (this.getSnapshot().status === 'unknown') void this.bootstrap();
     if (this.#platform.markers.has(this.#pendingLogoutKey)) {
-      void this.#exclusive(() => this.#flushPendingLogout()).catch(() => undefined);
+      void this.#exclusive(() => this.#flushPendingLogout()).catch(
+        () => undefined,
+      );
     }
   }
 
@@ -917,8 +1024,12 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
       void this.#resync();
       return;
     }
-    const revalidateAfterMs = this.#config.revalidateAfterMs ?? REVALIDATE_AFTER_MS;
-    if (status === 'authenticated' && this.#platform.now() - this.#userCheckedAt >= revalidateAfterMs) {
+    const revalidateAfterMs =
+      this.#config.revalidateAfterMs ?? REVALIDATE_AFTER_MS;
+    if (
+      status === 'authenticated' &&
+      this.#platform.now() - this.#userCheckedAt >= revalidateAfterMs
+    ) {
       void this.refreshUser();
     }
   }
@@ -937,7 +1048,9 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     const epoch = this.#epoch;
     try {
       const grant = await this.#exclusive(() =>
-        withDeadline(this.#operationTimeoutMs, (signal) => this.#restore(signal)),
+        withDeadline(this.#operationTimeoutMs, (signal) =>
+          this.#restore(signal),
+        ),
       );
       if (epoch === this.#epoch) this.#applyResync(grant);
     } catch (cause) {
@@ -958,8 +1071,10 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
       else this.#openSession(grant, { origin: 'remote', announce: true });
       return;
     }
-    if (status === 'authenticated') this.#endSession({ type: 'logout', origin: 'remote' });
-    else if (this.getSnapshot().phase !== 'idle') this.#store.patch({ phase: 'idle' });
+    if (status === 'authenticated')
+      this.#endSession({ type: 'logout', origin: 'remote' });
+    else if (this.getSnapshot().phase !== 'idle')
+      this.#store.patch({ phase: 'idle' });
   }
 
   #scheduleBootstrapRetry(): void {

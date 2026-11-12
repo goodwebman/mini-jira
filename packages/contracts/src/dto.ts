@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import {
   boardRoleSchema,
   sprintStateSchema,
@@ -22,7 +23,8 @@ export type ISODate = z.infer<typeof isoDateSchema>;
  * Union вместо `.nullable()`: на именованной схеме генератор OpenAPI выдаёт `allOf`,
  * и по такому описанию null становится недопустимым, а типы фронта получаются неверными.
  */
-const nullableRef = <T extends z.ZodType>(schema: T) => z.union([schema, z.null()]);
+const nullableRef = <T extends z.ZodType>(schema: T) =>
+  z.union([schema, z.null()]);
 
 const statusValuesSchema = z
   .object({
@@ -32,7 +34,10 @@ const statusValuesSchema = z
     test: z.number(),
     done: z.number(),
   })
-  .meta({ id: 'StatusValues', description: 'Значение по каждому статусу задачи' });
+  .meta({
+    id: 'StatusValues',
+    description: 'Значение по каждому статусу задачи',
+  });
 
 export const healthResponseSchema = z
   .object({
@@ -47,7 +52,10 @@ export const userBriefSchema = z
     id: z.string(),
     name: z.string(),
     job: z.string(),
-    colorIndex: z.number().int().describe('Цвет аватара, 0..5. Инициалы и цвет считает фронт'),
+    colorIndex: z
+      .number()
+      .int()
+      .describe('Цвет аватара, 0..5. Инициалы и цвет считает фронт'),
   })
   .meta({ id: 'UserBrief' });
 export type UserBrief = z.infer<typeof userBriefSchema>;
@@ -69,7 +77,9 @@ export const meSchema = z
     job: z.string(),
     timezone: timezoneSchema,
     colorIndex: z.number().int(),
-    hasPassword: z.boolean().describe('false значит, что currentPassword при смене пароля не нужен'),
+    hasPassword: z
+      .boolean()
+      .describe('false значит, что currentPassword при смене пароля не нужен'),
     hasGithub: z.boolean(),
     hasGoogle: z.boolean(),
   })
@@ -78,7 +88,9 @@ export type Me = z.infer<typeof meSchema>;
 
 export const authResponseSchema = z
   .object({
-    accessToken: z.string().describe('JWT на 15 минут. Хранить только в памяти'),
+    accessToken: z
+      .string()
+      .describe('JWT на 15 минут. Хранить только в памяти'),
     accessTokenExpiresAt: isoDateTimeSchema,
     user: meSchema,
   })
@@ -131,7 +143,9 @@ export const boardDetailSchema = z
     myRole: boardRoleSchema,
     members: z
       .array(boardMemberSchema)
-      .describe('По addedAt. Источник для чипов, селектов и экрана участников. Гостей в чипы и селекты фронт не выводит'),
+      .describe(
+        'По addedAt. Источник для чипов, селектов и экрана участников. Гостей в чипы и селекты фронт не выводит',
+      ),
     currentSprint: sprintBriefSchema,
   })
   .meta({ id: 'BoardDetail' });
@@ -140,8 +154,13 @@ export type BoardDetail = z.infer<typeof boardDetailSchema>;
 export const taskTimerSchema = z
   .object({
     statusEnteredAt: isoDateTimeSchema,
-    pausedAt: isoDateTimeSchema.nullable().describe('Не null значит, что задача на паузе'),
-    pausedTotalSec: z.number().int().describe('Накопленная пауза в текущем статусе'),
+    pausedAt: isoDateTimeSchema
+      .nullable()
+      .describe('Не null значит, что задача на паузе'),
+    pausedTotalSec: z
+      .number()
+      .int()
+      .describe('Накопленная пауза в текущем статусе'),
     canPause: z.boolean().describe('Статус work, review или test'),
     completedInDays: z.number().int().nullable().describe('Только для done'),
   })
@@ -166,8 +185,12 @@ export const taskCardSchema = z
     createdAt: isoDateTimeSchema,
     timer: taskTimerSchema,
     linkCount: z.number().int(),
-    isBlocked: z.boolean().describe('Задача не в done и есть связь blockedBy с задачей не в done'),
-    isTakeLocked: z.boolean().describe('Администратор запретил брать задачу в работу'),
+    isBlocked: z
+      .boolean()
+      .describe('Задача не в done и есть связь blockedBy с задачей не в done'),
+    isTakeLocked: z
+      .boolean()
+      .describe('Администратор запретил брать задачу в работу'),
     people: z.object({
       author: userBriefSchema,
       reviewer: userBriefSchema,
@@ -195,7 +218,9 @@ export const taskLinkItemSchema = z
       title: z.string(),
       status: taskStatusSchema,
       boardName: z.string(),
-      canOpen: z.boolean().describe('Состоит ли смотрящий в доске связанной задачи'),
+      canOpen: z
+        .boolean()
+        .describe('Состоит ли смотрящий в доске связанной задачи'),
     }),
   })
   .meta({ id: 'TaskLinkItem' });
@@ -214,14 +239,22 @@ export type TaskComment = z.infer<typeof taskCommentSchema>;
 export const taskDetailSchema = taskCardSchema
   .extend({
     description: z.string(),
-    board: z.object({ id: z.number().int(), key: z.string(), name: z.string() }),
+    board: z.object({
+      id: z.number().int(),
+      key: z.string(),
+      name: z.string(),
+    }),
     sprint: sprintBriefSchema,
-    myRole: boardRoleSchema.describe('На экран можно попасть по ссылке, минуя доску'),
+    myRole: boardRoleSchema.describe(
+      'На экран можно попасть по ссылке, минуя доску',
+    ),
     links: z.array(taskLinkItemSchema),
     comments: z.array(taskCommentSchema).describe('От старых к новым'),
     assigneeOptions: z
       .array(userBriefSchema)
-      .describe('Участники доски без гостей плюс нынешние роли задачи, даже удалённые с доски'),
+      .describe(
+        'Участники доски без гостей плюс нынешние роли задачи, даже удалённые с доски',
+      ),
     serverTime: isoDateTimeSchema,
   })
   .meta({ id: 'TaskDetail' });
@@ -292,13 +325,17 @@ export const navSummarySchema = z
     myTasks: z.object({
       openCount: z.number().int(),
       openSp: z.number(),
-      next: z.array(z.object({ key: z.string(), title: z.string() })).describe('До 3 задач'),
+      next: z
+        .array(z.object({ key: z.string(), title: z.string() }))
+        .describe('До 3 задач'),
     }),
     kpi: z
       .object({
         sprintNumber: z.number().int(),
         donePct: z.number(),
-        remaining: z.array(z.number()).describe('remainingSp по дням от 0 до todayIndex'),
+        remaining: z
+          .array(z.number())
+          .describe('remainingSp по дням от 0 до todayIndex'),
       })
       .nullable()
       .describe('null, если у пользователя нет досок'),
@@ -312,7 +349,13 @@ export const myTaskStatsSchema = z
     closed: z.number().int(),
     totalSp: z.number(),
     nextOpen: z
-      .array(z.object({ key: z.string(), title: z.string(), priority: taskPrioritySchema }))
+      .array(
+        z.object({
+          key: z.string(),
+          title: z.string(),
+          priority: taskPrioritySchema,
+        }),
+      )
       .describe('До 4 задач'),
   })
   .meta({ id: 'MyTaskStats' });
@@ -337,12 +380,17 @@ export const sprintKpiDaySchema = z
     date: isoDateSchema,
     isPast: z.boolean().describe('index <= todayIndex'),
     idealRemainingSp: z.number().describe('Считается для всех 10 дней'),
-    scopeSp: z.number().nullable().describe('null для будущих дней, как и поля ниже'),
+    scopeSp: z
+      .number()
+      .nullable()
+      .describe('null для будущих дней, как и поля ниже'),
     doneSp: z.number().nullable(),
     remainingSp: z.number().nullable(),
     addedSp: z.number().nullable(),
     closedSp: z.number().nullable(),
-    flow: statusValuesSchema.nullable().describe('Сумма SP в объёме по статусам'),
+    flow: statusValuesSchema
+      .nullable()
+      .describe('Сумма SP в объёме по статусам'),
   })
   .meta({ id: 'SprintKpiDay' });
 export type SprintKpiDay = z.infer<typeof sprintKpiDaySchema>;
@@ -357,7 +405,12 @@ export const sprintKpiSchema = z
       colorIndex: z.number().int(),
     }),
     sprint: sprintBriefSchema.extend({
-      todayIndex: z.number().int().describe('Наибольший день, который уже начался. В субботу это индекс пятницы'),
+      todayIndex: z
+        .number()
+        .int()
+        .describe(
+          'Наибольший день, который уже начался. В субботу это индекс пятницы',
+        ),
       dayNumber: z.number().int().describe('todayIndex + 1'),
       totalDays: z.literal(10),
     }),
@@ -371,7 +424,10 @@ export const sprintKpiSchema = z
       addedCount: z.number().int(),
       paceSpPerDay: z.number(),
       forecastDoneSp: z.number().nullable().describe('Только активный спринт'),
-      forecastRemainingSp: z.number().nullable().describe('Только активный спринт, конец пунктира'),
+      forecastRemainingSp: z
+        .number()
+        .nullable()
+        .describe('Только активный спринт, конец пунктира'),
       medianCycleDays: z.number(),
     }),
     days: z.array(sprintKpiDaySchema).describe('Всегда 10'),
@@ -379,7 +435,9 @@ export const sprintKpiSchema = z
     stages: z
       .array(z.object({ status: stageStatusSchema, avgDays: z.number() }))
       .describe('Порядок work, review, test'),
-    slowestStage: nullableRef(stageStatusSchema).describe('null, если все этапы по нулям'),
+    slowestStage: nullableRef(stageStatusSchema).describe(
+      'null, если все этапы по нулям',
+    ),
     velocity: z.object({
       items: z
         .array(

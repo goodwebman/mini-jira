@@ -1,4 +1,5 @@
-import { errors, jwtVerify, SignJWT } from 'jose';
+import { SignJWT, errors, jwtVerify } from 'jose';
+
 import { AppError } from './errors.js';
 
 const ALGORITHM = 'HS256';
@@ -13,7 +14,11 @@ export interface AccessClaims {
   sessionId: string;
 }
 
-export async function signAccessToken(claims: AccessClaims, secret: string, now: Date) {
+export async function signAccessToken(
+  claims: AccessClaims,
+  secret: string,
+  now: Date,
+) {
   const issuedAt = Math.floor(now.getTime() / 1000);
   const expiresAt = issuedAt + ACCESS_TTL_SEC;
   const accessToken = await new SignJWT({ sid: claims.sessionId })
@@ -24,7 +29,10 @@ export async function signAccessToken(claims: AccessClaims, secret: string, now:
     .setIssuedAt(issuedAt)
     .setExpirationTime(expiresAt)
     .sign(secretKey(secret));
-  return { accessToken, accessTokenExpiresAt: new Date(expiresAt * 1000).toISOString() };
+  return {
+    accessToken,
+    accessTokenExpiresAt: new Date(expiresAt * 1000).toISOString(),
+  };
 }
 
 export async function verifyAccessToken(
@@ -45,7 +53,8 @@ export async function verifyAccessToken(
     }
     return { userId: payload.sub, sessionId: payload.sid };
   } catch (err) {
-    if (err instanceof errors.JWTExpired) throw new AppError('ACCESS_TOKEN_EXPIRED');
+    if (err instanceof errors.JWTExpired)
+      throw new AppError('ACCESS_TOKEN_EXPIRED');
     throw new AppError('ACCESS_TOKEN_INVALID');
   }
 }

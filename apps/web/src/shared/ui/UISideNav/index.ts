@@ -1,7 +1,11 @@
 import { UISideNavRoot } from './UISideNav';
 import { UISideNavProfile } from './UISideNavProfile';
 import { UISideNavTile } from './UISideNavTile';
-import { UISideNavBoardViz, UISideNavSparkViz, UISideNavTasksViz } from './UISideNavViz';
+import {
+  UISideNavBoardViz,
+  UISideNavSparkViz,
+  UISideNavTasksViz,
+} from './UISideNavViz';
 
 export const UISideNav = Object.assign(UISideNavRoot, {
   Tile: UISideNavTile,

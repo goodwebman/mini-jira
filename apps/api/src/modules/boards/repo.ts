@@ -1,7 +1,15 @@
-import { and, asc, eq, ilike, inArray, isNotNull, or, sql } from 'drizzle-orm';
 import type { BoardRole } from '@gwmt/contracts';
+import { and, asc, eq, ilike, inArray, isNotNull, or, sql } from 'drizzle-orm';
+
 import type { Db } from '../../db/client.js';
-import { boardFavorites, boardMembers, boards, sprints, tasks, users } from '../../db/schema.js';
+import {
+  boardFavorites,
+  boardMembers,
+  boards,
+  sprints,
+  tasks,
+  users,
+} from '../../db/schema.js';
 import { containsPattern } from '../../lib/search.js';
 
 export const userBriefColumns = {
@@ -15,7 +23,9 @@ export async function findMemberRole(db: Db, boardId: number, userId: string) {
   const [row] = await db
     .select({ role: boardMembers.role })
     .from(boardMembers)
-    .where(and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId)));
+    .where(
+      and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId)),
+    );
   return row?.role ?? null;
 }
 
@@ -30,7 +40,10 @@ export async function findTaskAccess(db: Db, key: string, userId: string) {
     .from(tasks)
     .innerJoin(
       boardMembers,
-      and(eq(boardMembers.boardId, tasks.boardId), eq(boardMembers.userId, userId)),
+      and(
+        eq(boardMembers.boardId, tasks.boardId),
+        eq(boardMembers.userId, userId),
+      ),
     )
     .where(eq(tasks.key, key));
   return row ?? null;
@@ -54,10 +67,16 @@ export async function listBoardsForUser(
     })
     .from(boardMembers)
     .innerJoin(boards, eq(boards.id, boardMembers.boardId))
-    .innerJoin(sprints, and(eq(sprints.boardId, boards.id), eq(sprints.state, 'active')))
+    .innerJoin(
+      sprints,
+      and(eq(sprints.boardId, boards.id), eq(sprints.state, 'active')),
+    )
     .leftJoin(
       boardFavorites,
-      and(eq(boardFavorites.boardId, boards.id), eq(boardFavorites.userId, userId)),
+      and(
+        eq(boardFavorites.boardId, boards.id),
+        eq(boardFavorites.userId, userId),
+      ),
     )
     .where(
       and(
@@ -93,7 +112,12 @@ export async function isFavorite(db: Db, boardId: number, userId: string) {
   const [row] = await db
     .select({ boardId: boardFavorites.boardId })
     .from(boardFavorites)
-    .where(and(eq(boardFavorites.boardId, boardId), eq(boardFavorites.userId, userId)));
+    .where(
+      and(
+        eq(boardFavorites.boardId, boardId),
+        eq(boardFavorites.userId, userId),
+      ),
+    );
   return row !== undefined;
 }
 
@@ -118,12 +142,17 @@ export async function findBoardMember(db: Db, boardId: number, userId: string) {
     .select(boardMemberColumns)
     .from(boardMembers)
     .innerJoin(users, eq(users.id, boardMembers.userId))
-    .where(and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId)));
+    .where(
+      and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId)),
+    );
   return row ?? null;
 }
 
 export async function listExistingUserIds(db: Db, ids: string[]) {
-  const rows = await db.select({ id: users.id }).from(users).where(inArray(users.id, ids));
+  const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(inArray(users.id, ids));
   return rows.map((row) => row.id);
 }
 
@@ -137,16 +166,26 @@ export async function insertBoard(db: Db, values: typeof boards.$inferInsert) {
   return board ?? null;
 }
 
-export async function setBoardColor(db: Db, boardId: number, colorIndex: number) {
+export async function setBoardColor(
+  db: Db,
+  boardId: number,
+  colorIndex: number,
+) {
   await db.update(boards).set({ colorIndex }).where(eq(boards.id, boardId));
 }
 
-export async function insertMembers(db: Db, values: (typeof boardMembers.$inferInsert)[]) {
+export async function insertMembers(
+  db: Db,
+  values: (typeof boardMembers.$inferInsert)[],
+) {
   if (values.length > 0) await db.insert(boardMembers).values(values);
 }
 
 /** false значит, что человек уже на доске. */
-export async function insertMember(db: Db, values: typeof boardMembers.$inferInsert) {
+export async function insertMember(
+  db: Db,
+  values: typeof boardMembers.$inferInsert,
+) {
   const inserted = await db
     .insert(boardMembers)
     .values(values)
@@ -155,11 +194,18 @@ export async function insertMember(db: Db, values: typeof boardMembers.$inferIns
   return inserted.length > 0;
 }
 
-export async function updateMemberRole(db: Db, boardId: number, userId: string, role: BoardRole) {
+export async function updateMemberRole(
+  db: Db,
+  boardId: number,
+  userId: string,
+  role: BoardRole,
+) {
   const updated = await db
     .update(boardMembers)
     .set({ role })
-    .where(and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId)))
+    .where(
+      and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId)),
+    )
     .returning({ userId: boardMembers.userId });
   return updated.length > 0;
 }
@@ -167,12 +213,19 @@ export async function updateMemberRole(db: Db, boardId: number, userId: string, 
 export async function deleteMember(db: Db, boardId: number, userId: string) {
   const deleted = await db
     .delete(boardMembers)
-    .where(and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId)))
+    .where(
+      and(eq(boardMembers.boardId, boardId), eq(boardMembers.userId, userId)),
+    )
     .returning({ userId: boardMembers.userId });
   return deleted.length > 0;
 }
 
-export async function addFavorite(db: Db, boardId: number, userId: string, now: Date) {
+export async function addFavorite(
+  db: Db,
+  boardId: number,
+  userId: string,
+  now: Date,
+) {
   await db
     .insert(boardFavorites)
     .values({ boardId, userId, createdAt: now })
@@ -182,5 +235,10 @@ export async function addFavorite(db: Db, boardId: number, userId: string, now: 
 export async function removeFavorite(db: Db, boardId: number, userId: string) {
   await db
     .delete(boardFavorites)
-    .where(and(eq(boardFavorites.boardId, boardId), eq(boardFavorites.userId, userId)));
+    .where(
+      and(
+        eq(boardFavorites.boardId, boardId),
+        eq(boardFavorites.userId, userId),
+      ),
+    );
 }

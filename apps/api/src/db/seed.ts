@@ -1,22 +1,27 @@
-import { existsSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
 import type { BoardRole, TaskPriority, TaskStatus } from '@gwmt/contracts';
 import { Pool } from '@neondatabase/serverless';
 import { inArray, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
+import { existsSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+
 import { hashPassword } from '../lib/password.js';
 import {
+  type IsoDate,
+  SPRINT_LENGTH_DAYS,
   addDays,
   countWorkdays,
   dateInZone,
   diffDays,
-  SPRINT_LENGTH_DAYS,
   sprintEndDate,
   sprintWorkdays,
   startOfDayInZone,
-  type IsoDate,
 } from '../lib/workdays.js';
-import { computeSprintKpi, type KpiTask, type VelocityItem } from '../modules/kpi/compute.js';
+import {
+  type KpiTask,
+  type VelocityItem,
+  computeSprintKpi,
+} from '../modules/kpi/compute.js';
 import type { Db } from './client.js';
 import * as schema from './schema.js';
 
@@ -43,16 +48,76 @@ const TESTER_JOB = 'Тестировщик';
 const DESIGNER_JOB = 'Дизайнер';
 
 const SEED_USERS = [
-  { code: 'as', name: 'Анна Смирнова', job: 'Фронтенд-разработчик', email: 'anna@example.com', colorIndex: 0 },
-  { code: 'ip', name: 'Иван Петров', job: 'Бэкенд-разработчик', email: 'ivan@example.com', colorIndex: 1 },
-  { code: 'do', name: 'Дмитрий Орлов', job: 'Фронтенд-разработчик', email: 'dmitry@example.com', colorIndex: 2 },
-  { code: 'mk', name: 'Мария Ким', job: DESIGNER_JOB, email: 'maria@example.com', colorIndex: 5 },
-  { code: 'eb', name: 'Елена Белова', job: TESTER_JOB, email: 'elena@example.com', colorIndex: 3 },
-  { code: 'sn', name: 'Сергей Новиков', job: 'Бэкенд-разработчик', email: 'sergey@example.com', colorIndex: 4 },
-  { code: 'om', name: 'Ольга Морозова', job: TESTER_JOB, email: 'olga@example.com', colorIndex: 1 },
-  { code: 'pk', name: 'Павел Кузнецов', job: 'DevOps-инженер', email: 'pavel@example.com', colorIndex: 2 },
-  { code: 'vl', name: 'Виктория Лебедева', job: DESIGNER_JOB, email: 'viktoria@example.com', colorIndex: 0 },
-  { code: 'ta', name: 'Тимур Алиев', job: 'Мобильный разработчик', email: 'timur@example.com', colorIndex: 3 },
+  {
+    code: 'as',
+    name: 'Анна Смирнова',
+    job: 'Фронтенд-разработчик',
+    email: 'anna@example.com',
+    colorIndex: 0,
+  },
+  {
+    code: 'ip',
+    name: 'Иван Петров',
+    job: 'Бэкенд-разработчик',
+    email: 'ivan@example.com',
+    colorIndex: 1,
+  },
+  {
+    code: 'do',
+    name: 'Дмитрий Орлов',
+    job: 'Фронтенд-разработчик',
+    email: 'dmitry@example.com',
+    colorIndex: 2,
+  },
+  {
+    code: 'mk',
+    name: 'Мария Ким',
+    job: DESIGNER_JOB,
+    email: 'maria@example.com',
+    colorIndex: 5,
+  },
+  {
+    code: 'eb',
+    name: 'Елена Белова',
+    job: TESTER_JOB,
+    email: 'elena@example.com',
+    colorIndex: 3,
+  },
+  {
+    code: 'sn',
+    name: 'Сергей Новиков',
+    job: 'Бэкенд-разработчик',
+    email: 'sergey@example.com',
+    colorIndex: 4,
+  },
+  {
+    code: 'om',
+    name: 'Ольга Морозова',
+    job: TESTER_JOB,
+    email: 'olga@example.com',
+    colorIndex: 1,
+  },
+  {
+    code: 'pk',
+    name: 'Павел Кузнецов',
+    job: 'DevOps-инженер',
+    email: 'pavel@example.com',
+    colorIndex: 2,
+  },
+  {
+    code: 'vl',
+    name: 'Виктория Лебедева',
+    job: DESIGNER_JOB,
+    email: 'viktoria@example.com',
+    colorIndex: 0,
+  },
+  {
+    code: 'ta',
+    name: 'Тимур Алиев',
+    job: 'Мобильный разработчик',
+    email: 'timur@example.com',
+    colorIndex: 3,
+  },
 ] as const;
 
 type UserCode = (typeof SEED_USERS)[number]['code'];
@@ -70,14 +135,94 @@ interface SeedBoard {
 }
 
 const SEED_BOARDS: SeedBoard[] = [
-  { id: 9, key: 'GWT', name: 'Разработка', sprint: 14, members: ['as', 'ip', 'do', 'mk', 'eb', 'vl'], admins: ['as', 'ip'], guests: ['vl'], colorIndex: 0, favoriteOfAnna: true },
-  { id: 11, key: 'FRONT', name: 'Фронтенд', sprint: 9, members: ['as', 'do', 'mk', 'om'], admins: ['as'], guests: [], colorIndex: 2, favoriteOfAnna: false },
-  { id: 22, key: 'BACK', name: 'Бэкенд', sprint: 21, members: ['ip', 'sn', 'pk', 'om'], admins: ['ip'], guests: [], colorIndex: 1, favoriteOfAnna: false },
-  { id: 30, key: 'DES', name: 'Дизайн', sprint: 6, members: ['mk', 'vl', 'as'], admins: ['as', 'mk'], guests: [], colorIndex: 5, favoriteOfAnna: false },
-  { id: 36, key: 'MOB', name: 'Мобильное приложение', sprint: 11, members: ['ta', 'as', 'vl', 'om'], admins: ['as'], guests: [], colorIndex: 3, favoriteOfAnna: true },
-  { id: 39, key: 'OPS', name: 'Инфраструктура', sprint: 17, members: ['pk', 'sn', 'ip'], admins: ['pk'], guests: [], colorIndex: 4, favoriteOfAnna: false },
-  { id: 41, key: 'QA', name: 'Автотесты', sprint: 12, members: ['eb', 'om', 'do'], admins: ['eb'], guests: [], colorIndex: 2, favoriteOfAnna: false },
-  { id: 48, key: 'HOT', name: 'Срочные и важные', sprint: 5, members: ['as', 'ip', 'eb', 'pk'], admins: ['as'], guests: ['pk'], colorIndex: 1, favoriteOfAnna: false },
+  {
+    id: 9,
+    key: 'GWT',
+    name: 'Разработка',
+    sprint: 14,
+    members: ['as', 'ip', 'do', 'mk', 'eb', 'vl'],
+    admins: ['as', 'ip'],
+    guests: ['vl'],
+    colorIndex: 0,
+    favoriteOfAnna: true,
+  },
+  {
+    id: 11,
+    key: 'FRONT',
+    name: 'Фронтенд',
+    sprint: 9,
+    members: ['as', 'do', 'mk', 'om'],
+    admins: ['as'],
+    guests: [],
+    colorIndex: 2,
+    favoriteOfAnna: false,
+  },
+  {
+    id: 22,
+    key: 'BACK',
+    name: 'Бэкенд',
+    sprint: 21,
+    members: ['ip', 'sn', 'pk', 'om'],
+    admins: ['ip'],
+    guests: [],
+    colorIndex: 1,
+    favoriteOfAnna: false,
+  },
+  {
+    id: 30,
+    key: 'DES',
+    name: 'Дизайн',
+    sprint: 6,
+    members: ['mk', 'vl', 'as'],
+    admins: ['as', 'mk'],
+    guests: [],
+    colorIndex: 5,
+    favoriteOfAnna: false,
+  },
+  {
+    id: 36,
+    key: 'MOB',
+    name: 'Мобильное приложение',
+    sprint: 11,
+    members: ['ta', 'as', 'vl', 'om'],
+    admins: ['as'],
+    guests: [],
+    colorIndex: 3,
+    favoriteOfAnna: true,
+  },
+  {
+    id: 39,
+    key: 'OPS',
+    name: 'Инфраструктура',
+    sprint: 17,
+    members: ['pk', 'sn', 'ip'],
+    admins: ['pk'],
+    guests: [],
+    colorIndex: 4,
+    favoriteOfAnna: false,
+  },
+  {
+    id: 41,
+    key: 'QA',
+    name: 'Автотесты',
+    sprint: 12,
+    members: ['eb', 'om', 'do'],
+    admins: ['eb'],
+    guests: [],
+    colorIndex: 2,
+    favoriteOfAnna: false,
+  },
+  {
+    id: 48,
+    key: 'HOT',
+    name: 'Срочные и важные',
+    sprint: 5,
+    members: ['as', 'ip', 'eb', 'pk'],
+    admins: ['as'],
+    guests: ['pk'],
+    colorIndex: 1,
+    favoriteOfAnna: false,
+  },
 ];
 
 const SP_POOL = [1, 2, 2, 3, 3, 3, 5, 5, 8];
@@ -88,7 +233,15 @@ const PRIORITY_WEIGHTS: [TaskPriority, number][] = [
   ['low', 0.2],
 ];
 
-const TITLE_ACTIONS = ['Сделать', 'Починить', 'Переработать', 'Проверить', 'Ускорить', 'Описать', 'Добавить'];
+const TITLE_ACTIONS = [
+  'Сделать',
+  'Починить',
+  'Переработать',
+  'Проверить',
+  'Ускорить',
+  'Описать',
+  'Добавить',
+];
 const TITLE_SUBJECTS = [
   'экран входа',
   'фильтр задач',
@@ -126,11 +279,15 @@ function createRng(seed: number): Rng {
   };
 }
 
-const randInt = (rng: Rng, min: number, max: number) => min + Math.floor(rng() * (max - min + 1));
-const pick = <T>(rng: Rng, items: readonly T[]) => items[randInt(rng, 0, items.length - 1)] as T;
+const randInt = (rng: Rng, min: number, max: number) =>
+  min + Math.floor(rng() * (max - min + 1));
+const pick = <T>(rng: Rng, items: readonly T[]) =>
+  items[randInt(rng, 0, items.length - 1)] as T;
 
 function randomUuid(rng: Rng): string {
-  const hex = Array.from({ length: 32 }, () => randInt(rng, 0, 15).toString(16));
+  const hex = Array.from({ length: 32 }, () =>
+    randInt(rng, 0, 15).toString(16),
+  );
   hex[12] = '4';
   hex[16] = pick(rng, ['8', '9', 'a', 'b']);
   const text = hex.join('');
@@ -170,11 +327,16 @@ interface GenTask {
   takeLocked: boolean;
 }
 
-const currentStatus = (task: GenTask) => task.intervals.at(-1)?.status as TaskStatus;
-const lastEnteredAt = (task: GenTask) => task.intervals.at(-1)?.enteredAt as Date;
+const currentStatus = (task: GenTask) =>
+  task.intervals.at(-1)?.status as TaskStatus;
+const lastEnteredAt = (task: GenTask) =>
+  task.intervals.at(-1)?.enteredAt as Date;
 
 const workTime = (rng: Rng, date: IsoDate) =>
-  new Date(startOfDayInZone(date, TIMEZONE).getTime() + (9 * 60 + randInt(rng, 0, 540)) * 60_000);
+  new Date(
+    startOfDayInZone(date, TIMEZONE).getTime() +
+      (9 * 60 + randInt(rng, 0, 540)) * 60_000,
+  );
 
 function advanceTask(
   rng: Rng,
@@ -214,7 +376,9 @@ function advanceTask(
     const open = task.intervals.at(-1) as GenInterval;
     open.leftAt = enteredAt;
     if (rng() < 0.2) {
-      const duration = Math.floor((enteredAt.getTime() - open.enteredAt.getTime()) / 1000);
+      const duration = Math.floor(
+        (enteredAt.getTime() - open.enteredAt.getTime()) / 1000,
+      );
       open.pausedSec = Math.floor(duration * rng() * 0.5);
     }
 
@@ -231,10 +395,15 @@ function advanceTask(
 
 function completedInDays(task: GenTask): number | null {
   if (currentStatus(task) !== 'done') return null;
-  const started = task.intervals.find((interval) => interval.status !== 'todo') as GenInterval;
+  const started = task.intervals.find(
+    (interval) => interval.status !== 'todo',
+  ) as GenInterval;
   return Math.max(
     1,
-    countWorkdays(dateInZone(started.enteredAt, TIMEZONE), dateInZone(lastEnteredAt(task), TIMEZONE)),
+    countWorkdays(
+      dateInZone(started.enteredAt, TIMEZONE),
+      dateInZone(lastEnteredAt(task), TIMEZONE),
+    ),
   );
 }
 
@@ -261,12 +430,18 @@ function resolveTodayIndex(dates: IsoDate[], now: Date): number {
 
 function generateBoard(board: SeedBoard, userIds: UserIds, now: Date) {
   const rng = createRng(board.id * 2_654_435_761);
-  const jobs = new Map<string, string>(SEED_USERS.map((user) => [userIds[user.code], user.job]));
+  const jobs = new Map<string, string>(
+    SEED_USERS.map((user) => [userIds[user.code], user.job]),
+  );
 
-  const nonGuests = board.members.filter((code) => !board.guests.includes(code)).map((code) => userIds[code]);
+  const nonGuests = board.members
+    .filter((code) => !board.guests.includes(code))
+    .map((code) => userIds[code]);
   const testers = nonGuests.filter((id) => jobs.get(id) === TESTER_JOB);
   const designers = nonGuests.filter((id) => jobs.get(id) === DESIGNER_JOB);
-  const developers = nonGuests.filter((id) => !testers.includes(id) && !designers.includes(id));
+  const developers = nonGuests.filter(
+    (id) => !testers.includes(id) && !designers.includes(id),
+  );
   const assignees = developers.length >= 2 ? developers : nonGuests;
 
   const today = dateInZone(now, TIMEZONE);
@@ -309,7 +484,10 @@ function generateBoard(board: SeedBoard, userIds: UserIds, now: Date) {
 
     const newCount = Math.max(0, randInt(rng, 13, 18) - carried.length);
     const plans = Array.from({ length: newCount }, () => ({
-      createdDay: rng() < 0.18 && lastDay >= 1 ? randInt(rng, 1, Math.min(8, lastDay)) : 0,
+      createdDay:
+        rng() < 0.18 && lastDay >= 1
+          ? randInt(rng, 1, Math.min(8, lastDay))
+          : 0,
     })).sort((a, b) => a.createdDay - b.createdDay);
 
     const fresh: GenTask[] = [];
@@ -318,8 +496,10 @@ function generateBoard(board: SeedBoard, userIds: UserIds, now: Date) {
       const authorId = pick(rng, assignees);
       const reviewers = assignees.filter((id) => id !== authorId);
       const reviewerId = reviewers.length > 0 ? pick(rng, reviewers) : authorId;
-      const testerId = testers.length > 0 && rng() < 0.65 ? pick(rng, testers) : null;
-      const designerId = designers.length > 0 && rng() < 0.3 ? pick(rng, designers) : null;
+      const testerId =
+        testers.length > 0 && rng() < 0.65 ? pick(rng, testers) : null;
+      const designerId =
+        designers.length > 0 && rng() < 0.3 ? pick(rng, designers) : null;
 
       let createdAt = workTime(rng, dates[plan.createdDay] as IsoDate);
       if (createdAt >= now) createdAt = new Date(now.getTime() - 60_000);
@@ -336,7 +516,9 @@ function generateBoard(board: SeedBoard, userIds: UserIds, now: Date) {
         designerId,
         createdAt,
         sprintId,
-        intervals: [{ status: 'todo', enteredAt: createdAt, leftAt: null, pausedSec: 0 }],
+        intervals: [
+          { status: 'todo', enteredAt: createdAt, leftAt: null, pausedSec: 0 },
+        ],
         pausedAt: null,
         takeLocked: false,
       };
@@ -364,15 +546,36 @@ function generateBoard(board: SeedBoard, userIds: UserIds, now: Date) {
 
     for (let group = 0; group * 5 + 3 < fresh.length; group += 1) {
       const base = group * 5;
-      const [a, b, c, d] = [fresh[base], fresh[base + 1], fresh[base + 2], fresh[base + 3]] as GenTask[];
+      const [a, b, c, d] = [
+        fresh[base],
+        fresh[base + 1],
+        fresh[base + 2],
+        fresh[base + 3],
+      ] as GenTask[];
       linkRows.push(
-        { taskId: (a as GenTask).id, targetTaskId: (b as GenTask).id, type: 'rel' },
-        { taskId: (b as GenTask).id, targetTaskId: (a as GenTask).id, type: 'rel' },
+        {
+          taskId: (a as GenTask).id,
+          targetTaskId: (b as GenTask).id,
+          type: 'rel',
+        },
+        {
+          taskId: (b as GenTask).id,
+          targetTaskId: (a as GenTask).id,
+          type: 'rel',
+        },
       );
       if (group % 2 === 0) {
         linkRows.push(
-          { taskId: (c as GenTask).id, targetTaskId: (d as GenTask).id, type: 'blocks' },
-          { taskId: (d as GenTask).id, targetTaskId: (c as GenTask).id, type: 'blockedBy' },
+          {
+            taskId: (c as GenTask).id,
+            targetTaskId: (d as GenTask).id,
+            type: 'blocks',
+          },
+          {
+            taskId: (d as GenTask).id,
+            targetTaskId: (c as GenTask).id,
+            type: 'blockedBy',
+          },
         );
       }
     }
@@ -424,7 +627,9 @@ function generateBoard(board: SeedBoard, userIds: UserIds, now: Date) {
       for (const task of inWork) {
         if (rng() >= 0.25) continue;
         const entered = lastEnteredAt(task).getTime();
-        task.pausedAt = new Date(entered + Math.floor((now.getTime() - entered) / 2));
+        task.pausedAt = new Date(
+          entered + Math.floor((now.getTime() - entered) / 2),
+        );
       }
 
       members
@@ -439,8 +644,17 @@ function generateBoard(board: SeedBoard, userIds: UserIds, now: Date) {
   const commentRows = allTasks.flatMap((task) => {
     if (rng() >= 0.5) return [];
     const open = lastEnteredAt(task).getTime();
-    const createdAt = new Date(Math.min(open + randInt(rng, 5, 240) * 60_000, now.getTime()));
-    return [{ taskId: task.id, authorId: pick(rng, nonGuests), text: pick(rng, COMMENTS), createdAt }];
+    const createdAt = new Date(
+      Math.min(open + randInt(rng, 5, 240) * 60_000, now.getTime()),
+    );
+    return [
+      {
+        taskId: task.id,
+        authorId: pick(rng, nonGuests),
+        text: pick(rng, COMMENTS),
+        createdAt,
+      },
+    ];
   });
 
   return {
@@ -457,7 +671,10 @@ function generateBoard(board: SeedBoard, userIds: UserIds, now: Date) {
   };
 }
 
-async function insertChunked<T>(items: T[], insert: (chunk: T[]) => Promise<unknown>) {
+async function insertChunked<T>(
+  items: T[],
+  insert: (chunk: T[]) => Promise<unknown>,
+) {
   for (let offset = 0; offset < items.length; offset += INSERT_CHUNK) {
     await insert(items.slice(offset, offset + INSERT_CHUNK));
   }
@@ -483,20 +700,31 @@ async function deleteSeedBoards(tx: Db) {
     await tx.delete(taskComments).where(inArray(taskComments.taskId, taskIds));
     await tx
       .delete(taskLinks)
-      .where(or(inArray(taskLinks.taskId, taskIds), inArray(taskLinks.targetTaskId, taskIds)));
-    await tx.delete(taskStatusIntervals).where(inArray(taskStatusIntervals.taskId, taskIds));
+      .where(
+        or(
+          inArray(taskLinks.taskId, taskIds),
+          inArray(taskLinks.targetTaskId, taskIds),
+        ),
+      );
+    await tx
+      .delete(taskStatusIntervals)
+      .where(inArray(taskStatusIntervals.taskId, taskIds));
     await tx.delete(sprintTasks).where(inArray(sprintTasks.taskId, taskIds));
     await tx.delete(tasks).where(inArray(tasks.id, taskIds));
   }
   await tx.delete(sprints).where(inArray(sprints.boardId, boardIds));
-  await tx.delete(boardFavorites).where(inArray(boardFavorites.boardId, boardIds));
+  await tx
+    .delete(boardFavorites)
+    .where(inArray(boardFavorites.boardId, boardIds));
   await tx.delete(boardMembers).where(inArray(boardMembers.boardId, boardIds));
   await tx.delete(boards).where(inArray(boards.id, boardIds));
 }
 
 export function assertSeedAllowed(nodeEnv: string | undefined) {
   if (nodeEnv === 'production') {
-    throw new Error('Сид запрещён при NODE_ENV=production: он создаёт аккаунты с известным паролем');
+    throw new Error(
+      'Сид запрещён при NODE_ENV=production: он создаёт аккаунты с известным паролем',
+    );
   }
 }
 
@@ -570,7 +798,9 @@ export async function seedDatabase(tx: Db, now: Date, passwordHash: string) {
         .values({ userId: userIds.as, boardId: board.id, createdAt: now });
     }
 
-    await insertChunked(generated.sprintRows, (chunk) => tx.insert(sprints).values(chunk));
+    await insertChunked(generated.sprintRows, (chunk) =>
+      tx.insert(sprints).values(chunk),
+    );
     await insertChunked(generated.allTasks, (chunk) =>
       tx.insert(tasks).values(
         chunk.map((task) => ({
@@ -597,7 +827,9 @@ export async function seedDatabase(tx: Db, now: Date, passwordHash: string) {
         })),
       ),
     );
-    await insertChunked(generated.sprintTaskRows, (chunk) => tx.insert(sprintTasks).values(chunk));
+    await insertChunked(generated.sprintTaskRows, (chunk) =>
+      tx.insert(sprintTasks).values(chunk),
+    );
     await insertChunked(
       generated.allTasks.flatMap((task) =>
         task.intervals.map((interval) => ({
@@ -611,8 +843,12 @@ export async function seedDatabase(tx: Db, now: Date, passwordHash: string) {
       ),
       (chunk) => tx.insert(taskStatusIntervals).values(chunk),
     );
-    await insertChunked(generated.linkRows, (chunk) => tx.insert(taskLinks).values(chunk));
-    await insertChunked(generated.commentRows, (chunk) => tx.insert(taskComments).values(chunk));
+    await insertChunked(generated.linkRows, (chunk) =>
+      tx.insert(taskLinks).values(chunk),
+    );
+    await insertChunked(generated.commentRows, (chunk) =>
+      tx.insert(taskComments).values(chunk),
+    );
   }
 
   await tx.execute(
@@ -625,7 +861,8 @@ async function main() {
   assertSeedAllowed(process.env.NODE_ENV);
 
   const connectionString = process.env.DATABASE_URL_UNPOOLED;
-  if (!connectionString) throw new Error('Не задана переменная DATABASE_URL_UNPOOLED');
+  if (!connectionString)
+    throw new Error('Не задана переменная DATABASE_URL_UNPOOLED');
 
   const passwordHash = await hashPassword('password');
   const pool = new Pool({ connectionString });
@@ -639,6 +876,9 @@ async function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   await main();
 }

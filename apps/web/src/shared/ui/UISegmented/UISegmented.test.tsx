@@ -1,6 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
+
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
 import { UISegmented } from './UISegmented';
 
 type Value = 'a' | 'b' | 'c';
@@ -13,25 +15,36 @@ const options = [
 
 function Controlled({ initial }: { initial?: Value }) {
   const [value, setValue] = useState<Value | undefined>(initial);
-  return <UISegmented aria-label="Выбор" options={options} value={value} onValueChange={setValue} />;
+  return (
+    <UISegmented
+      aria-label='Выбор'
+      options={options}
+      value={value}
+      onValueChange={setValue}
+    />
+  );
 }
 
 describe('UISegmented', () => {
   it('размечен как radiogroup и отмечает выбранное', () => {
-    render(<Controlled initial="c" />);
-    expect(screen.getByRole('radiogroup', { name: 'Выбор' })).toBeInTheDocument();
+    render(<Controlled initial='c' />);
+    expect(
+      screen.getByRole('radiogroup', { name: 'Выбор' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Три' })).toBeChecked();
   });
 
   it('вызывает onValueChange по клику', () => {
     const onValueChange = vi.fn();
-    render(<UISegmented options={options} value="a" onValueChange={onValueChange} />);
+    render(
+      <UISegmented options={options} value='a' onValueChange={onValueChange} />,
+    );
     fireEvent.click(screen.getByRole('radio', { name: 'Три' }));
     expect(onValueChange).toHaveBeenCalledWith('c');
   });
 
   it('стрелки пропускают disabled, зацикливаются и переносят фокус', () => {
-    render(<Controlled initial="a" />);
+    render(<Controlled initial='a' />);
     const first = screen.getByRole('radio', { name: 'Раз' });
     const last = screen.getByRole('radio', { name: 'Три' });
 
@@ -46,7 +59,7 @@ describe('UISegmented', () => {
   });
 
   it('Home и End ведут к краям', () => {
-    render(<Controlled initial="a" />);
+    render(<Controlled initial='a' />);
     const first = screen.getByRole('radio', { name: 'Раз' });
     const last = screen.getByRole('radio', { name: 'Три' });
     fireEvent.keyDown(first, { key: 'End' });
@@ -57,7 +70,13 @@ describe('UISegmented', () => {
 
   it('Tab попадает в группу, даже если ничего не выбрано', () => {
     render(<Controlled />);
-    expect(screen.getByRole('radio', { name: 'Раз' })).toHaveAttribute('tabindex', '0');
-    expect(screen.getByRole('radio', { name: 'Три' })).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByRole('radio', { name: 'Раз' })).toHaveAttribute(
+      'tabindex',
+      '0',
+    );
+    expect(screen.getByRole('radio', { name: 'Три' })).toHaveAttribute(
+      'tabindex',
+      '-1',
+    );
   });
 });

@@ -1,6 +1,12 @@
 import { and, eq, isNull, ne, sql } from 'drizzle-orm';
+
 import type { Db } from '../../db/client.js';
-import { authSessions, authThrottle, refreshTokens, users } from '../../db/schema.js';
+import {
+  authSessions,
+  authThrottle,
+  refreshTokens,
+  users,
+} from '../../db/schema.js';
 
 type NewUser = typeof users.$inferInsert;
 type NewSession = typeof authSessions.$inferInsert;
@@ -16,7 +22,10 @@ export async function findUserByEmail(db: Db, email: string) {
 }
 
 export async function findUserByGithubId(db: Db, githubId: number) {
-  const [user] = await db.select().from(users).where(eq(users.githubId, githubId));
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.githubId, githubId));
   return user ?? null;
 }
 
@@ -31,7 +40,10 @@ export async function insertUser(db: Db, values: NewUser) {
 }
 
 export async function findUserByGoogleId(db: Db, googleId: string) {
-  const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.googleId, googleId));
   return user ?? null;
 }
 
@@ -99,7 +111,12 @@ export async function getRefreshTokenUsedAt(db: Db, id: string) {
   return row?.usedAt ?? null;
 }
 
-export async function extendSession(db: Db, sessionId: string, expiresAt: Date, now: Date) {
+export async function extendSession(
+  db: Db,
+  sessionId: string,
+  expiresAt: Date,
+  now: Date,
+) {
   await db
     .update(authSessions)
     .set({ expiresAt, lastUsedAt: now })
@@ -132,7 +149,10 @@ export async function revokeUserSessions(
 }
 
 export async function findThrottle(db: Db, key: string) {
-  const [row] = await db.select().from(authThrottle).where(eq(authThrottle.key, key));
+  const [row] = await db
+    .select()
+    .from(authThrottle)
+    .where(eq(authThrottle.key, key));
   return row ?? null;
 }
 

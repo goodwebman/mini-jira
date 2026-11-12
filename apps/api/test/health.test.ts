@@ -1,7 +1,8 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { apiErrorSchema } from '@gwmt/contracts';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { createApp } from '../src/app.js';
-import { createTestDeps, DEFAULT_NOW } from './helpers.js';
+import { DEFAULT_NOW, createTestDeps } from './helpers.js';
 
 describe('служебные ручки', () => {
   let ctx: Awaited<ReturnType<typeof createTestDeps>>;
@@ -17,7 +18,10 @@ describe('служебные ручки', () => {
   it('/health ходит в БД и отвечает временем часов приложения', async () => {
     const res = await app.request('/api/v1/health');
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ status: 'ok', time: DEFAULT_NOW.toISOString() });
+    expect(await res.json()).toEqual({
+      status: 'ok',
+      time: DEFAULT_NOW.toISOString(),
+    });
   });
 
   it('на ответе есть Cache-Control и X-Request-Id', async () => {
@@ -29,7 +33,10 @@ describe('служебные ручки', () => {
   it('/openapi.json отдаёт OpenAPI 3.1 без токена', async () => {
     const res = await app.request('/api/v1/openapi.json');
     expect(res.status).toBe(200);
-    const doc = (await res.json()) as { openapi: string; paths: Record<string, unknown> };
+    const doc = (await res.json()) as {
+      openapi: string;
+      paths: Record<string, unknown>;
+    };
     expect(doc.openapi).toBe('3.1.0');
     expect(doc.paths).toHaveProperty('/api/v1/health');
   });
@@ -46,20 +53,27 @@ describe('служебные ручки', () => {
   });
 
   it('падение БД даёт 500 без деталей, а секреты не попадают в лог', async () => {
-    const leaky = new Error('Failed query: select 1\nparams: secret-token-hash', {
-      cause: new Error('connection refused'),
-    });
+    const leaky = new Error(
+      'Failed query: select 1\nparams: secret-token-hash',
+      {
+        cause: new Error('connection refused'),
+      },
+    );
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     const broken = createApp({
       ...ctx.deps,
-      db: { execute: () => Promise.reject(leaky) } as unknown as typeof ctx.deps.db,
+      db: {
+        execute: () => Promise.reject(leaky),
+      } as unknown as typeof ctx.deps.db,
     });
 
     const res = await broken.request('/api/v1/health');
     const text = await res.text();
 
     expect(res.status).toBe(500);
-    expect(apiErrorSchema.parse(JSON.parse(text)).error.code).toBe('INTERNAL_ERROR');
+    expect(apiErrorSchema.parse(JSON.parse(text)).error.code).toBe(
+      'INTERNAL_ERROR',
+    );
     expect(text).not.toContain('connection refused');
     expect(text).not.toContain('secret-token-hash');
 

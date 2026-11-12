@@ -38,7 +38,8 @@ export const ERROR_CODES = [
 
 export const errorCodeSchema = z.enum(ERROR_CODES).meta({
   id: 'ErrorCode',
-  description: 'Машинный код ошибки. Какие коды возможны на ручке, указано в её ответах.',
+  description:
+    'Машинный код ошибки. Какие коды возможны на ручке, указано в её ответах.',
 });
 export type ErrorCode = z.infer<typeof errorCodeSchema>;
 

@@ -1,6 +1,7 @@
-import { forwardRef, memo, type HTMLAttributes } from 'react';
+import { type HTMLAttributes, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { Slot, type ISlotProps } from '@/shared/lib/dom';
+import { type ISlotProps, Slot } from '@/shared/lib/dom';
 
 export interface IUITabBarProps extends HTMLAttributes<HTMLElement> {
   readonly testId?: string;
@@ -39,7 +40,7 @@ const UITabBarItemBase = forwardRef<HTMLElement, IUITabBarItemProps>(
     <Slot
       ref={ref}
       aria-current={active ? 'page' : undefined}
-      data-name="UITabBarItem"
+      data-name='UITabBarItem'
       className={cn(
         'flex min-w-0 flex-1 items-center justify-center whitespace-nowrap font-medium text-foreground no-underline focus-ring',
         'aria-[current=page]:font-semibold aria-[current=page]:text-primary-hover aria-[current=page]:shadow-[inset_0_-2px_var(--primary)]',

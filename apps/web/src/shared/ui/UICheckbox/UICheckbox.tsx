@@ -1,16 +1,20 @@
 import {
-  forwardRef,
-  memo,
-  useRef,
   type ChangeEvent,
   type InputHTMLAttributes,
   type ReactNode,
+  forwardRef,
+  memo,
+  useRef,
 } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 import { useIsomorphicLayoutEffect, useMergedRefs } from '@/shared/lib/hooks';
 import { UIIcons } from '@/shared/ui/icons';
 
-export interface IUICheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface IUICheckboxProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
   readonly testId?: string;
   /** Текст рядом с чекбоксом. Без него задай `aria-label`. */
   readonly label?: ReactNode;
@@ -26,7 +30,16 @@ export interface IUICheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElem
  */
 const UICheckboxBase = forwardRef<HTMLInputElement, IUICheckboxProps>(
   (
-    { className, testId, label, indeterminate = false, onCheckedChange, onChange, disabled, ...props },
+    {
+      className,
+      testId,
+      label,
+      indeterminate = false,
+      onCheckedChange,
+      onChange,
+      disabled,
+      ...props
+    },
     ref,
   ) => {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -53,14 +66,16 @@ const UICheckboxBase = forwardRef<HTMLInputElement, IUICheckboxProps>(
         data-name={testId ? `UICheckbox-${testId}` : 'UICheckbox'}
         className={cn(
           'inline-flex items-center gap-2 text-body text-foreground',
-          disabled ? 'cursor-not-allowed text-muted-foreground' : 'cursor-pointer',
+          disabled
+            ? 'cursor-not-allowed text-muted-foreground'
+            : 'cursor-pointer',
           className,
         )}
       >
-        <span className="relative inline-flex size-[18px] shrink-0">
+        <span className='relative inline-flex size-[18px] shrink-0'>
           <input
             ref={mergedRef}
-            type="checkbox"
+            type='checkbox'
             disabled={disabled}
             onChange={handleChange}
             className={cn(
@@ -77,12 +92,12 @@ const UICheckboxBase = forwardRef<HTMLInputElement, IUICheckboxProps>(
           {indeterminate ? (
             <UIIcons.Minus
               strokeWidth={3}
-              className="pointer-events-none absolute inset-0 m-auto size-[12px] text-primary-foreground opacity-0 peer-indeterminate:opacity-100"
+              className='pointer-events-none absolute inset-0 m-auto size-[12px] text-primary-foreground opacity-0 peer-indeterminate:opacity-100'
             />
           ) : (
             <UIIcons.Check
               strokeWidth={3}
-              className="pointer-events-none absolute inset-0 m-auto size-[12px] text-primary-foreground opacity-0 peer-checked:opacity-100"
+              className='pointer-events-none absolute inset-0 m-auto size-[12px] text-primary-foreground opacity-0 peer-checked:opacity-100'
             />
           )}
         </span>

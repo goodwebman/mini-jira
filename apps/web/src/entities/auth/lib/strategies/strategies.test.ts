@@ -1,30 +1,45 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
+
 import { AuthError } from '../errors';
 import { sanitizeReturnTo } from '../origin-policy';
-import { createAuth, flush, makeUser, TARGET, type TestUser } from '../testing/test-kit';
-import type { AuthResponseInfo, AuthStrategy, PersistedSession } from '../types';
+import {
+  TARGET,
+  type TestUser,
+  createAuth,
+  flush,
+  makeUser,
+} from '../testing/test-kit';
+import type {
+  AuthResponseInfo,
+  AuthStrategy,
+  PersistedSession,
+} from '../types';
 import { ApiKeyStrategy } from './api-key.strategy';
 import { BasicStrategy } from './basic.strategy';
 import {
-  BearerStrategy,
   type BearerApi,
   type BearerCredentials,
+  BearerStrategy,
 } from './bearer.strategy';
-import { DigestStrategy, type DigestCredentials } from './digest.strategy';
+import { type DigestCredentials, DigestStrategy } from './digest.strategy';
 import { readJwtTtlMs } from './jwt';
 import { SessionCookieStrategy } from './session-cookie.strategy';
 import { withSsoRedirect } from './sso-redirect';
 
 const context = { signal: new AbortController().signal };
 
-const toBase64 = (text: string) => btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+const toBase64 = (text: string) =>
+  btoa(String.fromCharCode(...new TextEncoder().encode(text)));
 const toBase64Url = (text: string) =>
   toBase64(text).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const fromBase64 = (value: string) =>
-  new TextDecoder().decode(Uint8Array.from(atob(value), (char) => char.charCodeAt(0)));
+  new TextDecoder().decode(
+    Uint8Array.from(atob(value), (char) => char.charCodeAt(0)),
+  );
 const encode = (value: unknown) => toBase64Url(JSON.stringify(value));
-const jwt = (payload: unknown) => `${encode({ alg: 'HS256' })}.${encode(payload)}.signature`;
+const jwt = (payload: unknown) =>
+  `${encode({ alg: 'HS256' })}.${encode(payload)}.signature`;
 
 const FIFTEEN_MINUTES = 15 * 60_000;
 
@@ -33,8 +48,14 @@ const skewedJwt = jwt({ iat: 1_000, exp: 1_000 + 15 * 60 });
 
 function bearerApi(overrides: Partial<BearerApi<TestUser, unknown>> = {}) {
   return {
-    login: vi.fn(async () => ({ accessToken: 'login-token', user: makeUser() })),
-    refresh: vi.fn(async () => ({ accessToken: 'refreshed-token', user: makeUser() })),
+    login: vi.fn(async () => ({
+      accessToken: 'login-token',
+      user: makeUser(),
+    })),
+    refresh: vi.fn(async () => ({
+      accessToken: 'refreshed-token',
+      user: makeUser(),
+    })),
     logout: vi.fn(async () => undefined),
     ...overrides,
   } satisfies BearerApi<TestUser, unknown>;
@@ -65,7 +86,9 @@ describe('readJwtTtlMs', () => {
 describe('BearerStrategy', () => {
   it('подписывает запрос заголовком Authorization', () => {
     const strategy = new BearerStrategy({ api: bearerApi() });
-    expect(strategy.decorate({ accessToken: 'abc', refreshToken: null })).toEqual({
+    expect(
+      strategy.decorate({ accessToken: 'abc', refreshToken: null }),
+    ).toEqual({
       headers: { Authorization: 'Bearer abc' },
     });
   });
@@ -75,7 +98,9 @@ describe('BearerStrategy', () => {
       api: bearerApi(),
       formatHeaders: (token) => ({ Token: token }),
     });
-    expect(strategy.decorate({ accessToken: 'abc', refreshToken: null })).toEqual({
+    expect(
+      strategy.decorate({ accessToken: 'abc', refreshToken: null }),
+    ).toEqual({
       headers: { Token: 'abc' },
     });
   });
@@ -90,14 +115,20 @@ describe('BearerStrategy', () => {
 
   it('явный срок важнее JWT', async () => {
     const strategy = new BearerStrategy({
-      api: bearerApi({ refresh: async () => ({ accessToken: skewedJwt, expiresInMs: 5_000 }) }),
+      api: bearerApi({
+        refresh: async () => ({ accessToken: skewedJwt, expiresInMs: 5_000 }),
+      }),
     });
-    expect((await strategy.renew?.({ ...context, credentials: null }))?.expiresInMs).toBe(5_000);
+    expect(
+      (await strategy.renew?.({ ...context, credentials: null }))?.expiresInMs,
+    ).toBe(5_000);
   });
 
   it('непрозрачный токен: срок неизвестен, обновление только по 401', async () => {
     const strategy = new BearerStrategy({ api: bearerApi() });
-    expect((await strategy.renew?.({ ...context, credentials: null }))?.expiresInMs).toBeNull();
+    expect(
+      (await strategy.renew?.({ ...context, credentials: null }))?.expiresInMs,
+    ).toBeNull();
   });
 
   it('restore без сохранённой записи идёт в refresh (cookie)', async () => {
@@ -143,14 +174,22 @@ describe('BearerStrategy', () => {
   it('новый refresh-токен заменяет старый, без него старый сохраняется', async () => {
     const credentials = { accessToken: 'a', refreshToken: 'r1' };
     const rotating = new BearerStrategy({
-      api: bearerApi({ refresh: async () => ({ accessToken: 'b', refreshToken: 'r2' }) }),
+      api: bearerApi({
+        refresh: async () => ({ accessToken: 'b', refreshToken: 'r2' }),
+      }),
     });
-    expect((await rotating.renew?.({ ...context, credentials }))?.credentials.refreshToken).toBe('r2');
+    expect(
+      (await rotating.renew?.({ ...context, credentials }))?.credentials
+        .refreshToken,
+    ).toBe('r2');
 
     const stable = new BearerStrategy({
       api: bearerApi({ refresh: async () => ({ accessToken: 'b' }) }),
     });
-    expect((await stable.renew?.({ ...context, credentials }))?.credentials.refreshToken).toBe('r1');
+    expect(
+      (await stable.renew?.({ ...context, credentials }))?.credentials
+        .refreshToken,
+    ).toBe('r1');
   });
 
   it('без refresh получается простой Bearer: нет renew, холодный старт = гость', async () => {
@@ -159,7 +198,9 @@ describe('BearerStrategy', () => {
     });
     expect(strategy.renew).toBeUndefined();
     expect(strategy.logout).toBeUndefined();
-    await expect(strategy.restore({ ...context, stored: null })).resolves.toBeNull();
+    await expect(
+      strategy.restore({ ...context, stored: null }),
+    ).resolves.toBeNull();
   });
 
   it.each([
@@ -172,20 +213,27 @@ describe('BearerStrategy', () => {
     const strategy = new BearerStrategy({
       api: bearerApi({ login: async () => ({ accessToken }) as never }),
     });
-    await expect(strategy.login({}, context)).rejects.toMatchObject({ code: 'bad_response' });
+    await expect(strategy.login({}, context)).rejects.toMatchObject({
+      code: 'bad_response',
+    });
   });
 
   it('редирект из login пробрасывается как есть', async () => {
     const strategy = new BearerStrategy({
       api: bearerApi({ login: async () => ({ redirectTo: '/sso' }) }),
     });
-    await expect(strategy.login({}, context)).resolves.toEqual({ redirectTo: '/sso' });
+    await expect(strategy.login({}, context)).resolves.toEqual({
+      redirectTo: '/sso',
+    });
   });
 
   it('logout получает текущие реквизиты', async () => {
     const api = bearerApi();
     const strategy = new BearerStrategy({ api });
-    await strategy.logout?.({ ...context, credentials: { accessToken: 'a', refreshToken: 'r' } });
+    await strategy.logout?.({
+      ...context,
+      credentials: { accessToken: 'a', refreshToken: 'r' },
+    });
     expect(api.logout).toHaveBeenCalledWith(
       expect.objectContaining({ accessToken: 'a', refreshToken: 'r' }),
     );
@@ -222,26 +270,42 @@ describe('SessionCookieStrategy', () => {
   });
 
   it('для другого origin режим include', async () => {
-    const strategy = new SessionCookieStrategy({ api, credentialsMode: 'include' });
-    await expect(strategy.decorate('cookie-session', TARGET)).resolves.toMatchObject({
+    const strategy = new SessionCookieStrategy({
+      api,
+      credentialsMode: 'include',
+    });
+    await expect(
+      strategy.decorate('cookie-session', TARGET),
+    ).resolves.toMatchObject({
       credentialsMode: 'include',
     });
   });
 
   const csrf = { headerName: 'X-CSRF-Token', readToken: () => 'csrf-value' };
 
-  it.each(['POST', 'put', 'PATCH', 'delete'])('%s идёт с CSRF-токеном', async (method) => {
-    const strategy = new SessionCookieStrategy({ api, csrf });
-    await expect(strategy.decorate('cookie-session', { ...TARGET, method })).resolves.toMatchObject({
-      headers: { 'X-CSRF-Token': 'csrf-value' },
-    });
-  });
+  it.each(['POST', 'put', 'PATCH', 'delete'])(
+    '%s идёт с CSRF-токеном',
+    async (method) => {
+      const strategy = new SessionCookieStrategy({ api, csrf });
+      await expect(
+        strategy.decorate('cookie-session', { ...TARGET, method }),
+      ).resolves.toMatchObject({
+        headers: { 'X-CSRF-Token': 'csrf-value' },
+      });
+    },
+  );
 
-  it.each(['GET', 'head', 'OPTIONS'])('%s идёт без CSRF-токена', async (method) => {
-    const strategy = new SessionCookieStrategy({ api, csrf });
-    const decoration = await strategy.decorate('cookie-session', { ...TARGET, method });
-    expect(decoration.headers).toBeUndefined();
-  });
+  it.each(['GET', 'head', 'OPTIONS'])(
+    '%s идёт без CSRF-токена',
+    async (method) => {
+      const strategy = new SessionCookieStrategy({ api, csrf });
+      const decoration = await strategy.decorate('cookie-session', {
+        ...TARGET,
+        method,
+      });
+      expect(decoration.headers).toBeUndefined();
+    },
+  );
 
   it('в сервисе: 401 при старте значит гость, 401 в работе значит kick без refresh', async () => {
     const getUser = vi
@@ -265,14 +329,20 @@ describe('SessionCookieStrategy', () => {
     const strategy = new SessionCookieStrategy<TestUser, unknown>({
       api: { ...api, login: vi.fn(async () => ({ redirectTo: '/saml' })) },
     });
-    await expect(strategy.login({}, context)).resolves.toEqual({ redirectTo: '/saml' });
+    await expect(strategy.login({}, context)).resolves.toEqual({
+      redirectTo: '/saml',
+    });
   });
 });
 
 describe('ApiKeyStrategy', () => {
   it('ключ уходит только в заголовке, имя настраивается', () => {
-    expect(new ApiKeyStrategy().decorate({ apiKey: 'k' })).toEqual({ headers: { 'X-API-Key': 'k' } });
-    expect(new ApiKeyStrategy({ headerName: 'X-Token' }).decorate({ apiKey: 'k' })).toEqual({
+    expect(new ApiKeyStrategy().decorate({ apiKey: 'k' })).toEqual({
+      headers: { 'X-API-Key': 'k' },
+    });
+    expect(
+      new ApiKeyStrategy({ headerName: 'X-Token' }).decorate({ apiKey: 'k' }),
+    ).toEqual({
       headers: { 'X-Token': 'k' },
     });
   });
@@ -282,15 +352,22 @@ describe('ApiKeyStrategy', () => {
     const strategy = new ApiKeyStrategy({ provideKey: () => 'k', verify });
     const grant = await strategy.restore({ ...context, stored: null });
     expect(grant).toEqual({ credentials: { apiKey: 'k' }, user: makeUser() });
-    expect(verify).toHaveBeenCalledWith({ 'X-API-Key': 'k' }, expect.anything());
+    expect(verify).toHaveBeenCalledWith(
+      { 'X-API-Key': 'k' },
+      expect.anything(),
+    );
   });
 
   it('нет ключа: гость', async () => {
-    await expect(new ApiKeyStrategy().restore({ ...context, stored: null })).resolves.toBeNull();
+    await expect(
+      new ApiKeyStrategy().restore({ ...context, stored: null }),
+    ).resolves.toBeNull();
   });
 
   it('пустой ключ при входе отвергается', async () => {
-    await expect(new ApiKeyStrategy().login({ apiKey: '' }, context)).rejects.toMatchObject({
+    await expect(
+      new ApiKeyStrategy().login({ apiKey: '' }, context),
+    ).rejects.toMatchObject({
       code: 'bad_request',
     });
   });
@@ -310,19 +387,32 @@ describe('BasicStrategy', () => {
 
   it('кодирует логин и пароль (RFC 7617)', async () => {
     const strategy = new BasicStrategy({ verify });
-    const grant = await strategy.login({ username: 'Aladdin', password: 'open sesame' }, context);
-    expect(grant.credentials.authorization).toBe('Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==');
+    const grant = await strategy.login(
+      { username: 'Aladdin', password: 'open sesame' },
+      context,
+    );
+    expect(grant.credentials.authorization).toBe(
+      'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==',
+    );
   });
 
   it('кириллица кодируется как UTF-8, а не падает', async () => {
     const strategy = new BasicStrategy({ verify });
-    const grant = await strategy.login({ username: 'анна', password: 'пароль' }, context);
-    expect(fromBase64(grant.credentials.authorization.replace('Basic ', ''))).toBe('анна:пароль');
+    const grant = await strategy.login(
+      { username: 'анна', password: 'пароль' },
+      context,
+    );
+    expect(
+      fromBase64(grant.credentials.authorization.replace('Basic ', '')),
+    ).toBe('анна:пароль');
   });
 
   it('двоеточие в логине запрещено', async () => {
     await expect(
-      new BasicStrategy({ verify }).login({ username: 'a:b', password: 'x' }, context),
+      new BasicStrategy({ verify }).login(
+        { username: 'a:b', password: 'x' },
+        context,
+      ),
     ).rejects.toMatchObject({ code: 'bad_request' });
   });
 
@@ -357,7 +447,9 @@ describe('DigestStrategy', () => {
 
   const sha256 = async (text: string) =>
     Array.from(
-      new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))),
+      new Uint8Array(
+        await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)),
+      ),
       (byte) => byte.toString(16).padStart(2, '0'),
     ).join('');
 
@@ -371,7 +463,9 @@ describe('DigestStrategy', () => {
     uri: string;
   }) {
     const ha2 = await sha256(`${params.method}:${params.uri}`);
-    return sha256(`${params.secret}:${params.nonce}:${params.nc}:${params.cnonce}:auth:${ha2}`);
+    return sha256(
+      `${params.secret}:${params.nonce}:${params.nc}:${params.cnonce}:auth:${ha2}`,
+    );
   }
 
   // Как в примере RFC: браузер склеивает два заголовка WWW-Authenticate через запятую.
@@ -385,10 +479,16 @@ describe('DigestStrategy', () => {
     return new Response(status === 204 ? null : '{}', { status, headers });
   }
 
-  function createDigest(options: Partial<ConstructorParameters<typeof DigestStrategy<TestUser>>[0]> = {}) {
+  function createDigest(
+    options: Partial<
+      ConstructorParameters<typeof DigestStrategy<TestUser>>[0]
+    > = {},
+  ) {
     const fetch = vi
       .fn<typeof globalThis.fetch>()
-      .mockResolvedValueOnce(fakeResponse(401, { 'WWW-Authenticate': challengeHeader() }))
+      .mockResolvedValueOnce(
+        fakeResponse(401, { 'WWW-Authenticate': challengeHeader() }),
+      )
       .mockResolvedValue(fakeResponse(200));
     const strategy = new DigestStrategy<TestUser>({
       verifyUrl: 'https://api.test/dir/index.html',
@@ -409,7 +509,9 @@ describe('DigestStrategy', () => {
 
   function parseAuthorization(header: string | undefined) {
     const params = new Map<string, string>();
-    for (const match of (header ?? '').matchAll(/([\w*]+)=(?:"((?:[^"\\]|\\.)*)"|([^,\s]+))/g)) {
+    for (const match of (header ?? '').matchAll(
+      /([\w*]+)=(?:"((?:[^"\\]|\\.)*)"|([^,\s]+))/g,
+    )) {
       params.set(match[1]!, match[2] ?? match[3]!);
     }
     return params;
@@ -432,7 +534,9 @@ describe('DigestStrategy', () => {
         method: 'GET',
         uri: RFC.uri,
       }),
-    ).resolves.toBe('753927fa0e85d155564e2e272a28d1802ca10daf4496794697cf8db5856cb6c1');
+    ).resolves.toBe(
+      '753927fa0e85d155564e2e272a28d1802ca10daf4496794697cf8db5856cb6c1',
+    );
   });
 
   it('заголовок вычислен по RFC 7616', async () => {
@@ -464,8 +568,12 @@ describe('DigestStrategy', () => {
   it('вход: сначала вызов, потом запрос с ответом', async () => {
     const { fetch, credentials } = await loggedIn();
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).has('Authorization')).toBe(false);
-    expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get('Authorization')).toContain('Digest ');
+    expect(
+      new Headers(fetch.mock.calls[0]?.[1]?.headers).has('Authorization'),
+    ).toBe(false);
+    expect(
+      new Headers(fetch.mock.calls[1]?.[1]?.headers).get('Authorization'),
+    ).toContain('Digest ');
     expect(credentials.counter).toBe(1);
   });
 
@@ -478,9 +586,15 @@ describe('DigestStrategy', () => {
     const { strategy, fetch } = createDigest();
     fetch.mockReset();
     fetch
-      .mockResolvedValueOnce(fakeResponse(401, { 'WWW-Authenticate': challengeHeader() }))
-      .mockResolvedValueOnce(fakeResponse(401, { 'WWW-Authenticate': challengeHeader() }));
-    await expect(strategy.login({ username: 'u', password: 'bad' }, context)).rejects.toMatchObject({
+      .mockResolvedValueOnce(
+        fakeResponse(401, { 'WWW-Authenticate': challengeHeader() }),
+      )
+      .mockResolvedValueOnce(
+        fakeResponse(401, { 'WWW-Authenticate': challengeHeader() }),
+      );
+    await expect(
+      strategy.login({ username: 'u', password: 'bad' }, context),
+    ).rejects.toMatchObject({
       code: 'unauthorized',
     });
   });
@@ -490,7 +604,9 @@ describe('DigestStrategy', () => {
     const decorations = await Promise.all(
       Array.from({ length: 5 }, () => strategy.decorate(credentials, TARGET)),
     );
-    const counters = decorations.map((item) => parseAuthorization(item.headers?.Authorization).get('nc'));
+    const counters = decorations.map((item) =>
+      parseAuthorization(item.headers?.Authorization).get('nc'),
+    );
     expect(new Set(counters).size).toBe(5);
   });
 
@@ -504,10 +620,18 @@ describe('DigestStrategy', () => {
         }),
       )
       .mockResolvedValue(fakeResponse(200));
-    const { credentials } = await strategy.login({ username: 'u', password: 'p' }, context);
-    const { headers } = await strategy.decorate(credentials, { url: 'https://a.test/x', method: 'GET' });
+    const { credentials } = await strategy.login(
+      { username: 'u', password: 'p' },
+      context,
+    );
+    const { headers } = await strategy.decorate(credentials, {
+      url: 'https://a.test/x',
+      method: 'GET',
+    });
     const params = parseAuthorization(headers?.Authorization);
-    const secret = await sha256(`${await sha256('u:r:p')}:n:${params.get('cnonce')}`);
+    const secret = await sha256(
+      `${await sha256('u:r:p')}:n:${params.get('cnonce')}`,
+    );
 
     expect(params.get('algorithm')).toBe('SHA-256-sess');
     expect(params.get('response')).toBe(
@@ -525,7 +649,9 @@ describe('DigestStrategy', () => {
   it('stale=true: nonce обновлён, счётчик сброшен, повтор', async () => {
     const { strategy, credentials } = await loggedIn();
     const verdict = strategy.assess(
-      unauthorizedInfo(`Digest realm="${RFC.realm}", qop="auth", algorithm=SHA-256, nonce="fresh", stale=true`),
+      unauthorizedInfo(
+        `Digest realm="${RFC.realm}", qop="auth", algorithm=SHA-256, nonce="fresh", stale=true`,
+      ),
       credentials,
     );
     expect(verdict).toEqual({ action: 'retry' });
@@ -534,7 +660,9 @@ describe('DigestStrategy', () => {
 
   it('401 без stale: реквизиты отвергнуты, сессии конец', async () => {
     const { strategy, credentials } = await loggedIn();
-    expect(strategy.assess(unauthorizedInfo(challengeHeader()), credentials)).toEqual({
+    expect(
+      strategy.assess(unauthorizedInfo(challengeHeader()), credentials),
+    ).toEqual({
       action: 'reject',
     });
   });
@@ -544,7 +672,8 @@ describe('DigestStrategy', () => {
     const verdict = strategy.assess(
       {
         status: 200,
-        header: (name) => (name === 'Authentication-Info' ? 'nextnonce="after", qop=auth' : null),
+        header: (name) =>
+          name === 'Authentication-Info' ? 'nextnonce="after", qop=auth' : null,
         json: async () => ({}),
       },
       credentials,
@@ -557,9 +686,14 @@ describe('DigestStrategy', () => {
     const { strategy, fetch } = createDigest();
     fetch.mockReset();
     fetch.mockResolvedValue(
-      fakeResponse(401, { 'WWW-Authenticate': 'Digest realm="r", qop="auth", algorithm=MD5, nonce="n"' }),
+      fakeResponse(401, {
+        'WWW-Authenticate':
+          'Digest realm="r", qop="auth", algorithm=MD5, nonce="n"',
+      }),
     );
-    await expect(strategy.login({ username: 'u', password: 'p' }, context)).rejects.toMatchObject({
+    await expect(
+      strategy.login({ username: 'u', password: 'p' }, context),
+    ).rejects.toMatchObject({
       code: 'misconfigured',
     });
   });
@@ -568,9 +702,13 @@ describe('DigestStrategy', () => {
     const { strategy, fetch } = createDigest();
     fetch.mockReset();
     fetch.mockResolvedValue(
-      fakeResponse(401, { 'WWW-Authenticate': 'Digest realm="r", qop="auth", nonce="n"' }),
+      fakeResponse(401, {
+        'WWW-Authenticate': 'Digest realm="r", qop="auth", nonce="n"',
+      }),
     );
-    await expect(strategy.login({ username: 'u', password: 'p' }, context)).rejects.toMatchObject({
+    await expect(
+      strategy.login({ username: 'u', password: 'p' }, context),
+    ).rejects.toMatchObject({
       code: 'misconfigured',
     });
   });
@@ -581,7 +719,10 @@ describe('DigestStrategy', () => {
     fetch.mockReset();
     fetch
       .mockResolvedValueOnce(
-        fakeResponse(401, { 'WWW-Authenticate': 'Digest realm="r", qop="auth", algorithm=MD5, nonce="n"' }),
+        fakeResponse(401, {
+          'WWW-Authenticate':
+            'Digest realm="r", qop="auth", algorithm=MD5, nonce="n"',
+        }),
       )
       .mockResolvedValue(fakeResponse(200));
     await strategy.login({ username: 'u', password: 'p' }, context);
@@ -599,17 +740,29 @@ describe('DigestStrategy', () => {
         }),
       )
       .mockResolvedValue(fakeResponse(200));
-    const { credentials } = await strategy.login({ username: 'u', password: 'p' }, context);
-    expect(credentials).toMatchObject({ nonce: 'strong', realm: 'a, "quoted"', algorithm: 'SHA-256' });
+    const { credentials } = await strategy.login(
+      { username: 'u', password: 'p' },
+      context,
+    );
+    expect(credentials).toMatchObject({
+      nonce: 'strong',
+      realm: 'a, "quoted"',
+      algorithm: 'SHA-256',
+    });
   });
 
   it('сервер без qop=auth отвергается', async () => {
     const { strategy, fetch } = createDigest();
     fetch.mockReset();
     fetch.mockResolvedValue(
-      fakeResponse(401, { 'WWW-Authenticate': 'Digest realm="r", qop="auth-int", algorithm=SHA-256, nonce="n"' }),
+      fakeResponse(401, {
+        'WWW-Authenticate':
+          'Digest realm="r", qop="auth-int", algorithm=SHA-256, nonce="n"',
+      }),
     );
-    await expect(strategy.login({ username: 'u', password: 'p' }, context)).rejects.toMatchObject({
+    await expect(
+      strategy.login({ username: 'u', password: 'p' }, context),
+    ).rejects.toMatchObject({
       code: 'misconfigured',
     });
   });
@@ -618,7 +771,9 @@ describe('DigestStrategy', () => {
     const { strategy, fetch } = createDigest();
     fetch.mockReset();
     fetch.mockResolvedValue(fakeResponse(200));
-    await expect(strategy.login({ username: 'u', password: 'p' }, context)).rejects.toMatchObject({
+    await expect(
+      strategy.login({ username: 'u', password: 'p' }, context),
+    ).rejects.toMatchObject({
       code: 'misconfigured',
     });
   });
@@ -626,12 +781,16 @@ describe('DigestStrategy', () => {
   it('спецсимволы в логине экранируются, не-ASCII идёт через username*', async () => {
     const { strategy, credentials } = await loggedIn();
     const quoted: DigestCredentials = { ...credentials, username: 'a"b\\c' };
-    const quotedHeader = (await strategy.decorate(quoted, TARGET)).headers?.Authorization;
+    const quotedHeader = (await strategy.decorate(quoted, TARGET)).headers
+      ?.Authorization;
     expect(quotedHeader).toContain('username="a\\"b\\\\c"');
 
     const cyrillic: DigestCredentials = { ...credentials, username: 'анна' };
-    const cyrillicHeader = (await strategy.decorate(cyrillic, TARGET)).headers?.Authorization;
-    expect(cyrillicHeader).toContain(`username*=UTF-8''${encodeURIComponent('анна')}`);
+    const cyrillicHeader = (await strategy.decorate(cyrillic, TARGET)).headers
+      ?.Authorization;
+    expect(cyrillicHeader).toContain(
+      `username*=UTF-8''${encodeURIComponent('анна')}`,
+    );
   });
 
   it('сессия не переживает перезагрузку', async () => {
@@ -683,20 +842,24 @@ describe('withSsoRedirect', () => {
       logout: vi.fn(async () => undefined),
       decorate: vi.fn(() => ({})),
     };
-    const strategy = withSsoRedirect<string, TestUser, { password: string }, 'google' | 'github'>(
-      base as unknown as AuthStrategy<string, TestUser, { password: string }>,
-      {
-        buildUrl: (provider, returnTo) =>
-          `/auth/${provider}/start?next=${encodeURIComponent(returnTo)}`,
-        defaultReturnTo: '/boards',
-      },
-    );
+    const strategy = withSsoRedirect<
+      string,
+      TestUser,
+      { password: string },
+      'google' | 'github'
+    >(base as unknown as AuthStrategy<string, TestUser, { password: string }>, {
+      buildUrl: (provider, returnTo) =>
+        `/auth/${provider}/start?next=${encodeURIComponent(returnTo)}`,
+      defaultReturnTo: '/boards',
+    });
     return { base, strategy };
   }
 
   it('SSO: редирект на сервер, обычный вход стратегии не вызывается', async () => {
     const { base, strategy } = createSso();
-    await expect(strategy.login({ sso: 'google', returnTo: '/tasks/1' }, context)).resolves.toEqual({
+    await expect(
+      strategy.login({ sso: 'google', returnTo: '/tasks/1' }, context),
+    ).resolves.toEqual({
       redirectTo: '/auth/google/start?next=%2Ftasks%2F1',
     });
     expect(base.login).not.toHaveBeenCalled();
@@ -724,22 +887,34 @@ describe('withSsoRedirect', () => {
   });
 
   it('работает с классом, у которого приватные поля', async () => {
-    const strategy = withSsoRedirect(new BasicStrategy({ verify: async () => makeUser() }), {
-      buildUrl: () => '/sso',
-    });
-    await expect(strategy.login({ username: 'u', password: 'p' }, context)).resolves.toMatchObject({
+    const strategy = withSsoRedirect(
+      new BasicStrategy({ verify: async () => makeUser() }),
+      {
+        buildUrl: () => '/sso',
+      },
+    );
+    await expect(
+      strategy.login({ username: 'u', password: 'p' }, context),
+    ).resolves.toMatchObject({
       credentials: { authorization: expect.any(String) },
     });
-    await expect(strategy.restore({ ...context, stored: null })).resolves.toBeNull();
-    expect(strategy.decorate({ authorization: 'Basic x' }, TARGET)).toMatchObject({
+    await expect(
+      strategy.restore({ ...context, stored: null }),
+    ).resolves.toBeNull();
+    expect(
+      strategy.decorate({ authorization: 'Basic x' }, TARGET),
+    ).toMatchObject({
       credentialsMode: 'omit',
     });
   });
 
   it('отсутствующие у стратегии методы не появляются', () => {
-    const strategy = withSsoRedirect(new BasicStrategy({ verify: async () => makeUser() }), {
-      buildUrl: () => '/sso',
-    });
+    const strategy = withSsoRedirect(
+      new BasicStrategy({ verify: async () => makeUser() }),
+      {
+        buildUrl: () => '/sso',
+      },
+    );
     expect(strategy.renew).toBeUndefined();
     expect(strategy.logout).toBeUndefined();
   });
@@ -752,6 +927,8 @@ describe('withSsoRedirect', () => {
     await auth.bootstrap();
     await auth.login({ sso: 'google' });
     await flush();
-    expect(platform.navigated).toEqual(['https://app.test/auth/google/start?next=%2Fboards']);
+    expect(platform.navigated).toEqual([
+      'https://app.test/auth/google/start?next=%2Fboards',
+    ]);
   });
 });

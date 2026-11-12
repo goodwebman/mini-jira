@@ -7,17 +7,20 @@ import type {
   UpdateMemberBody,
   UserBrief,
 } from '@gwmt/contracts';
+
 import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import * as authRepo from '../auth/repo.js';
-import { createFirstSprint, toSprintBrief } from '../sprints/service.js';
 import * as sprintsRepo from '../sprints/repo.js';
+import { createFirstSprint, toSprintBrief } from '../sprints/service.js';
 import * as repo from './repo.js';
 
 const COLOR_COUNT = 6;
 const MEMBERS_PREVIEW_LIMIT = 4;
 
-const toBoardMember = (row: NonNullable<Awaited<ReturnType<typeof repo.findBoardMember>>>): BoardMember => ({
+const toBoardMember = (
+  row: NonNullable<Awaited<ReturnType<typeof repo.findBoardMember>>>,
+): BoardMember => ({
   id: row.id,
   name: row.name,
   job: row.job,
@@ -36,7 +39,10 @@ export async function listBoards(
     q: query.q,
     favoriteOnly: query.filter === 'favorite',
   });
-  const members = await repo.listMembersOfBoards(deps.db, rows.map((row) => row.id));
+  const members = await repo.listMembersOfBoards(
+    deps.db,
+    rows.map((row) => row.id),
+  );
 
   const previews = new Map<number, UserBrief[]>();
   for (const { boardId, ...user } of members) {
@@ -46,7 +52,10 @@ export async function listBoards(
   }
 
   return {
-    items: rows.map((row) => ({ ...row, membersPreview: previews.get(row.id) ?? [] })),
+    items: rows.map((row) => ({
+      ...row,
+      membersPreview: previews.get(row.id) ?? [],
+    })),
     total: rows.length,
   };
 }
@@ -93,7 +102,8 @@ export async function createBoard(
   const boardId = await deps.withTx(async (tx) => {
     if (memberIds.length > 0) {
       const existing = await repo.listExistingUserIds(tx, memberIds);
-      if (existing.length !== memberIds.length) throw new AppError('USER_NOT_FOUND');
+      if (existing.length !== memberIds.length)
+        throw new AppError('USER_NOT_FOUND');
     }
 
     const board = await repo.insertBoard(tx, {
@@ -106,12 +116,20 @@ export async function createBoard(
       createdAt: now,
     });
     if (!board) {
-      throw new AppError('BOARD_KEY_TAKEN', { fields: { key: 'Такой ключ уже есть' } });
+      throw new AppError('BOARD_KEY_TAKEN', {
+        fields: { key: 'Такой ключ уже есть' },
+      });
     }
 
     await repo.setBoardColor(tx, board.id, board.id % COLOR_COUNT);
     await repo.insertMembers(tx, [
-      { boardId: board.id, userId, role: 'admin', addedAt: now, addedBy: userId },
+      {
+        boardId: board.id,
+        userId,
+        role: 'admin',
+        addedAt: now,
+        addedBy: userId,
+      },
       ...memberIds.map((id) => ({
         boardId: board.id,
         userId: id,
@@ -173,5 +191,6 @@ export async function removeMember(
   userId: string,
 ): Promise<void> {
   if (actorId === userId) throw new AppError('CANNOT_REMOVE_SELF');
-  if (!(await repo.deleteMember(deps.db, boardId, userId))) throw new AppError('USER_NOT_FOUND');
+  if (!(await repo.deleteMember(deps.db, boardId, userId)))
+    throw new AppError('USER_NOT_FOUND');
 }

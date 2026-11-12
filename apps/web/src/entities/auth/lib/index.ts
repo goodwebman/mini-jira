@@ -10,9 +10,18 @@ export {
   type AuthErrorCode,
 } from './errors';
 export { sanitizeReturnTo } from './origin-policy';
-export { createBrowserPlatform, detectPlatform, type BrowserScope } from './platform/browser-platform';
+export {
+  createBrowserPlatform,
+  detectPlatform,
+  type BrowserScope,
+} from './platform/browser-platform';
 export { createMemoryPlatform } from './platform/memory-platform';
-export type { AuthChannel, AuthMarkers, AuthPlatform, AuthResumeInfo } from './platform/types';
+export type {
+  AuthChannel,
+  AuthMarkers,
+  AuthPlatform,
+  AuthResumeInfo,
+} from './platform/types';
 export type * from './types';
 
 export {
@@ -23,7 +32,11 @@ export {
 } from './adapters/fetch';
 export { attachAuthToAxios, type AxiosLike } from './adapters/axios';
 export { graphqlEffectiveStatus } from './adapters/graphql';
-export { bindAuthToRtkQuery, type RtkApiLike, type RtkStoreLike } from './adapters/rtk-query';
+export {
+  bindAuthToRtkQuery,
+  type RtkApiLike,
+  type RtkStoreLike,
+} from './adapters/rtk-query';
 export {
   bindAuthToQueryClient,
   shouldRetryQuery,

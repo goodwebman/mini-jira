@@ -1,5 +1,6 @@
-import { existsSync } from 'node:fs';
 import { serve } from '@hono/node-server';
+import { existsSync } from 'node:fs';
+
 import { createApp } from './app.js';
 import { createDatabase } from './db/client.js';
 import { loadEnv } from './lib/env.js';

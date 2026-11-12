@@ -1,11 +1,12 @@
 import type { SprintKpi, SprintListItem } from '@gwmt/contracts';
 import { eq, inArray } from 'drizzle-orm';
+
 import type { Db } from '../../db/client.js';
-import { boards, users, type SprintRow } from '../../db/schema.js';
+import { type SprintRow, boards, users } from '../../db/schema.js';
 import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import * as sprintsRepo from '../sprints/repo.js';
-import { computeSprintKpi, type SprintKpiSnapshot } from './compute.js';
+import { type SprintKpiSnapshot, computeSprintKpi } from './compute.js';
 
 const PREVIOUS_VELOCITY_LIMIT = 5;
 
@@ -19,7 +20,12 @@ export async function computeForSprint(
   const [tasks, memberIds, previousSprints] = await Promise.all([
     sprintsRepo.loadKpiTasks(db, sprint.id),
     sprintsRepo.listNonGuestMemberIds(db, sprint.boardId),
-    sprintsRepo.listPreviousVelocity(db, sprint.boardId, sprint.number, PREVIOUS_VELOCITY_LIMIT),
+    sprintsRepo.listPreviousVelocity(
+      db,
+      sprint.boardId,
+      sprint.number,
+      PREVIOUS_VELOCITY_LIMIT,
+    ),
   ]);
   return computeSprintKpi({
     now,
@@ -64,7 +70,12 @@ export async function getSprintKpi(
     userIds.length === 0
       ? []
       : await deps.db
-          .select({ id: users.id, name: users.name, job: users.job, colorIndex: users.colorIndex })
+          .select({
+            id: users.id,
+            name: users.name,
+            job: users.job,
+            colorIndex: users.colorIndex,
+          })
           .from(users)
           .where(inArray(users.id, userIds));
   const peopleById = new Map(people.map((person) => [person.id, person]));
@@ -73,7 +84,12 @@ export async function getSprintKpi(
   return {
     ...rest,
     serverTime: now.toISOString(),
-    board: { id: board.id, key: board.key, name: board.name, colorIndex: board.colorIndex },
+    board: {
+      id: board.id,
+      key: board.key,
+      name: board.name,
+      colorIndex: board.colorIndex,
+    },
     sprint: {
       id: sprint.id,
       number: sprint.number,
@@ -110,7 +126,15 @@ export async function listBoardSprints(
       const summary =
         sprint.state === 'closed' && sprint.kpiSnapshot
           ? sprint.kpiSnapshot.summary
-          : (await computeForSprint(deps.db, sprint, board.timezone, now, false)).summary;
+          : (
+              await computeForSprint(
+                deps.db,
+                sprint,
+                board.timezone,
+                now,
+                false,
+              )
+            ).summary;
       return {
         id: sprint.id,
         number: sprint.number,

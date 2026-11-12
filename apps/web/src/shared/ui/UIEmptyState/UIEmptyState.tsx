@@ -1,7 +1,11 @@
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
-export interface IUIEmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface IUIEmptyStateProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   readonly testId?: string;
   readonly title: ReactNode;
   /** Пояснение под заголовком. */
@@ -21,7 +25,19 @@ export interface IUIEmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>,
  * <UIEmptyState boxed title="Задач по этим условиям нет" />
  */
 const UIEmptyStateBase = forwardRef<HTMLDivElement, IUIEmptyStateProps>(
-  ({ className, testId, title, description, icon, action, boxed = false, ...props }, ref) => (
+  (
+    {
+      className,
+      testId,
+      title,
+      description,
+      icon,
+      action,
+      boxed = false,
+      ...props
+    },
+    ref,
+  ) => (
     <div
       ref={ref}
       data-name={testId ? `UIEmptyState-${testId}` : 'UIEmptyState'}
@@ -32,10 +48,10 @@ const UIEmptyStateBase = forwardRef<HTMLDivElement, IUIEmptyStateProps>(
       )}
       {...props}
     >
-      {icon != null && <div className="[&_svg]:size-[32px]">{icon}</div>}
-      <p className="m-0">{title}</p>
-      {description != null && <p className="m-0 text-small">{description}</p>}
-      {action != null && <div className="mt-2">{action}</div>}
+      {icon != null && <div className='[&_svg]:size-[32px]'>{icon}</div>}
+      <p className='m-0'>{title}</p>
+      {description != null && <p className='m-0 text-small'>{description}</p>}
+      {action != null && <div className='mt-2'>{action}</div>}
     </div>
   ),
 );

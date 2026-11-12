@@ -1,7 +1,16 @@
-import { forwardRef, memo, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import {
+  type ButtonHTMLAttributes,
+  type ReactNode,
+  forwardRef,
+  memo,
+} from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
-export interface IUIOptionCardProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'title'> {
+export interface IUIOptionCardProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'title'
+> {
   readonly testId?: string;
   readonly title: ReactNode;
   /** Вторая строка мелким текстом. */
@@ -14,7 +23,19 @@ export interface IUIOptionCardProps extends Omit<ButtonHTMLAttributes<HTMLButton
 
 /** Выбираемая строка-карточка: доска, спринт, задача для связи. */
 const UIOptionCardBase = forwardRef<HTMLButtonElement, IUIOptionCardProps>(
-  ({ className, testId, title, meta, aside, selected, type = 'button', ...props }, ref) => (
+  (
+    {
+      className,
+      testId,
+      title,
+      meta,
+      aside,
+      selected,
+      type = 'button',
+      ...props
+    },
+    ref,
+  ) => (
     <button
       ref={ref}
       type={type}
@@ -30,11 +51,19 @@ const UIOptionCardBase = forwardRef<HTMLButtonElement, IUIOptionCardProps>(
       )}
       {...props}
     >
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-semibold">{title}</span>
-        {meta != null && <span className="truncate text-caption text-muted-foreground">{meta}</span>}
+      <span className='flex min-w-0 flex-1 flex-col'>
+        <span className='truncate font-semibold'>{title}</span>
+        {meta != null && (
+          <span className='truncate text-caption text-muted-foreground'>
+            {meta}
+          </span>
+        )}
       </span>
-      {aside != null && <span className="shrink-0 text-small font-medium tabular-nums">{aside}</span>}
+      {aside != null && (
+        <span className='shrink-0 text-small font-medium tabular-nums'>
+          {aside}
+        </span>
+      )}
     </button>
   ),
 );

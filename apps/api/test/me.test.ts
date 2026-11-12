@@ -1,11 +1,21 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createTestApp, createUser, json, signedPost, type TestApp } from './helpers.js';
+
+import {
+  type TestApp,
+  createTestApp,
+  createUser,
+  json,
+  signedPost,
+} from './helpers.js';
 
 describe('профиль', () => {
   let t: TestApp;
 
-  const post = (path: string, body?: unknown, headers: Record<string, string> = {}) =>
-    signedPost(t, path, body, headers);
+  const post = (
+    path: string,
+    body?: unknown,
+    headers: Record<string, string> = {},
+  ) => signedPost(t, path, body, headers);
 
   beforeAll(async () => {
     t = await createTestApp();
@@ -55,10 +65,14 @@ describe('профиль', () => {
   it('чужой email даёт EMAIL_TAKEN, свой проходит', async () => {
     const other = await createUser(t);
     const user = await createUser(t);
-    const taken = await t.request('PATCH', '/me', user.token, { email: other.email });
+    const taken = await t.request('PATCH', '/me', user.token, {
+      email: other.email,
+    });
     expect(taken.status).toBe(409);
     expect((await json(taken)).error.code).toBe('EMAIL_TAKEN');
-    const same = await t.request('PATCH', '/me', user.token, { email: user.email.toUpperCase() });
+    const same = await t.request('PATCH', '/me', user.token, {
+      email: user.email.toUpperCase(),
+    });
     expect(same.status).toBe(200);
   });
 
@@ -103,8 +117,14 @@ describe('профиль', () => {
       });
       expect(res.status).toBe(204);
 
-      expect((await post('/auth/refresh', undefined, { Cookie: otherCookie })).status).toBe(401);
-      expect((await post('/auth/refresh', undefined, { Cookie: first.cookie })).status).toBe(200);
+      expect(
+        (await post('/auth/refresh', undefined, { Cookie: otherCookie }))
+          .status,
+      ).toBe(401);
+      expect(
+        (await post('/auth/refresh', undefined, { Cookie: first.cookie }))
+          .status,
+      ).toBe(200);
 
       const login = await post('/auth/login', {
         email: first.email,
@@ -116,16 +136,24 @@ describe('профиль', () => {
 
     it('без пароля currentPassword не нужен', async () => {
       const user = await createUser(t);
-      const res = await t.request('POST', '/me/password', user.token, { newPassword: 'new-password' });
+      const res = await t.request('POST', '/me/password', user.token, {
+        newPassword: 'new-password',
+      });
       expect(res.status).toBe(204);
-      expect((await json(await t.request('GET', '/me', user.token))).hasPassword).toBe(true);
+      expect(
+        (await json(await t.request('GET', '/me', user.token))).hasPassword,
+      ).toBe(true);
     });
 
     it('короткий новый пароль даёт текст из контракта', async () => {
       const user = await createUser(t);
-      const res = await t.request('POST', '/me/password', user.token, { newPassword: '123' });
+      const res = await t.request('POST', '/me/password', user.token, {
+        newPassword: '123',
+      });
       expect(res.status).toBe(422);
-      expect((await json(res)).error.fields.newPassword).toBe('Минимум 8 символов');
+      expect((await json(res)).error.fields.newPassword).toBe(
+        'Минимум 8 символов',
+      );
     });
   });
 });

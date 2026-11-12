@@ -1,17 +1,18 @@
 import {
   STAGE_STATUSES,
-  TASK_STATUSES,
   type SprintKpi,
   type StageStatus,
+  TASK_STATUSES,
   type TaskStatus,
 } from '@gwmt/contracts';
+
 import {
+  type IsoDate,
   addDays,
   sprintEndDate,
   sprintWorkdays,
   startOfDayInZone,
   workingSeconds,
-  type IsoDate,
 } from '../../lib/workdays.js';
 
 export interface KpiInterval {
@@ -57,7 +58,13 @@ export interface KpiTeamEntry {
 /** Всё, что считается по данным спринта. В снимок попадают только userId и числа. */
 export type SprintKpiSnapshot = Pick<
   SprintKpi,
-  'isEmpty' | 'summary' | 'days' | 'byStatus' | 'stages' | 'slowestStage' | 'velocity'
+  | 'isEmpty'
+  | 'summary'
+  | 'days'
+  | 'byStatus'
+  | 'stages'
+  | 'slowestStage'
+  | 'velocity'
 > & {
   todayIndex: number;
   team: KpiTeamEntry[];
@@ -117,16 +124,31 @@ function averageStageDays(
     for (const interval of task.intervals) {
       if (interval.status !== stage || !interval.leftAt) continue;
       if (interval.leftAt < from || interval.leftAt >= to) continue;
-      const seconds = workingSeconds(interval.enteredAt, interval.leftAt, input.timezone);
-      durations.push(Math.max(0, seconds - interval.pausedSec) / SECONDS_IN_DAY);
+      const seconds = workingSeconds(
+        interval.enteredAt,
+        interval.leftAt,
+        input.timezone,
+      );
+      durations.push(
+        Math.max(0, seconds - interval.pausedSec) / SECONDS_IN_DAY,
+      );
     }
   }
   if (durations.length === 0) return 0;
-  return round1(durations.reduce((sum, value) => sum + value, 0) / durations.length);
+  return round1(
+    durations.reduce((sum, value) => sum + value, 0) / durations.length,
+  );
 }
 
-function buildTeam(input: KpiInput, scopeAtToday: KpiTask[], cutoff: Date): KpiTeamEntry[] {
-  const entries = new Map<string, { doneTenths: number; reviews: number; tests: number }>();
+function buildTeam(
+  input: KpiInput,
+  scopeAtToday: KpiTask[],
+  cutoff: Date,
+): KpiTeamEntry[] {
+  const entries = new Map<
+    string,
+    { doneTenths: number; reviews: number; tests: number }
+  >();
   const entry = (userId: string) => {
     let value = entries.get(userId);
     if (!value) {
@@ -138,7 +160,12 @@ function buildTeam(input: KpiInput, scopeAtToday: KpiTask[], cutoff: Date): KpiT
 
   input.memberIds.forEach(entry);
   for (const task of input.tasks) {
-    for (const userId of [task.authorId, task.reviewerId, task.testerId, task.designerId]) {
+    for (const userId of [
+      task.authorId,
+      task.reviewerId,
+      task.testerId,
+      task.designerId,
+    ]) {
       if (userId) entry(userId);
     }
   }
@@ -146,7 +173,8 @@ function buildTeam(input: KpiInput, scopeAtToday: KpiTask[], cutoff: Date): KpiT
   for (const task of scopeAtToday) {
     const status = statusBefore(task, cutoff);
     if (status === 'done') entry(task.authorId).doneTenths += toTenths(task.sp);
-    if (status === 'test' || status === 'done') entry(task.reviewerId).reviews += 1;
+    if (status === 'test' || status === 'done')
+      entry(task.reviewerId).reviews += 1;
     if (status === 'done' && task.testerId) entry(task.testerId).tests += 1;
   }
 
@@ -164,7 +192,10 @@ export function computeSprintKpi(input: KpiInput): SprintKpiSnapshot {
   const { timezone, startDate, isClosed, tasks } = input;
   const dates = sprintWorkdays(startDate);
   const cutoffs = dates.map((date, index) =>
-    startOfDayInZone(index === LAST_DAY ? addDays(date, 3) : (dates[index + 1] as IsoDate), timezone),
+    startOfDayInZone(
+      index === LAST_DAY ? addDays(date, 3) : (dates[index + 1] as IsoDate),
+      timezone,
+    ),
   );
   const today = resolveTodayIndex(input, dates);
 
@@ -198,7 +229,9 @@ export function computeSprintKpi(input: KpiInput): SprintKpiSnapshot {
 
   const firstCutoff = cutoffs[0] as Date;
   const todayCutoff = cutoffs[today] as Date;
-  const added = tasks.filter((task) => task.addedAt >= firstCutoff && task.addedAt < todayCutoff);
+  const added = tasks.filter(
+    (task) => task.addedAt >= firstCutoff && task.addedAt < todayCutoff,
+  );
   const addedTenths = added.reduce((sum, task) => sum + toTenths(task.sp), 0);
 
   const scopeAtToday = tasks.filter((task) => task.addedAt < todayCutoff);
@@ -210,13 +243,23 @@ export function computeSprintKpi(input: KpiInput): SprintKpiSnapshot {
   const sprintStart = startOfDayInZone(startDate, timezone);
   const stages = STAGE_STATUSES.map((status) => ({
     status,
-    avgDays: averageStageDays(input, status, scopeAtToday, sprintStart, todayCutoff),
+    avgDays: averageStageDays(
+      input,
+      status,
+      scopeAtToday,
+      sprintStart,
+      todayCutoff,
+    ),
   }));
-  const slowest = stages.reduce((best, stage) => (stage.avgDays > best.avgDays ? stage : best));
+  const slowest = stages.reduce((best, stage) =>
+    stage.avgDays > best.avgDays ? stage : best,
+  );
 
   const days = dates.map((date, index) => {
     const isPast = index <= today;
-    const idealRemainingSp = round1(fromTenths(committedTenths) * (1 - index / LAST_DAY));
+    const idealRemainingSp = round1(
+      fromTenths(committedTenths) * (1 - index / LAST_DAY),
+    );
     if (!isPast) {
       return {
         index,
@@ -263,7 +306,9 @@ export function computeSprintKpi(input: KpiInput): SprintKpiSnapshot {
       isActive: !isClosed,
     },
   ];
-  const closedDone = velocityItems.filter((item) => !item.isActive).map((item) => item.doneSp);
+  const closedDone = velocityItems
+    .filter((item) => !item.isActive)
+    .map((item) => item.doneSp);
 
   return {
     todayIndex: today,
@@ -271,13 +316,18 @@ export function computeSprintKpi(input: KpiInput): SprintKpiSnapshot {
     summary: {
       scopeSp,
       doneSp,
-      donePct: scopeTenths === 0 ? 0 : Math.round((doneTenths / scopeTenths) * 100),
+      donePct:
+        scopeTenths === 0 ? 0 : Math.round((doneTenths / scopeTenths) * 100),
       committedSp: fromTenths(committedTenths),
       addedSp: fromTenths(addedTenths),
       addedCount: added.length,
       paceSpPerDay: round1(pace),
-      forecastDoneSp: isClosed ? null : Math.min(scopeSp, Math.round(doneSp + pace * daysLeft)),
-      forecastRemainingSp: isClosed ? null : round1(Math.max(0, remaining - pace * daysLeft)),
+      forecastDoneSp: isClosed
+        ? null
+        : Math.min(scopeSp, Math.round(doneSp + pace * daysLeft)),
+      forecastRemainingSp: isClosed
+        ? null
+        : round1(Math.max(0, remaining - pace * daysLeft)),
       medianCycleDays: median(cycleDays),
     },
     days,
@@ -289,7 +339,10 @@ export function computeSprintKpi(input: KpiInput): SprintKpiSnapshot {
       averageDoneSp:
         closedDone.length === 0
           ? null
-          : round1(closedDone.reduce((sum, value) => sum + value, 0) / closedDone.length),
+          : round1(
+              closedDone.reduce((sum, value) => sum + value, 0) /
+                closedDone.length,
+            ),
     },
     team: buildTeam(input, scopeAtToday, todayCutoff),
   };

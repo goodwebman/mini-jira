@@ -1,6 +1,7 @@
+import { serve } from '@hono/node-server';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { serve } from '@hono/node-server';
+
 import { createApp } from './app.js';
 import type { Db, WithTx } from './db/client.js';
 import { loadEnv } from './lib/env.js';

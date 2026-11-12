@@ -1,10 +1,17 @@
 import {
-  boardTasksResponseSchema, myTasksQuerySchema, myTasksResponseSchema,
-  TASK_KEY_PATTERN, taskDetailSchema, taskSearchQuerySchema, taskSearchResponseSchema,
+  TASK_KEY_PATTERN,
+  boardTasksResponseSchema,
+  myTasksQuerySchema,
+  myTasksResponseSchema,
+  taskDetailSchema,
+  taskSearchQuerySchema,
+  taskSearchResponseSchema,
 } from '@gwmt/contracts';
 import { queryOptions } from '@tanstack/react-query';
-import type { MyTasksQuery, TaskSearchQuery } from '../model';
+
 import { apiClient, withQuery } from '@/shared/api';
+
+import type { MyTasksQuery, TaskSearchQuery } from '../model';
 
 export function myTasksPath(params: MyTasksQuery = {}): string {
   return withQuery('/me/tasks', myTasksQuerySchema.parse(params));
@@ -16,30 +23,46 @@ export function taskSearchPath(params: TaskSearchQuery = {}): string {
 
 /** GET `/boards/{boardId}/tasks` — весь активный спринт, фильтрация на клиенте. */
 export async function fetchBoardTasks(boardId: number, signal?: AbortSignal) {
-  return apiClient.get<unknown>(`/boards/${boardId}/tasks`, { signal }).then(boardTasksResponseSchema.parse);
+  return apiClient
+    .get<unknown>(`/boards/${boardId}/tasks`, { signal })
+    .then(boardTasksResponseSchema.parse);
 }
 
 /** GET `/tasks/{key}`. */
 export async function fetchTask(key: string, signal?: AbortSignal) {
-  return apiClient.get<unknown>(`/tasks/${encodeURIComponent(key)}`, { signal }).then(taskDetailSchema.parse);
+  return apiClient
+    .get<unknown>(`/tasks/${encodeURIComponent(key)}`, { signal })
+    .then(taskDetailSchema.parse);
 }
 
 /** GET `/me/tasks` — пагинация и фильтры на сервере. */
-export async function fetchMyTasks(params: MyTasksQuery = {}, signal?: AbortSignal) {
-  return apiClient.get<unknown>(myTasksPath(params), { signal }).then(myTasksResponseSchema.parse);
+export async function fetchMyTasks(
+  params: MyTasksQuery = {},
+  signal?: AbortSignal,
+) {
+  return apiClient
+    .get<unknown>(myTasksPath(params), { signal })
+    .then(myTasksResponseSchema.parse);
 }
 
 /** GET `/tasks/search` — поиск для связывания задач. */
-export async function searchTasks(params: TaskSearchQuery = {}, signal?: AbortSignal) {
-  return apiClient.get<unknown>(taskSearchPath(params), { signal }).then(taskSearchResponseSchema.parse);
+export async function searchTasks(
+  params: TaskSearchQuery = {},
+  signal?: AbortSignal,
+) {
+  return apiClient
+    .get<unknown>(taskSearchPath(params), { signal })
+    .then(taskSearchResponseSchema.parse);
 }
 
 export const taskQueryKeys = {
   all: ['task'] as const,
   board: (boardId: number) => ['task', 'board', boardId] as const,
   detail: (key: string) => ['task', 'detail', key] as const,
-  my: (params: MyTasksQuery = {}) => ['task', 'my', myTasksQuerySchema.parse(params)] as const,
-  search: (params: TaskSearchQuery = {}) => ['task', 'search', taskSearchQuerySchema.parse(params)] as const,
+  my: (params: MyTasksQuery = {}) =>
+    ['task', 'my', myTasksQuerySchema.parse(params)] as const,
+  search: (params: TaskSearchQuery = {}) =>
+    ['task', 'search', taskSearchQuerySchema.parse(params)] as const,
 };
 
 export function boardTasksQueryOptions(boardId: number) {

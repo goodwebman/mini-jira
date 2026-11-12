@@ -1,7 +1,9 @@
-import { cva, type VariantProps } from 'class-variance-authority';
-import { forwardRef, memo, type ReactNode } from 'react';
+import { type ReactNode, forwardRef, memo } from 'react';
+
+import { type VariantProps, cva } from 'class-variance-authority';
+
 import { cn } from '@/shared/lib/cn';
-import { Slot, type ISlotProps } from '@/shared/lib/dom';
+import { type ISlotProps, Slot } from '@/shared/lib/dom';
 
 const tileVariants = cva(
   [
@@ -40,7 +42,9 @@ const narrowLabelSlotClass =
   'flex min-h-0 w-full flex-1 justify-center [container-type:size] [@container(max-height:48px)]:*:hidden';
 
 export interface IUISideNavTileProps
-  extends Omit<ISlotProps, 'as' | 'children'>, VariantProps<typeof tileVariants> {
+  extends
+    Omit<ISlotProps, 'as' | 'children'>,
+    VariantProps<typeof tileVariants> {
   readonly testId?: string;
   readonly icon: ReactNode;
   readonly label: string;
@@ -56,7 +60,21 @@ export interface IUISideNavTileProps
 
 /** Плитка раздела. Активная в 1,6 раза выше; при наведении растёт любая. */
 const UISideNavTileBase = forwardRef<HTMLElement, IUISideNavTileProps>(
-  ({ className, testId, tone, icon, label, value, sub, active = false, children, ...props }, ref) => (
+  (
+    {
+      className,
+      testId,
+      tone,
+      icon,
+      label,
+      value,
+      sub,
+      active = false,
+      children,
+      ...props
+    },
+    ref,
+  ) => (
     <Slot
       ref={ref}
       aria-label={label}
@@ -67,31 +85,39 @@ const UISideNavTileBase = forwardRef<HTMLElement, IUISideNavTileProps>(
       {...props}
     >
       {/* Широкое меню */}
-      <div className="hidden flex-none items-center gap-3 lg:flex">
+      <div className='hidden flex-none items-center gap-3 lg:flex'>
         <span className={iconBoxClass}>{icon}</span>
-        <span className="line-clamp-2 min-w-0 flex-1 text-title font-semibold leading-[1.2] tracking-title">
+        <span className='line-clamp-2 min-w-0 flex-1 text-title font-semibold leading-[1.2] tracking-title'>
           {label}
         </span>
         {value != null && (
-          <span className="flex-none text-display font-bold leading-none tracking-display tabular-nums">
+          <span className='flex-none text-display font-bold leading-none tracking-display tabular-nums'>
             {value}
           </span>
         )}
       </div>
-      <div className="hidden min-h-0 flex-1 flex-col justify-end gap-2 overflow-hidden lg:flex">
+      <div className='hidden min-h-0 flex-1 flex-col justify-end gap-2 overflow-hidden lg:flex'>
         {children != null && <div className={vizSlotClass}>{children}</div>}
-        {sub != null && <div className="flex-none truncate text-caption opacity-90">{sub}</div>}
+        {sub != null && (
+          <div className='flex-none truncate text-caption opacity-90'>
+            {sub}
+          </div>
+        )}
       </div>
 
       {/* Узкое меню */}
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-between gap-2 lg:hidden">
+      <div className='flex min-h-0 flex-1 flex-col items-center justify-between gap-2 lg:hidden'>
         <span className={iconBoxClass}>{icon}</span>
         <span className={narrowLabelSlotClass}>
-          <span className="rotate-180 truncate text-left text-lead font-semibold [writing-mode:vertical-rl]">
+          <span className='rotate-180 truncate text-left text-lead font-semibold [writing-mode:vertical-rl]'>
             {label}
           </span>
         </span>
-        {value != null && <span className="flex-none text-lead font-bold tabular-nums">{value}</span>}
+        {value != null && (
+          <span className='flex-none text-lead font-bold tabular-nums'>
+            {value}
+          </span>
+        )}
       </div>
     </Slot>
   ),

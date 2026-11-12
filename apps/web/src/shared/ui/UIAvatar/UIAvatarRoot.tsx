@@ -1,8 +1,11 @@
+import { type HTMLAttributes, forwardRef, memo, useState } from 'react';
+
 import type { VariantProps } from 'class-variance-authority';
-import { forwardRef, memo, useState, type HTMLAttributes } from 'react';
+
 import { cn } from '@/shared/lib/cn';
-import { getInitials, getTintByName } from './avatar-utils';
+
 import { avatarVariants } from './UIAvatar.variants';
+import { getInitials, getTintByName } from './avatar-utils';
 
 export interface IUIAvatarProps
   extends HTMLAttributes<HTMLSpanElement>, VariantProps<typeof avatarVariants> {
@@ -21,25 +24,31 @@ export interface IUIAvatarProps
  * <UIAvatar name="Анна Соколова" size="sm" />
  */
 const UIAvatarRootBase = forwardRef<HTMLSpanElement, IUIAvatarProps>(
-  ({ className, testId, name, src, size, tint, title = name, ...props }, ref) => {
+  (
+    { className, testId, name, src, size, tint, title = name, ...props },
+    ref,
+  ) => {
     const [failedSrc, setFailedSrc] = useState<string | null>(null);
     const showImage = src != null && src !== '' && src !== failedSrc;
 
     return (
       <span
         ref={ref}
-        role="img"
+        role='img'
         aria-label={name}
         title={title}
         data-name={testId ? `UIAvatar-${testId}` : 'UIAvatar'}
-        className={cn(avatarVariants({ size, tint: tint ?? getTintByName(name) }), className)}
+        className={cn(
+          avatarVariants({ size, tint: tint ?? getTintByName(name) }),
+          className,
+        )}
         {...props}
       >
         {showImage ? (
           <img
             src={src}
-            alt=""
-            className="size-full object-cover"
+            alt=''
+            className='size-full object-cover'
             onError={() => {
               setFailedSrc(src);
             }}

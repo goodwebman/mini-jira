@@ -25,7 +25,10 @@ interface AxiosInterceptors {
 
 /** Структурный тип: сам axios в зависимостях не нужен. */
 export interface AxiosLike {
-  readonly interceptors: { readonly request: AxiosInterceptors; readonly response: AxiosInterceptors };
+  readonly interceptors: {
+    readonly request: AxiosInterceptors;
+    readonly response: AxiosInterceptors;
+  };
   request(config: never): Promise<unknown>;
   getUri?(config?: never): string;
 }
@@ -38,7 +41,8 @@ interface AxiosResponseLike {
 }
 
 function setHeader(config: AxiosConfig, name: string, value: string): void {
-  const headers = config.headers as { set?: (name: string, value: string) => void } | undefined;
+  const headers = config.headers as
+    { set?: (name: string, value: string) => void } | undefined;
   if (typeof headers?.set === 'function') headers.set(name, value);
   else config.headers = { ...headers, [name]: value };
 }
@@ -49,29 +53,43 @@ function resolveTarget(instance: AxiosLike, config: AxiosConfig): string {
 }
 
 /** Подключает авторизацию к экземпляру axios. Возвращает функцию отключения. */
-export function attachAuthToAxios(auth: AuthPipeline, instance: AxiosLike): Unsubscribe {
-  const signalOf = (config: AxiosConfig) => config.signal as AbortSignal | undefined;
+export function attachAuthToAxios(
+  auth: AuthPipeline,
+  instance: AxiosLike,
+): Unsubscribe {
+  const signalOf = (config: AxiosConfig) =>
+    config.signal as AbortSignal | undefined;
 
   const onRequest = async (config: AxiosConfig) => {
     const attempt = await auth.prepare(
-      { url: auth.resolveUrl(resolveTarget(instance, config)), method: config.method ?? 'GET' },
+      {
+        url: auth.resolveUrl(resolveTarget(instance, config)),
+        method: config.method ?? 'GET',
+      },
       {
         signal: signalOf(config),
         skip: config.skipAuth === true,
         retryOf: config[RETRY_OF_KEY] as AuthTicket | undefined,
       },
     );
-    for (const [name, value] of Object.entries(attempt.headers)) setHeader(config, name, value);
-    if (attempt.credentialsMode) config.withCredentials = attempt.credentialsMode === 'include';
+    for (const [name, value] of Object.entries(attempt.headers))
+      setHeader(config, name, value);
+    if (attempt.credentialsMode)
+      config.withCredentials = attempt.credentialsMode === 'include';
     config[TICKET_KEY] = attempt.ticket;
     return config;
   };
 
-  const reconcile = async (config: AxiosConfig | undefined, response: AxiosResponseLike) => {
+  const reconcile = async (
+    config: AxiosConfig | undefined,
+    response: AxiosResponseLike,
+  ) => {
     const ticket = config?.[TICKET_KEY] as AuthTicket | undefined;
     const info = describeResponse(response);
     if (!config || !ticket || !info) return NOT_RETRIED;
-    const verdict = await auth.settle({ ticket }, info, { signal: signalOf(config) });
+    const verdict = await auth.settle({ ticket }, info, {
+      signal: signalOf(config),
+    });
     if (verdict !== 'retry') return NOT_RETRIED;
     return instance.request({ ...config, [RETRY_OF_KEY]: ticket } as never);
   };
@@ -86,7 +104,10 @@ export function attachAuthToAxios(auth: AuthPipeline, instance: AxiosLike): Unsu
     config?: AxiosConfig;
   }) => {
     if (!error.response) throw error;
-    const retried = await reconcile(error.config ?? error.response.config, error.response);
+    const retried = await reconcile(
+      error.config ?? error.response.config,
+      error.response,
+    );
     if (retried === NOT_RETRIED) throw error;
     return retried;
   };

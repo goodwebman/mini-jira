@@ -1,5 +1,3 @@
-import { eq } from 'drizzle-orm';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   boardTasksResponseSchema,
   myTaskStatsSchema,
@@ -8,9 +6,25 @@ import {
   taskCardSchema,
   taskDetailSchema,
 } from '@gwmt/contracts';
+import { eq } from 'drizzle-orm';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+
 import { taskStatusIntervals } from '../src/db/schema.js';
-import { createTask, createTeam, errorCode, moveTask, taskBody, type Team } from './fixtures.js';
-import { createTestApp, createUser, DEFAULT_NOW, json, type TestApp } from './helpers.js';
+import {
+  type Team,
+  createTask,
+  createTeam,
+  errorCode,
+  moveTask,
+  taskBody,
+} from './fixtures.js';
+import {
+  DEFAULT_NOW,
+  type TestApp,
+  createTestApp,
+  createUser,
+  json,
+} from './helpers.js';
 
 describe('задачи', () => {
   let t: TestApp;
@@ -41,16 +55,25 @@ describe('задачи', () => {
       expect(task.key).toBe(`${local.boardKey}-101`);
       expect(task.status).toBe('todo');
       expect(task.priority).toBe('med');
-      expect(task.timer).toMatchObject({ canPause: false, pausedAt: null, completedInDays: null });
+      expect(task.timer).toMatchObject({
+        canPause: false,
+        pausedAt: null,
+        completedInDays: null,
+      });
     });
 
     it('параллельные создания не дают дублей', async () => {
       const local = await createTeam(t);
-      const cards = await Promise.all(Array.from({ length: 8 }, () => createTask(t, local)));
+      const cards = await Promise.all(
+        Array.from({ length: 8 }, () => createTask(t, local)),
+      );
       const keys = cards.map((card) => card.key);
       expect(new Set(keys).size).toBe(8);
       expect(keys.sort()).toEqual(
-        Array.from({ length: 8 }, (_, index) => `${local.boardKey}-${101 + index}`),
+        Array.from(
+          { length: 8 },
+          (_, index) => `${local.boardKey}-${101 + index}`,
+        ),
       );
     });
 
@@ -62,9 +85,16 @@ describe('задачи', () => {
         taskBody(team, { reviewerId: undefined }),
       );
       expect(noReviewer.status).toBe(422);
-      expect((await json(noReviewer)).error.fields.reviewerId).toBe('Выберите ревьювера');
+      expect((await json(noReviewer)).error.fields.reviewerId).toBe(
+        'Выберите ревьювера',
+      );
 
-      const zero = await t.request('POST', `/boards/${team.boardId}/tasks`, team.admin.token, taskBody(team, { sp: 0 }));
+      const zero = await t.request(
+        'POST',
+        `/boards/${team.boardId}/tasks`,
+        team.admin.token,
+        taskBody(team, { sp: 0 }),
+      );
       expect(zero.status).toBe(422);
       expect((await json(zero)).error.fields.sp).toBe('Введите число больше 0');
     });
@@ -73,7 +103,11 @@ describe('задачи', () => {
       const task = await createTask(t, team);
       const intervals = await intervalsOf(task.id);
       expect(intervals).toHaveLength(1);
-      expect(intervals[0]).toMatchObject({ status: 'todo', leftAt: null, pausedSec: 0 });
+      expect(intervals[0]).toMatchObject({
+        status: 'todo',
+        leftAt: null,
+        pausedSec: 0,
+      });
     });
 
     it('sp приходит числом', async () => {
@@ -88,7 +122,9 @@ describe('задачи', () => {
       await t.request('POST', `/tasks/${task.key}/pause`, team.worker.token);
       t.advance(120_000);
 
-      const card = await json(await moveTask(t, team.worker.token, task.key, 'review'));
+      const card = await json(
+        await moveTask(t, team.worker.token, task.key, 'review'),
+      );
       expect(card.status).toBe('review');
       expect(card.timer).toMatchObject({
         statusEnteredAt: t.clock.current.toISOString(),
@@ -108,7 +144,9 @@ describe('задачи', () => {
       await t.request('POST', `/tasks/${task.key}/pause`, team.worker.token);
       t.advance(60_000);
 
-      const card = await json(await moveTask(t, team.worker.token, task.key, 'work'));
+      const card = await json(
+        await moveTask(t, team.worker.token, task.key, 'work'),
+      );
       expect(card.timer.pausedAt).not.toBeNull();
       expect(card.timer.statusEnteredAt).toBe(task.timer.statusEnteredAt);
       expect(await intervalsOf(task.id)).toHaveLength(1);
@@ -118,16 +156,22 @@ describe('задачи', () => {
       const task = await createTask(t, team); // понедельник
       await moveTask(t, team.admin.token, task.key, 'work');
       t.advance(2 * 86_400_000); // среда
-      const done = await json(await moveTask(t, team.admin.token, task.key, 'done'));
+      const done = await json(
+        await moveTask(t, team.admin.token, task.key, 'done'),
+      );
       expect(done.timer.completedInDays).toBe(3);
 
-      const back = await json(await moveTask(t, team.admin.token, task.key, 'test'));
+      const back = await json(
+        await moveTask(t, team.admin.token, task.key, 'test'),
+      );
       expect(back.timer.completedInDays).toBeNull();
     });
 
     it('минимум один день', async () => {
       const task = await createTask(t, team);
-      const done = await json(await moveTask(t, team.admin.token, task.key, 'done'));
+      const done = await json(
+        await moveTask(t, team.admin.token, task.key, 'done'),
+      );
       expect(done.timer.completedInDays).toBe(1);
     });
   });
@@ -135,21 +179,35 @@ describe('задачи', () => {
   describe('пауза', () => {
     it.each(['todo', 'done'])('в %s даёт 409', async (status) => {
       const task = await createTask(t, team, { status });
-      const res = await t.request('POST', `/tasks/${task.key}/pause`, team.worker.token);
+      const res = await t.request(
+        'POST',
+        `/tasks/${task.key}/pause`,
+        team.worker.token,
+      );
       expect(res.status).toBe(409);
       expect(await errorCode(res)).toBe('TASK_NOT_PAUSABLE');
     });
 
     it('повторная пауза и resume без паузы возвращают 200 без изменений', async () => {
       const task = await createTask(t, team, { status: 'review' });
-      const first = await json(await t.request('POST', `/tasks/${task.key}/pause`, team.worker.token));
+      const first = await json(
+        await t.request('POST', `/tasks/${task.key}/pause`, team.worker.token),
+      );
       t.advance(30_000);
-      const second = await t.request('POST', `/tasks/${task.key}/pause`, team.worker.token);
+      const second = await t.request(
+        'POST',
+        `/tasks/${task.key}/pause`,
+        team.worker.token,
+      );
       expect(second.status).toBe(200);
       expect((await json(second)).timer.pausedAt).toBe(first.timer.pausedAt);
 
       const other = await createTask(t, team, { status: 'review' });
-      const resume = await t.request('POST', `/tasks/${other.key}/resume`, team.worker.token);
+      const resume = await t.request(
+        'POST',
+        `/tasks/${other.key}/resume`,
+        team.worker.token,
+      );
       expect(resume.status).toBe(200);
       expect((await json(resume)).timer.pausedTotalSec).toBe(0);
     });
@@ -158,7 +216,9 @@ describe('задачи', () => {
       const task = await createTask(t, team, { status: 'test' });
       await t.request('POST', `/tasks/${task.key}/pause`, team.worker.token);
       t.advance(90_000);
-      const card = await json(await t.request('POST', `/tasks/${task.key}/resume`, team.worker.token));
+      const card = await json(
+        await t.request('POST', `/tasks/${task.key}/resume`, team.worker.token),
+      );
       expect(card.timer).toMatchObject({ pausedAt: null, pausedTotalSec: 90 });
       expect((await intervalsOf(task.id))[0]?.pausedSec).toBe(90);
     });
@@ -166,22 +226,37 @@ describe('задачи', () => {
 
   describe('связи', () => {
     const link = (key: string, type: string, targetKey: string) =>
-      t.request('POST', `/tasks/${key}/links`, team.worker.token, { type, targetKey });
+      t.request('POST', `/tasks/${key}/links`, team.worker.token, {
+        type,
+        targetKey,
+      });
     const links = async (key: string) =>
-      (await json(await t.request('GET', `/tasks/${key}`, team.worker.token))).links;
+      (await json(await t.request('GET', `/tasks/${key}`, team.worker.token)))
+        .links;
 
     it('создаёт обратную сторону правильного типа', async () => {
       const [a, b] = [await createTask(t, team), await createTask(t, team)];
       const res = await link(a.key, 'blocks', b.key);
       expect(res.status).toBe(201);
       expect((await json(res)).type).toBe('blocks');
-      expect((await links(b.key))[0]).toMatchObject({ type: 'blockedBy', task: { key: a.key, canOpen: true } });
+      expect((await links(b.key))[0]).toMatchObject({
+        type: 'blockedBy',
+        task: { key: a.key, canOpen: true },
+      });
     });
 
     it('удаление убирает обе стороны', async () => {
       const [a, b] = [await createTask(t, team), await createTask(t, team)];
       await link(a.key, 'rel', b.key);
-      expect((await t.request('DELETE', `/tasks/${b.key}/links/${a.key}`, team.worker.token)).status).toBe(204);
+      expect(
+        (
+          await t.request(
+            'DELETE',
+            `/tasks/${b.key}/links/${a.key}`,
+            team.worker.token,
+          )
+        ).status,
+      ).toBe(204);
       expect(await links(a.key)).toEqual([]);
       expect(await links(b.key)).toEqual([]);
     });
@@ -210,15 +285,22 @@ describe('задачи', () => {
     });
 
     it('isBlocked выключается, когда блокирующая задача ушла в done', async () => {
-      const [blocker, blocked] = [await createTask(t, team), await createTask(t, team)];
+      const [blocker, blocked] = [
+        await createTask(t, team),
+        await createTask(t, team),
+      ];
       await link(blocker.key, 'blocks', blocked.key);
 
-      const before = await json(await t.request('GET', `/tasks/${blocked.key}`, team.worker.token));
+      const before = await json(
+        await t.request('GET', `/tasks/${blocked.key}`, team.worker.token),
+      );
       expect(before.isBlocked).toBe(true);
       expect(before.linkCount).toBe(1);
 
       await moveTask(t, team.admin.token, blocker.key, 'done');
-      const after = await json(await t.request('GET', `/tasks/${blocked.key}`, team.worker.token));
+      const after = await json(
+        await t.request('GET', `/tasks/${blocked.key}`, team.worker.token),
+      );
       expect(after.isBlocked).toBe(false);
     });
 
@@ -232,17 +314,27 @@ describe('задачи', () => {
         expect(notMember.status).toBe(404);
         expect(await errorCode(notMember)).toBe('TASK_NOT_FOUND');
 
-        await t.request('POST', `/boards/${other.boardId}/members`, other.admin.token, {
-          userId: team.worker.id,
-          role: 'guest',
-        });
+        await t.request(
+          'POST',
+          `/boards/${other.boardId}/members`,
+          other.admin.token,
+          {
+            userId: team.worker.id,
+            role: 'guest',
+          },
+        );
         const guest = await link(a.key, 'rel', foreign.key);
         expect(guest.status).toBe(403);
         expect(await errorCode(guest)).toBe('ROLE_FORBIDDEN');
 
-        await t.request('PATCH', `/boards/${other.boardId}/members/${team.worker.id}`, other.admin.token, {
-          role: 'worker',
-        });
+        await t.request(
+          'PATCH',
+          `/boards/${other.boardId}/members/${team.worker.id}`,
+          other.admin.token,
+          {
+            role: 'worker',
+          },
+        );
         expect((await link(a.key, 'rel', foreign.key)).status).toBe(201);
       });
 
@@ -250,12 +342,21 @@ describe('задачи', () => {
         const other = await createTeam(t);
         const foreign = await createTask(t, other);
         const a = await createTask(t, team);
-        await t.request('POST', `/boards/${other.boardId}/members`, other.admin.token, { userId: team.worker.id });
+        await t.request(
+          'POST',
+          `/boards/${other.boardId}/members`,
+          other.admin.token,
+          { userId: team.worker.id },
+        );
         await link(a.key, 'rel', foreign.key);
 
-        const asWorker = await json(await t.request('GET', `/tasks/${a.key}`, team.worker.token));
+        const asWorker = await json(
+          await t.request('GET', `/tasks/${a.key}`, team.worker.token),
+        );
         expect(asWorker.links[0].task.canOpen).toBe(true);
-        const asAdmin = await json(await t.request('GET', `/tasks/${a.key}`, team.admin.token));
+        const asAdmin = await json(
+          await t.request('GET', `/tasks/${a.key}`, team.admin.token),
+        );
         expect(asAdmin.links[0].task.canOpen).toBe(false);
       });
     });
@@ -264,13 +365,24 @@ describe('задачи', () => {
   describe('деталь и комментарии', () => {
     it('деталь соответствует контракту, комментарии от старых к новым', async () => {
       const task = await createTask(t, team, { description: 'Описание' });
-      const first = await t.request('POST', `/tasks/${task.key}/comments`, team.worker.token, { text: '  Первый ' });
+      const first = await t.request(
+        'POST',
+        `/tasks/${task.key}/comments`,
+        team.worker.token,
+        { text: '  Первый ' },
+      );
       expect(first.status).toBe(201);
       expect((await json(first)).text).toBe('Первый');
       t.advance(1000);
-      await t.request('POST', `/tasks/${task.key}/comments`, team.admin.token, { text: 'Второй' });
+      await t.request('POST', `/tasks/${task.key}/comments`, team.admin.token, {
+        text: 'Второй',
+      });
 
-      const detail = taskDetailSchema.parse(await json(await t.request('GET', `/tasks/${task.key}`, team.guest.token)));
+      const detail = taskDetailSchema.parse(
+        await json(
+          await t.request('GET', `/tasks/${task.key}`, team.guest.token),
+        ),
+      );
       expect(detail.description).toBe('Описание');
       expect(detail.myRole).toBe('guest');
       expect(detail.comments.map((c) => c.text)).toEqual(['Первый', 'Второй']);
@@ -281,16 +393,27 @@ describe('задачи', () => {
 
     it('пустой комментарий даёт 422', async () => {
       const task = await createTask(t, team);
-      const res = await t.request('POST', `/tasks/${task.key}/comments`, team.worker.token, { text: '   ' });
+      const res = await t.request(
+        'POST',
+        `/tasks/${task.key}/comments`,
+        team.worker.token,
+        { text: '   ' },
+      );
       expect(res.status).toBe(422);
     });
 
     it('assigneeOptions без гостей, но с нынешними ролями', async () => {
       const local = await createTeam(t);
       const task = await createTask(t, local, { authorId: local.worker.id });
-      await t.request('DELETE', `/boards/${local.boardId}/members/${local.worker.id}`, local.admin.token);
+      await t.request(
+        'DELETE',
+        `/boards/${local.boardId}/members/${local.worker.id}`,
+        local.admin.token,
+      );
 
-      const detail = await json(await t.request('GET', `/tasks/${task.key}`, local.admin.token));
+      const detail = await json(
+        await t.request('GET', `/tasks/${task.key}`, local.admin.token),
+      );
       const ids = detail.assigneeOptions.map((u: { id: string }) => u.id);
       expect(ids).toContain(local.worker.id);
       expect(ids).toContain(local.admin.id);
@@ -305,9 +428,18 @@ describe('задачи', () => {
       t.advance(1000);
       const second = await createTask(t, local);
       const body = boardTasksResponseSchema.parse(
-        await json(await t.request('GET', `/boards/${local.boardId}/tasks`, local.guest.token)),
+        await json(
+          await t.request(
+            'GET',
+            `/boards/${local.boardId}/tasks`,
+            local.guest.token,
+          ),
+        ),
       );
-      expect(body.items.map((item) => item.key)).toEqual([first.key, second.key]);
+      expect(body.items.map((item) => item.key)).toEqual([
+        first.key,
+        second.key,
+      ]);
       expect(body.sprint.number).toBe(1);
     });
   });
@@ -321,11 +453,24 @@ describe('задачи', () => {
         t.advance(1000);
       }
       const asc = cards.map((card) => card.key);
-      const res = await json(await t.request('GET', '/tasks/search', local.worker.token));
-      expect(res.items.map((i: { key: string }) => i.key)).toEqual(asc.toReversed().slice(0, 6));
+      const res = await json(
+        await t.request('GET', '/tasks/search', local.worker.token),
+      );
+      expect(res.items.map((i: { key: string }) => i.key)).toEqual(
+        asc.toReversed().slice(0, 6),
+      );
 
-      await t.request('POST', `/tasks/${asc[7]}/links`, local.worker.token, { type: 'rel', targetKey: asc[6] });
-      const excluded = await json(await t.request('GET', `/tasks/search?excludeLinkedTo=${asc[7]}&limit=20`, local.worker.token));
+      await t.request('POST', `/tasks/${asc[7]}/links`, local.worker.token, {
+        type: 'rel',
+        targetKey: asc[6],
+      });
+      const excluded = await json(
+        await t.request(
+          'GET',
+          `/tasks/search?excludeLinkedTo=${asc[7]}&limit=20`,
+          local.worker.token,
+        ),
+      );
       const keys = excluded.items.map((i: { key: string }) => i.key);
       expect(keys).not.toContain(asc[7]);
       expect(keys).not.toContain(asc[6]);
@@ -333,15 +478,27 @@ describe('задачи', () => {
     });
 
     it('limit больше 20 даёт 422', async () => {
-      expect((await t.request('GET', '/tasks/search?limit=21', team.worker.token)).status).toBe(422);
+      expect(
+        (await t.request('GET', '/tasks/search?limit=21', team.worker.token))
+          .status,
+      ).toBe(422);
     });
 
     it('ищет по ключу', async () => {
       const local = await createTeam(t);
       const task = await createTask(t, local);
-      const res = await json(await t.request('GET', `/tasks/search?q=${task.key}`, local.worker.token));
+      const res = await json(
+        await t.request(
+          'GET',
+          `/tasks/search?q=${task.key}`,
+          local.worker.token,
+        ),
+      );
       expect(res.items.map((i: { key: string }) => i.key)).toEqual([task.key]);
-      expect(res.items[0].board).toEqual({ id: local.boardId, name: expect.any(String) });
+      expect(res.items[0].board).toEqual({
+        id: local.boardId,
+        name: expect.any(String),
+      });
     });
   });
 
@@ -353,50 +510,101 @@ describe('задачи', () => {
       local = await createTeam(t);
       cards = {};
       for (const status of ['done', 'todo', 'test', 'review', 'work']) {
-        cards[status] = await createTask(t, local, { status, sp: 1.5, title: `Статус ${status}` });
+        cards[status] = await createTask(t, local, {
+          status,
+          sp: 1.5,
+          title: `Статус ${status}`,
+        });
       }
     });
 
     it('порядок work, review, test, todo, done', async () => {
-      const body = myTasksResponseSchema.parse(await json(await t.request('GET', '/me/tasks', local.worker.token)));
-      expect(body.items.map((item) => item.status)).toEqual(['work', 'review', 'test', 'todo', 'done']);
+      const body = myTasksResponseSchema.parse(
+        await json(await t.request('GET', '/me/tasks', local.worker.token)),
+      );
+      expect(body.items.map((item) => item.status)).toEqual([
+        'work',
+        'review',
+        'test',
+        'todo',
+        'done',
+      ]);
       expect(body.items[0]?.roles).toEqual(['author']);
       expect(body.page).toBe(1);
       expect(body.pageSize).toBe(50);
     });
 
     it('total учитывает фильтры, summary нет', async () => {
-      const body = await json(await t.request('GET', '/me/tasks?status=work', local.worker.token));
+      const body = await json(
+        await t.request('GET', '/me/tasks?status=work', local.worker.token),
+      );
       expect(body.total).toBe(1);
       expect(body.summary).toEqual({ totalCount: 5, totalSp: 7.5 });
     });
 
     it('роль, q и пагинация', async () => {
-      const asReviewer = await json(await t.request('GET', '/me/tasks?role=reviewer', local.worker.token));
+      const asReviewer = await json(
+        await t.request('GET', '/me/tasks?role=reviewer', local.worker.token),
+      );
       expect(asReviewer.total).toBe(0);
-      const found = await json(await t.request('GET', `/me/tasks?q=${encodeURIComponent('статус test')}`, local.worker.token));
-      expect(found.items.map((i: { key: string }) => i.key)).toEqual([cards.test!.key]);
-      const byKey = await json(await t.request('GET', `/me/tasks?q=${cards.done!.key}`, local.worker.token));
+      const found = await json(
+        await t.request(
+          'GET',
+          `/me/tasks?q=${encodeURIComponent('статус test')}`,
+          local.worker.token,
+        ),
+      );
+      expect(found.items.map((i: { key: string }) => i.key)).toEqual([
+        cards.test!.key,
+      ]);
+      const byKey = await json(
+        await t.request(
+          'GET',
+          `/me/tasks?q=${cards.done!.key}`,
+          local.worker.token,
+        ),
+      );
       expect(byKey.total).toBe(1);
-      const page2 = await json(await t.request('GET', '/me/tasks?page=2&pageSize=2', local.worker.token));
-      expect(page2.items.map((i: { status: string }) => i.status)).toEqual(['test', 'todo']);
+      const page2 = await json(
+        await t.request(
+          'GET',
+          '/me/tasks?page=2&pageSize=2',
+          local.worker.token,
+        ),
+      );
+      expect(page2.items.map((i: { status: string }) => i.status)).toEqual([
+        'test',
+        'todo',
+      ]);
       expect(page2.total).toBe(5);
     });
 
     it('pageSize больше 100 даёт 422', async () => {
-      expect((await t.request('GET', '/me/tasks?pageSize=101', local.worker.token)).status).toBe(422);
+      expect(
+        (await t.request('GET', '/me/tasks?pageSize=101', local.worker.token))
+          .status,
+      ).toBe(422);
     });
 
     it('номер сортируется как число', async () => {
       const crowd = await createTeam(t);
       const created = [];
-      for (let index = 0; index < 12; index += 1) created.push(await createTask(t, crowd));
-      const body = await json(await t.request('GET', '/me/tasks?pageSize=100', crowd.worker.token));
-      expect(body.items.map((i: { key: string }) => i.key)).toEqual(created.map((c) => c.key));
+      for (let index = 0; index < 12; index += 1)
+        created.push(await createTask(t, crowd));
+      const body = await json(
+        await t.request('GET', '/me/tasks?pageSize=100', crowd.worker.token),
+      );
+      expect(body.items.map((i: { key: string }) => i.key)).toEqual(
+        created.map((c) => c.key),
+      );
     });
 
     it('task-stats считает открытые, закрытые и SP', async () => {
-      const stats = myTaskStatsSchema.parse(await json(await t.request('GET', '/me/task-stats', local.worker.token)));
+      const stats = myTaskStatsSchema.parse(
+        await json(
+          await t.request('GET', '/me/task-stats', local.worker.token),
+        ),
+      );
       expect(stats.open).toBe(4);
       expect(stats.closed).toBe(1);
       expect(stats.totalSp).toBe(7.5);
@@ -406,7 +614,13 @@ describe('задачи', () => {
 
     it('nav-summary по доске, с плитками и KPI', async () => {
       const body = navSummarySchema.parse(
-        await json(await t.request('GET', `/me/nav-summary?boardId=${local.boardId}`, local.worker.token)),
+        await json(
+          await t.request(
+            'GET',
+            `/me/nav-summary?boardId=${local.boardId}`,
+            local.worker.token,
+          ),
+        ),
       );
       expect(body.board).toMatchObject({
         id: local.boardId,
@@ -421,7 +635,9 @@ describe('задачи', () => {
 
     it('nav-summary без досок: board и kpi равны null', async () => {
       const newcomer = await createUser(t);
-      expect(await json(await t.request('GET', '/me/nav-summary', newcomer.token))).toEqual({
+      expect(
+        await json(await t.request('GET', '/me/nav-summary', newcomer.token)),
+      ).toEqual({
         boardsTotal: 0,
         board: null,
         myTasks: { openCount: 0, openSp: 0, next: [] },
@@ -432,33 +648,54 @@ describe('задачи', () => {
     it('nav-summary без boardId берёт доску, куда добавили последней', async () => {
       const user = await createUser(t);
       const first = await createTeam(t);
-      await t.request('POST', `/boards/${first.boardId}/members`, first.admin.token, { userId: user.id });
+      await t.request(
+        'POST',
+        `/boards/${first.boardId}/members`,
+        first.admin.token,
+        { userId: user.id },
+      );
       t.advance(1000);
       const second = await createTeam(t);
-      await t.request('POST', `/boards/${second.boardId}/members`, second.admin.token, { userId: user.id });
+      await t.request(
+        'POST',
+        `/boards/${second.boardId}/members`,
+        second.admin.token,
+        { userId: user.id },
+      );
 
-      const body = await json(await t.request('GET', '/me/nav-summary', user.token));
+      const body = await json(
+        await t.request('GET', '/me/nav-summary', user.token),
+      );
       expect(body.board.id).toBe(second.boardId);
       expect(body.boardsTotal).toBe(2);
     });
 
     it('nav-summary по чужой доске даёт 404', async () => {
       const user = await createUser(t);
-      const res = await t.request('GET', `/me/nav-summary?boardId=${local.boardId}`, user.token);
+      const res = await t.request(
+        'GET',
+        `/me/nav-summary?boardId=${local.boardId}`,
+        user.token,
+      );
       expect(res.status).toBe(404);
     });
   });
 
   it('правка задачи администратором меняет поля и людей', async () => {
     const task = await createTask(t, team);
-    const res = await t.request('PATCH', `/tasks/${task.key}`, team.admin.token, {
-      title: 'Новое',
-      description: 'Текст',
-      priority: 'crit',
-      sp: 8,
-      testerId: null,
-      designerId: team.tester.id,
-    });
+    const res = await t.request(
+      'PATCH',
+      `/tasks/${task.key}`,
+      team.admin.token,
+      {
+        title: 'Новое',
+        description: 'Текст',
+        priority: 'crit',
+        sp: 8,
+        testerId: null,
+        designerId: team.tester.id,
+      },
+    );
     expect(res.status).toBe(200);
     const card = await json(res);
     expect(card).toMatchObject({ title: 'Новое', priority: 'crit', sp: 8 });

@@ -47,9 +47,15 @@ const response = await authService.fetch('/api/v1/boards');
 
 // Вход и выход
 try {
-  await authService.login({ kind: 'password', email, password, remember: true });
+  await authService.login({
+    kind: 'password',
+    email,
+    password,
+    remember: true,
+  });
 } catch (error) {
-  if (isAuthError(error) && error.serverCode === 'INVALID_CREDENTIALS') showWrongPassword();
+  if (isAuthError(error) && error.serverCode === 'INVALID_CREDENTIALS')
+    showWrongPassword();
 }
 await authService.login({ sso: 'google', returnTo: '/boards' });
 await authService.logout();
@@ -58,14 +64,17 @@ await authService.logout();
 React подключается одной строкой, отдельный хук ядру не нужен:
 
 ```tsx
-const { status, user } = useSyncExternalStore(authService.subscribe, authService.getSnapshot);
+const { status, user } = useSyncExternalStore(
+  authService.subscribe,
+  authService.getSnapshot,
+);
 ```
 
-| `status` | Что значит | Что показать |
-| --- | --- | --- |
-| `unknown` | Сессия ещё не проверена. Если в `error` лежит причина, сервер не ответил, и сервис сам повторит запрос | Скелетон или «нет связи». Не форму входа |
-| `authenticated` | Сессия есть. `user` может быть `null`, пока профиль догружается | Приложение |
-| `guest` | Сессии нет | Форму входа |
+| `status`        | Что значит                                                                                             | Что показать                             |
+| --------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| `unknown`       | Сессия ещё не проверена. Если в `error` лежит причина, сервер не ответил, и сервис сам повторит запрос | Скелетон или «нет связи». Не форму входа |
+| `authenticated` | Сессия есть. `user` может быть `null`, пока профиль догружается                                        | Приложение                               |
+| `guest`         | Сессии нет                                                                                             | Форму входа                              |
 
 События для всего, что не про отрисовку, приходят через `authService.on(listener)`: `ready`, `login`, `logout`, `kick`, `user`, `renewed`.
 
@@ -79,21 +88,27 @@ bindAuthToQueryClient(authService, queryClient);
 useQuery({
   queryKey: ['boards'],
   retry: shouldRetryQuery,
-  queryFn: async ({ signal }) => (await authService.fetch('/api/v1/boards', { signal })).json(),
+  queryFn: async ({ signal }) =>
+    (await authService.fetch('/api/v1/boards', { signal })).json(),
 });
 
 // RTK Query
 const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: '/api/v1', fetchFn: authService.fetch }),
-  endpoints: (build) => ({ /* ... */ }),
+  endpoints: (build) => ({/* ... */}),
 });
 bindAuthToRtkQuery(authService, store, api);
 
 // axios. Функция возвращает отключение
-const detach = attachAuthToAxios(authService, axios.create({ baseURL: '/api/v1' }));
+const detach = attachAuthToAxios(
+  authService,
+  axios.create({ baseURL: '/api/v1' }),
+);
 
 // GraphQL отвечает 200 и на просроченный токен, поэтому нужен настоящий статус
-const fetchGraphql = createAuthFetch(authService, { effectiveStatus: graphqlEffectiveStatus });
+const fetchGraphql = createAuthFetch(authService, {
+  effectiveStatus: graphqlEffectiveStatus,
+});
 const client = new GraphQLClient('/graphql', { fetch: fetchGraphql });
 
 // Свой клиент
@@ -111,43 +126,43 @@ const data = await authService.execute(
 
 Защита зависит от способа. Это свойство самого способа, сервис его не исправит.
 
-| Стратегия | Для чего | Где реквизиты | Оценка |
-| --- | --- | --- | --- |
-| `BearerStrategy` + refresh в cookie | SPA с access и refresh | access в памяти, refresh в httpOnly-cookie | **Рекомендуется** |
-| `SessionCookieStrategy` | Серверные сессии | httpOnly-cookie | **Рекомендуется**, нужен CSRF-токен |
-| `withSsoRedirect` | Google, GitHub, корпоративный SSO | Обмен кода на сервере, дальше как выше | **Рекомендуется** |
-| `BearerStrategy` без refresh | Короткий токен из внешней системы | Память | После перезагрузки вход заново |
-| `BearerStrategy` + `persistence` | Нативное приложение | Keychain, Keystore | Только с защищённым хранилищем |
-| `DigestStrategy` | Старые API | Память, хэш вместо пароля | Только SHA-256, MD5 подключается явно |
-| `BasicStrategy` | Внутренние инструменты | Память | Пароль идёт с каждым запросом, только HTTPS |
-| `ApiKeyStrategy` | Сервер-сервер | Память или конфигурация | На веб-странице ключ публичен |
+| Стратегия                           | Для чего                          | Где реквизиты                              | Оценка                                      |
+| ----------------------------------- | --------------------------------- | ------------------------------------------ | ------------------------------------------- |
+| `BearerStrategy` + refresh в cookie | SPA с access и refresh            | access в памяти, refresh в httpOnly-cookie | **Рекомендуется**                           |
+| `SessionCookieStrategy`             | Серверные сессии                  | httpOnly-cookie                            | **Рекомендуется**, нужен CSRF-токен         |
+| `withSsoRedirect`                   | Google, GitHub, корпоративный SSO | Обмен кода на сервере, дальше как выше     | **Рекомендуется**                           |
+| `BearerStrategy` без refresh        | Короткий токен из внешней системы | Память                                     | После перезагрузки вход заново              |
+| `BearerStrategy` + `persistence`    | Нативное приложение               | Keychain, Keystore                         | Только с защищённым хранилищем              |
+| `DigestStrategy`                    | Старые API                        | Память, хэш вместо пароля                  | Только SHA-256, MD5 подключается явно       |
+| `BasicStrategy`                     | Внутренние инструменты            | Память                                     | Пароль идёт с каждым запросом, только HTTPS |
+| `ApiKeyStrategy`                    | Сервер-сервер                     | Память или конфигурация                    | На веб-странице ключ публичен               |
 
 В браузере OAuth PKCE без бэкенда сюда намеренно не входит: IETF рекомендует сначала серверный обмен (BFF), токены в JS остаются доступны XSS. Если нужен, это ещё одна реализация `AuthStrategy` поверх `oidc-client-ts`.
 
 ## Как закрыты гонки и сбои
 
-| Ситуация | Что происходит |
-| --- | --- |
-| N запросов одного экземпляра получили 401 | Один refresh, все повторяются с новым токеном |
-| Запрос ушёл во время refresh | Ждёт его и уходит сразу с новым токеном |
-| 401 пришёл на уже заменённый токен | Без refresh и kick, просто повтор |
-| Новый токен тоже отвергнут | Ровно один повтор, затем kick. Цикла нет |
-| Несколько вкладок одновременно | Refresh, вход и восстановление идут по одному через Web Locks |
-| Вкладка заморожена и держит блокировку | Ожидание заканчивается ошибкой timeout; операция не обходит lock. Bootstrap остаётся unknown и повторяется |
-| Выход или вход другого пользователя, пока летел запрос | Результат выбрасывается, сессия не воскресает |
-| Запрос пользователя A, а уже вошёл B | Не повторяется от имени B, ответ отвергается как `session_changed` |
-| Выход в одной вкладке | Остальные закрываются сразу через BroadcastChannel |
-| В соседней вкладке вошёл другой человек | Граница сессии: новый токен, сброс кэшей |
-| Сеть, 5xx или 429 на refresh | Сессия жива, ошибка повторяемая, пауза растёт, `Retry-After` учитывается |
-| Сеть упала при запуске | `unknown` с причиной вместо ложного гостя, повтор сам |
-| Зависший refresh или logout | Таймаут освобождает очередь, сессия не закрывается |
-| Отмена одного запроса | Общий refresh для остальных продолжается |
-| Выход без связи с сервером | Флаг в `localStorage`: при следующем старте сессия не поднимется по живой cookie, выход довершится |
-| Страница вернулась из bfcache | Сессия сверяется с сервером |
-| Часы клиента врут | Срок считается как `exp - iat` от момента получения |
-| Токен на чужой адрес | Подписываются только свой origin и `trustedOrigins`. Маски и `http` падают при старте |
-| Подписанный fetch получил redirect | Redirect запрещён, чтобы нестандартные заголовки не ушли на чужой origin; fetch отклоняет запрос |
-| Упавший подписчик | Не ломает выход и остальных подписчиков |
+| Ситуация                                               | Что происходит                                                                                             |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| N запросов одного экземпляра получили 401              | Один refresh, все повторяются с новым токеном                                                              |
+| Запрос ушёл во время refresh                           | Ждёт его и уходит сразу с новым токеном                                                                    |
+| 401 пришёл на уже заменённый токен                     | Без refresh и kick, просто повтор                                                                          |
+| Новый токен тоже отвергнут                             | Ровно один повтор, затем kick. Цикла нет                                                                   |
+| Несколько вкладок одновременно                         | Refresh, вход и восстановление идут по одному через Web Locks                                              |
+| Вкладка заморожена и держит блокировку                 | Ожидание заканчивается ошибкой timeout; операция не обходит lock. Bootstrap остаётся unknown и повторяется |
+| Выход или вход другого пользователя, пока летел запрос | Результат выбрасывается, сессия не воскресает                                                              |
+| Запрос пользователя A, а уже вошёл B                   | Не повторяется от имени B, ответ отвергается как `session_changed`                                         |
+| Выход в одной вкладке                                  | Остальные закрываются сразу через BroadcastChannel                                                         |
+| В соседней вкладке вошёл другой человек                | Граница сессии: новый токен, сброс кэшей                                                                   |
+| Сеть, 5xx или 429 на refresh                           | Сессия жива, ошибка повторяемая, пауза растёт, `Retry-After` учитывается                                   |
+| Сеть упала при запуске                                 | `unknown` с причиной вместо ложного гостя, повтор сам                                                      |
+| Зависший refresh или logout                            | Таймаут освобождает очередь, сессия не закрывается                                                         |
+| Отмена одного запроса                                  | Общий refresh для остальных продолжается                                                                   |
+| Выход без связи с сервером                             | Флаг в `localStorage`: при следующем старте сессия не поднимется по живой cookie, выход довершится         |
+| Страница вернулась из bfcache                          | Сессия сверяется с сервером                                                                                |
+| Часы клиента врут                                      | Срок считается как `exp - iat` от момента получения                                                        |
+| Токен на чужой адрес                                   | Подписываются только свой origin и `trustedOrigins`. Маски и `http` падают при старте                      |
+| Подписанный fetch получил redirect                     | Redirect запрещён, чтобы нестандартные заголовки не ушли на чужой origin; fetch отклоняет запрос           |
+| Упавший подписчик                                      | Не ломает выход и остальных подписчиков                                                                    |
 
 ## Что сервис не может
 
@@ -172,17 +187,19 @@ const data = await authService.execute(
 2. Описать ручки и создать экземпляр:
 
 ```ts
-export const authService = new AuthService<User, LoginInput, BearerCredentials>({
-  strategy: new BearerStrategy({
-    api: {
-      login: (input, { signal }) => post('/login', input, signal),
-      refresh: ({ signal }) => post('/refresh', undefined, signal),
-      logout: ({ signal }) => post('/logout', undefined, signal),
-    },
-  }),
-  identify: (user) => user.id,
-  trustedOrigins: ['https://api.example.com'],
-});
+export const authService = new AuthService<User, LoginInput, BearerCredentials>(
+  {
+    strategy: new BearerStrategy({
+      api: {
+        login: (input, { signal }) => post('/login', input, signal),
+        refresh: ({ signal }) => post('/refresh', undefined, signal),
+        logout: ({ signal }) => post('/logout', undefined, signal),
+      },
+    }),
+    identify: (user) => user.id,
+    trustedOrigins: ['https://api.example.com'],
+  },
+);
 ```
 
 Запросы стратегии идут обычным `fetch`: через авторизованный refresh ждал бы сам себя. Ошибки бросайте через `AuthError.fromResponse`: только 401 означает конец сессии, остальное сессию не закрывает.
@@ -197,11 +214,11 @@ export const authService = new AuthService<User, LoginInput, BearerCredentials>(
 // app/init-auth.ts
 import { authService } from '@/entities/auth';
 import { configureApiTransport } from '@/shared/api';
+// Запросы приложения
+import { apiClient } from '@/shared/api';
 
 configureApiTransport(authService.fetch);
 
-// Запросы приложения
-import { apiClient } from '@/shared/api';
 await apiClient.get('/me');
 ```
 

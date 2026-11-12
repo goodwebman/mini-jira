@@ -3,7 +3,12 @@ import type { ChartPlot } from './chart-utils';
 interface ChartAxesProps {
   readonly plot: ChartPlot;
   /** Подписи оси X с готовыми координатами. */
-  readonly xLabels: readonly { readonly x: number; readonly text: string; readonly first: boolean; readonly strong?: boolean }[];
+  readonly xLabels: readonly {
+    readonly x: number;
+    readonly text: string;
+    readonly first: boolean;
+    readonly strong?: boolean;
+  }[];
   readonly unit: number;
 }
 
@@ -14,7 +19,7 @@ export function ChartAxes({ plot, xLabels, unit }: ChartAxesProps) {
       {plot.ticks.map((tick) => (
         <span
           key={tick}
-          className="pointer-events-none absolute left-0 -translate-y-1/2 whitespace-nowrap text-caption text-muted-foreground"
+          className='pointer-events-none absolute left-0 -translate-y-1/2 whitespace-nowrap text-caption text-muted-foreground'
           style={{ top: plot.y(tick) }}
         >
           {tick}

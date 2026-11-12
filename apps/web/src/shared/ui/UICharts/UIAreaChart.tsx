@@ -1,6 +1,9 @@
-import { memo, useState, type PointerEvent } from 'react';
+import { type PointerEvent, memo, useState } from 'react';
+
 import { cn } from '@/shared/lib/cn';
+
 import { ChartAxes } from './ChartAxes';
+import { UIChartTooltip } from './UIChartTooltip';
 import {
   clampIndex,
   createPlot,
@@ -10,7 +13,6 @@ import {
   seriesColor,
   xLabelStep,
 } from './chart-utils';
-import { UIChartTooltip } from './UIChartTooltip';
 import { useChartBox } from './use-chart-box';
 
 export interface IUIAreaChartSeries {
@@ -56,7 +58,12 @@ function UIAreaChartBase({
   const plot = createPlot(
     width,
     height,
-    { left: Math.round(30 * unit), right: 8, top: 10, bottom: Math.round(24 * unit) },
+    {
+      left: Math.round(30 * unit),
+      right: 8,
+      top: 10,
+      bottom: Math.round(24 * unit),
+    },
     Math.max(0, ...totals),
   );
 
@@ -72,7 +79,11 @@ function UIAreaChartBase({
     for (let index = lastIndex; index >= 0; index -= 1) {
       path += `L${String(pointX(plot, index, count))} ${String(plot.y(lower[index]))}`;
     }
-    return { key: item.name, path: `${path}Z`, color: seriesColor(seriesIndex, item.color) };
+    return {
+      key: item.name,
+      path: `${path}Z`,
+      color: seriesColor(seriesIndex, item.color),
+    };
   });
 
   const step = xLabelStep(width);
@@ -83,16 +94,17 @@ function UIAreaChartBase({
       return;
     }
     const rect = event.currentTarget.getBoundingClientRect();
-    const ratio = (event.clientX - rect.left - plot.margin.left) / plot.plotWidth;
+    const ratio =
+      (event.clientX - rect.left - plot.margin.left) / plot.plotWidth;
     setHovered(clampIndex(Math.round(ratio * (count - 1)), count));
   };
 
   return (
     <div
       ref={ref}
-      role="img"
+      role='img'
       aria-label={ariaLabel}
-      data-name="UIAreaChart"
+      data-name='UIAreaChart'
       className={cn('relative w-full touch-pan-y', className)}
       style={{ height }}
       onPointerMove={handlePointerMove}
@@ -101,27 +113,32 @@ function UIAreaChartBase({
       }}
     >
       <svg
-        aria-hidden="true"
+        aria-hidden='true'
         viewBox={`0 0 ${String(width)} ${String(height)}`}
-        className="absolute inset-0 block size-full overflow-visible"
+        className='absolute inset-0 block size-full overflow-visible'
       >
-        <path d={gridPath(plot)} fill="none" stroke="var(--border)" strokeWidth={1} />
+        <path
+          d={gridPath(plot)}
+          fill='none'
+          stroke='var(--border)'
+          strokeWidth={1}
+        />
         {lastIndex >= 0 &&
           layers.map((layer) => (
             <path
               key={layer.key}
               d={layer.path}
               fill={layer.color}
-              stroke="var(--surface)"
+              stroke='var(--surface)'
               strokeWidth={1.5}
-              strokeLinejoin="round"
+              strokeLinejoin='round'
             />
           ))}
         {active != null && (
           <path
             d={`M${String(pointX(plot, active, count))} ${String(plot.margin.top)}V${String(plot.baseline)}`}
-            fill="none"
-            stroke="var(--foreground)"
+            fill='none'
+            stroke='var(--foreground)'
             strokeWidth={1}
           />
         )}
@@ -131,7 +148,9 @@ function UIAreaChartBase({
         plot={plot}
         unit={unit}
         xLabels={labels.flatMap((text, index) =>
-          index % step === 0 ? [{ x: pointX(plot, index, count), text, first: index === 0 }] : [],
+          index % step === 0
+            ? [{ x: pointX(plot, index, count), text, first: index === 0 }]
+            : [],
         )}
       />
 

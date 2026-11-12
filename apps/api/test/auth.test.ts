@@ -1,9 +1,25 @@
-import { SignJWT } from 'jose';
 import { eq } from 'drizzle-orm';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { SignJWT } from 'jose';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+
 import { authSessions, users } from '../src/db/schema.js';
 import { hashPassword } from '../src/lib/password.js';
-import { createTestApp, json, saltHeaders, signedPost, testEnv, type TestApp } from './helpers.js';
+import {
+  type TestApp,
+  createTestApp,
+  json,
+  saltHeaders,
+  signedPost,
+  testEnv,
+} from './helpers.js';
 
 const APP_URL = testEnv.APP_URL;
 
@@ -15,15 +31,19 @@ function refreshCookieOf(res: Response) {
   return cookiesOf(res).find((value) => value.startsWith('gwmt_refresh='));
 }
 
-const tokenValue = (cookie: string | undefined) => cookie?.split(';')[0]?.split('=')[1] ?? '';
+const tokenValue = (cookie: string | undefined) =>
+  cookie?.split(';')[0]?.split('=')[1] ?? '';
 
 describe('авторизация', () => {
   let t: TestApp;
   let counter = 0;
   const email = () => `auth${(counter += 1)}@example.com`;
 
-  const post = (path: string, body?: unknown, headers: Record<string, string> = {}) =>
-    signedPost(t, path, body, headers);
+  const post = (
+    path: string,
+    body?: unknown,
+    headers: Record<string, string> = {},
+  ) => signedPost(t, path, body, headers);
 
   const register = (address = email()) =>
     post('/auth/register', {
@@ -34,7 +54,10 @@ describe('авторизация', () => {
     });
 
   const refreshWith = (token: string, headers: Record<string, string> = {}) =>
-    post('/auth/refresh', undefined, { Cookie: `gwmt_refresh=${token}`, ...headers });
+    post('/auth/refresh', undefined, {
+      Cookie: `gwmt_refresh=${token}`,
+      ...headers,
+    });
 
   beforeAll(async () => {
     t = await createTestApp();
@@ -50,7 +73,11 @@ describe('авторизация', () => {
       expect(res.status).toBe(201);
 
       const body = await json(res);
-      expect(body.user).toMatchObject({ email: address, hasPassword: true, hasGithub: false });
+      expect(body.user).toMatchObject({
+        email: address,
+        hasPassword: true,
+        hasGithub: false,
+      });
       expect(body.accessToken).toEqual(expect.any(String));
       expect(body.accessTokenExpiresAt).toBe(
         new Date(t.clock.current.getTime() + 15 * 60_000).toISOString(),
@@ -94,7 +121,10 @@ describe('авторизация', () => {
   it('битый JSON даёт 400', async () => {
     const res = await t.app.request('/api/v1/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...saltHeaders('', t.clock.current) },
+      headers: {
+        'Content-Type': 'application/json',
+        ...saltHeaders('', t.clock.current),
+      },
       body: '{not json',
     });
     expect(res.status).toBe(400);
@@ -105,7 +135,11 @@ describe('авторизация', () => {
     it('неверный пароль и неизвестный email дают одинаковый ответ', async () => {
       const address = email();
       await register(address);
-      const wrong = await post('/auth/login', { email: address, password: 'bad-pass', remember: true });
+      const wrong = await post('/auth/login', {
+        email: address,
+        password: 'bad-pass',
+        remember: true,
+      });
       const unknown = await post('/auth/login', {
         email: 'ghost@example.com',
         password: 'bad-pass',
@@ -120,7 +154,11 @@ describe('авторизация', () => {
     });
 
     it('пустой пароль даёт текст из контракта', async () => {
-      const res = await post('/auth/login', { email: email(), password: '', remember: false });
+      const res = await post('/auth/login', {
+        email: email(),
+        password: '',
+        remember: false,
+      });
       expect(res.status).toBe(422);
       expect((await json(res)).error.fields.password).toBe('Введите пароль');
     });
@@ -128,19 +166,35 @@ describe('авторизация', () => {
     it('remember: false даёт cookie без Max-Age, true даёт 30 дней', async () => {
       const address = email();
       await register(address);
-      const session = await post('/auth/login', { email: address, password: 'password', remember: false });
+      const session = await post('/auth/login', {
+        email: address,
+        password: 'password',
+        remember: false,
+      });
       expect(refreshCookieOf(session)).not.toContain('Max-Age');
-      const remembered = await post('/auth/login', { email: address, password: 'password', remember: true });
+      const remembered = await post('/auth/login', {
+        email: address,
+        password: 'password',
+        remember: true,
+      });
       expect(refreshCookieOf(remembered)).toContain(`Max-Age=${30 * 86400}`);
     });
 
     it('11-я неудача подряд даёт 429 с Retry-After', async () => {
       const address = email();
       for (let attempt = 1; attempt <= 10; attempt += 1) {
-        const res = await post('/auth/login', { email: address, password: 'bad-pass', remember: true });
+        const res = await post('/auth/login', {
+          email: address,
+          password: 'bad-pass',
+          remember: true,
+        });
         expect(res.status).toBe(401);
       }
-      const blocked = await post('/auth/login', { email: address, password: 'bad-pass', remember: true });
+      const blocked = await post('/auth/login', {
+        email: address,
+        password: 'bad-pass',
+        remember: true,
+      });
       expect(blocked.status).toBe(429);
       expect((await json(blocked)).error.code).toBe('TOO_MANY_ATTEMPTS');
       expect(Number(blocked.headers.get('Retry-After'))).toBeGreaterThan(0);
@@ -149,10 +203,18 @@ describe('авторизация', () => {
     it('после окна счётчик начинается заново', async () => {
       const address = email();
       for (let attempt = 1; attempt <= 10; attempt += 1) {
-        await post('/auth/login', { email: address, password: 'bad-pass', remember: true });
+        await post('/auth/login', {
+          email: address,
+          password: 'bad-pass',
+          remember: true,
+        });
       }
       t.advance(15 * 60_000 + 1000);
-      const res = await post('/auth/login', { email: address, password: 'bad-pass', remember: true });
+      const res = await post('/auth/login', {
+        email: address,
+        password: 'bad-pass',
+        remember: true,
+      });
       expect(res.status).toBe(401);
     });
   });
@@ -187,13 +249,17 @@ describe('авторизация', () => {
     it('alg: none даёт ACCESS_TOKEN_INVALID', async () => {
       const { accessToken } = await json(await register());
       const [, payload] = (accessToken as string).split('.');
-      const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+      const header = Buffer.from(
+        JSON.stringify({ alg: 'none', typ: 'JWT' }),
+      ).toString('base64url');
       const res = await call(`Bearer ${header}.${payload}.`);
       expect((await json(res)).error.code).toBe('ACCESS_TOKEN_INVALID');
     });
 
     it('другой алгоритм даёт ACCESS_TOKEN_INVALID', async () => {
-      const key = new TextEncoder().encode(testEnv.JWT_ACCESS_SECRET.padEnd(64, 'x'));
+      const key = new TextEncoder().encode(
+        testEnv.JWT_ACCESS_SECRET.padEnd(64, 'x'),
+      );
       const token = await new SignJWT({ sid: crypto.randomUUID() })
         .setProtectedHeader({ alg: 'HS512' })
         .setSubject(crypto.randomUUID())
@@ -202,16 +268,23 @@ describe('авторизация', () => {
         .setIssuedAt()
         .setExpirationTime('1h')
         .sign(key);
-      expect((await json(await call(`Bearer ${token}`))).error.code).toBe('ACCESS_TOKEN_INVALID');
+      expect((await json(await call(`Bearer ${token}`))).error.code).toBe(
+        'ACCESS_TOKEN_INVALID',
+      );
     });
   });
 
   describe('refresh', () => {
-    const cookieFrom = async (res: Response) => tokenValue(refreshCookieOf(res));
+    const cookieFrom = async (res: Response) =>
+      tokenValue(refreshCookieOf(res));
 
     it('без cookie REFRESH_MISSING, с мусором REFRESH_INVALID', async () => {
-      expect((await json(await post('/auth/refresh'))).error.code).toBe('REFRESH_MISSING');
-      expect((await json(await refreshWith('garbage'))).error.code).toBe('REFRESH_INVALID');
+      expect((await json(await post('/auth/refresh'))).error.code).toBe(
+        'REFRESH_MISSING',
+      );
+      expect((await json(await refreshWith('garbage'))).error.code).toBe(
+        'REFRESH_INVALID',
+      );
     });
 
     it('выдаёт новый токен, и старая cookie перестаёт быть основной', async () => {
@@ -227,9 +300,14 @@ describe('авторизация', () => {
 
     it('два параллельных refresh: оба 200, ровно один Set-Cookie', async () => {
       const token = await cookieFrom(await register());
-      const [a, b] = await Promise.all([refreshWith(token), refreshWith(token)]);
+      const [a, b] = await Promise.all([
+        refreshWith(token),
+        refreshWith(token),
+      ]);
       expect([a.status, b.status]).toEqual([200, 200]);
-      expect([refreshCookieOf(a), refreshCookieOf(b)].filter(Boolean)).toHaveLength(2);
+      expect(
+        [refreshCookieOf(a), refreshCookieOf(b)].filter(Boolean),
+      ).toHaveLength(2);
       expect(refreshCookieOf(a)).toBe(refreshCookieOf(b));
       expect((await json(a)).accessToken).toEqual(expect.any(String));
       expect((await json(b)).accessToken).toEqual(expect.any(String));
@@ -253,11 +331,11 @@ describe('авторизация', () => {
     it('срок скользящий', async () => {
       const first = await cookieFrom(
         await post('/auth/login', {
-          email: (await (async () => {
+          email: await (async () => {
             const address = email();
             await register(address);
             return address;
-          })()),
+          })(),
           password: 'password',
           remember: false,
         }),
@@ -266,22 +344,32 @@ describe('авторизация', () => {
       const res = await refreshWith(first);
       expect(res.status).toBe(200);
       t.advance(20 * 3600_000);
-      expect((await refreshWith(tokenValue(refreshCookieOf(res)))).status).toBe(200);
+      expect((await refreshWith(tokenValue(refreshCookieOf(res)))).status).toBe(
+        200,
+      );
     });
 
     it('истёкшая сессия даёт REFRESH_EXPIRED', async () => {
       const address = email();
       await register(address);
       const token = await cookieFrom(
-        await post('/auth/login', { email: address, password: 'password', remember: false }),
+        await post('/auth/login', {
+          email: address,
+          password: 'password',
+          remember: false,
+        }),
       );
       t.advance(86_400_000 + 1000);
-      expect((await json(await refreshWith(token))).error.code).toBe('REFRESH_EXPIRED');
+      expect((await json(await refreshWith(token))).error.code).toBe(
+        'REFRESH_EXPIRED',
+      );
     });
 
     it('чужой Origin даёт 403, свой и отсутствующий проходят', async () => {
       const token = await cookieFrom(await register());
-      const foreign = await refreshWith(token, { Origin: 'https://evil.example' });
+      const foreign = await refreshWith(token, {
+        Origin: 'https://evil.example',
+      });
       expect(foreign.status).toBe(403);
       expect((await json(foreign)).error.code).toBe('FORBIDDEN_ORIGIN');
       expect((await refreshWith(token, { Origin: APP_URL })).status).toBe(200);
@@ -298,13 +386,17 @@ describe('авторизация', () => {
     const retry = await refreshWith(first);
     expect(refreshCookieOf(retry)).toBe(refreshCookieOf(latest));
     t.advance(31_000);
-    expect((await refreshWith(tokenValue(refreshCookieOf(retry)))).status).toBe(200);
+    expect((await refreshWith(tokenValue(refreshCookieOf(retry)))).status).toBe(
+      200,
+    );
   });
 
   describe('logout', () => {
     it('очищает cookie, и после него refresh отдаёт 401', async () => {
       const token = tokenValue(refreshCookieOf(await register()));
-      const res = await post('/auth/logout', undefined, { Cookie: `gwmt_refresh=${token}` });
+      const res = await post('/auth/logout', undefined, {
+        Cookie: `gwmt_refresh=${token}`,
+      });
       expect(res.status).toBe(204);
       expect(refreshCookieOf(res)).toContain('Max-Age=0');
       expect((await refreshWith(token)).status).toBe(401);
@@ -312,16 +404,31 @@ describe('авторизация', () => {
 
     it('без cookie тоже 204, с чужим Origin 403', async () => {
       expect((await post('/auth/logout')).status).toBe(204);
-      expect((await post('/auth/logout', undefined, { Origin: 'https://evil.example' })).status).toBe(403);
+      expect(
+        (
+          await post('/auth/logout', undefined, {
+            Origin: 'https://evil.example',
+          })
+        ).status,
+      ).toBe(403);
     });
   });
 
   describe('GitHub', () => {
     const startFlow = async (next = '/boards') => {
-      const res = await t.app.request(`/api/v1/auth/github/start?next=${encodeURIComponent(next)}`);
+      const res = await t.app.request(
+        `/api/v1/auth/github/start?next=${encodeURIComponent(next)}`,
+      );
       const location = new URL(res.headers.get('Location')!);
-      const cookie = cookiesOf(res).find((value) => value.startsWith('gwmt_oauth_state='))!;
-      return { res, location, cookie, state: location.searchParams.get('state')! };
+      const cookie = cookiesOf(res).find((value) =>
+        value.startsWith('gwmt_oauth_state='),
+      )!;
+      return {
+        res,
+        location,
+        cookie,
+        state: location.searchParams.get('state')!,
+      };
     };
 
     const stubGithub = (identity: {
@@ -336,7 +443,8 @@ describe('авторизация', () => {
           if (url.includes('/login/oauth/access_token')) {
             return Response.json({ access_token: 'gh-token' });
           }
-          if (url.endsWith('/user/emails')) return Response.json(identity.emails ?? []);
+          if (url.endsWith('/user/emails'))
+            return Response.json(identity.emails ?? []);
           return Response.json({
             id: identity.id,
             login: identity.login ?? 'octocat',
@@ -367,27 +475,41 @@ describe('авторизация', () => {
       const { cookie } = await startFlow();
       const res = await callback('wrong-state', cookie);
       expect(res.status).toBe(302);
-      expect(res.headers.get('Location')).toBe(`${APP_URL}/login?authError=github_state_mismatch`);
+      expect(res.headers.get('Location')).toBe(
+        `${APP_URL}/login?authError=github_state_mismatch`,
+      );
     });
 
     it('отказ пользователя ведёт на github_denied', async () => {
       const { cookie, state } = await startFlow();
       const res = await callback(state, cookie, 'error=access_denied');
-      expect(res.headers.get('Location')).toBe(`${APP_URL}/login?authError=github_denied`);
+      expect(res.headers.get('Location')).toBe(
+        `${APP_URL}/login?authError=github_denied`,
+      );
     });
 
     it('нет подтверждённого email ведёт на github_no_verified_email', async () => {
-      stubGithub({ id: 100, emails: [{ email: 'x@example.com', primary: true, verified: false }] });
+      stubGithub({
+        id: 100,
+        emails: [{ email: 'x@example.com', primary: true, verified: false }],
+      });
       const { cookie, state } = await startFlow();
       const res = await callback(state, cookie);
-      expect(res.headers.get('Location')).toBe(`${APP_URL}/login?authError=github_no_verified_email`);
+      expect(res.headers.get('Location')).toBe(
+        `${APP_URL}/login?authError=github_no_verified_email`,
+      );
     });
 
     it('сбой GitHub ведёт на github_failed', async () => {
-      vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 500 })));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response('nope', { status: 500 })),
+      );
       const { cookie, state } = await startFlow();
       const res = await callback(state, cookie);
-      expect(res.headers.get('Location')).toBe(`${APP_URL}/login?authError=github_failed`);
+      expect(res.headers.get('Location')).toBe(
+        `${APP_URL}/login?authError=github_failed`,
+      );
     });
 
     it('создаёт нового пользователя, ставит cookie, токена нет в URL', async () => {
@@ -395,7 +517,9 @@ describe('авторизация', () => {
         id: 101,
         login: 'newbie',
         name: null,
-        emails: [{ email: 'newbie@example.com', primary: true, verified: true }],
+        emails: [
+          { email: 'newbie@example.com', primary: true, verified: true },
+        ],
       });
       const { cookie, state } = await startFlow('/boards/9');
       const res = await callback(state, cookie);
@@ -405,12 +529,20 @@ describe('авторизация', () => {
       expect(location).not.toMatch(/token/i);
       expect(refreshCookieOf(res)).toContain('SameSite=Strict');
 
-      const [user] = await t.db.select().from(users).where(eq(users.githubId, 101));
+      const [user] = await t.db
+        .select()
+        .from(users)
+        .where(eq(users.githubId, 101));
       expect(user?.name).toBe('newbie');
       expect(user?.passwordHash).toBeNull();
 
-      const access = await json(await refreshWith(tokenValue(refreshCookieOf(res))));
-      expect(access.user).toMatchObject({ hasGithub: true, hasPassword: false });
+      const access = await json(
+        await refreshWith(tokenValue(refreshCookieOf(res))),
+      );
+      expect(access.user).toMatchObject({
+        hasGithub: true,
+        hasPassword: false,
+      });
     });
 
     it('внешний next игнорируется', async () => {
@@ -429,27 +561,41 @@ describe('авторизация', () => {
       const oldCookie = tokenValue(refreshCookieOf(registered));
       const userId = (await json(registered)).user.id as string;
 
-      stubGithub({ id: 103, emails: [{ email: address, primary: true, verified: true }] });
+      stubGithub({
+        id: 103,
+        emails: [{ email: address, primary: true, verified: true }],
+      });
       const { cookie, state } = await startFlow();
       const res = await callback(state, cookie);
       expect(res.status).toBe(302);
 
-      const [user] = await t.db.select().from(users).where(eq(users.id, userId));
+      const [user] = await t.db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
       expect(user?.passwordHash).toBeNull();
       expect(user?.githubId).toBe(103);
 
       const old = await refreshWith(oldCookie);
       expect((await json(old)).error.code).toBe('REFRESH_EXPIRED');
-      expect((await refreshWith(tokenValue(refreshCookieOf(res)))).status).toBe(200);
+      expect((await refreshWith(tokenValue(refreshCookieOf(res)))).status).toBe(
+        200,
+      );
     });
 
     it('повторный вход находит пользователя по github_id', async () => {
-      stubGithub({ id: 104, emails: [{ email: 'again@example.com', primary: true, verified: true }] });
+      stubGithub({
+        id: 104,
+        emails: [{ email: 'again@example.com', primary: true, verified: true }],
+      });
       for (let round = 0; round < 2; round += 1) {
         const { cookie, state } = await startFlow();
         await callback(state, cookie);
       }
-      const rows = await t.db.select().from(users).where(eq(users.githubId, 104));
+      const rows = await t.db
+        .select()
+        .from(users)
+        .where(eq(users.githubId, 104));
       expect(rows).toHaveLength(1);
     });
   });
@@ -463,11 +609,19 @@ describe('авторизация', () => {
     it('сессия пишется с user agent', async () => {
       const res = await post(
         '/auth/register',
-        { name: 'Агент', email: email(), password: 'password', acceptedTerms: true },
+        {
+          name: 'Агент',
+          email: email(),
+          password: 'password',
+          acceptedTerms: true,
+        },
         { 'User-Agent': 'vitest' },
       );
       const userId = (await json(res)).user.id as string;
-      const [session] = await t.db.select().from(authSessions).where(eq(authSessions.userId, userId));
+      const [session] = await t.db
+        .select()
+        .from(authSessions)
+        .where(eq(authSessions.userId, userId));
       expect(session?.userAgent).toBe('vitest');
       expect(session?.remember).toBe(true);
     });

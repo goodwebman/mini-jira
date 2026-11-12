@@ -6,6 +6,7 @@ import {
   sprintsQuerySchema,
 } from '@gwmt/contracts';
 import { createRoute } from '@hono/zod-openapi';
+
 import { TAG } from '../../lib/api-docs.js';
 import type { AppDeps } from '../../lib/context.js';
 import {
@@ -42,7 +43,13 @@ export function sprintsRoutes(deps: AppDeps) {
     }),
     async (c) =>
       c.json(
-        { items: await listBoardSprints(deps, c.get('boardId'), c.req.valid('query').limit) },
+        {
+          items: await listBoardSprints(
+            deps,
+            c.get('boardId'),
+            c.req.valid('query').limit,
+          ),
+        },
         200,
       ),
   );
@@ -62,11 +69,17 @@ export function sprintsRoutes(deps: AppDeps) {
       request: { params: sprintNumberParamSchema },
       responses: {
         200: jsonResponse(sprintKpiSchema, 'KPI'),
-        ...errors({ ...boardErrors, 404: ['BOARD_NOT_FOUND', 'SPRINT_NOT_FOUND'] }),
+        ...errors({
+          ...boardErrors,
+          404: ['BOARD_NOT_FOUND', 'SPRINT_NOT_FOUND'],
+        }),
       },
     }),
     async (c) =>
-      c.json(await getSprintKpi(deps, c.get('boardId'), c.req.valid('param').number), 200),
+      c.json(
+        await getSprintKpi(deps, c.get('boardId'), c.req.valid('param').number),
+        200,
+      ),
   );
 
   return router;

@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+
 import { Portal } from '@/shared/lib/dom';
-import { ToastContext, type ToastOptions } from './toast-context';
+
 import { UIToastItem } from './UIToastItem';
+import { ToastContext, type ToastOptions } from './toast-context';
 
 const DEFAULT_DURATION = 4000;
 
@@ -27,13 +29,20 @@ export function UIToastProvider({ children }: IUIToastProviderProps) {
     setToasts((current) => current.filter((item) => item.id !== id));
   }, []);
 
-  const toast = useCallback((message: ReactNode, options: ToastOptions = {}) => {
-    counterRef.current += 1;
-    const id = `toast-${String(counterRef.current)}`;
-    const record: ToastRecord = { id, message, duration: options.duration ?? DEFAULT_DURATION };
-    setToasts((current) => [...current, record].slice(-MAX_VISIBLE));
-    return id;
-  }, []);
+  const toast = useCallback(
+    (message: ReactNode, options: ToastOptions = {}) => {
+      counterRef.current += 1;
+      const id = `toast-${String(counterRef.current)}`;
+      const record: ToastRecord = {
+        id,
+        message,
+        duration: options.duration ?? DEFAULT_DURATION,
+      };
+      setToasts((current) => [...current, record].slice(-MAX_VISIBLE));
+      return id;
+    },
+    [],
+  );
 
   const context = useMemo(() => ({ toast, dismiss }), [toast, dismiss]);
 
@@ -43,10 +52,10 @@ export function UIToastProvider({ children }: IUIToastProviderProps) {
       <Portal>
         {/* Live-регион смонтирован всегда: иначе скринридер пропустит первое сообщение */}
         <div
-          aria-live="polite"
-          aria-atomic="false"
-          data-name="UIToastRegion"
-          className="pointer-events-none fixed bottom-[80px] left-1/2 z-60 flex w-max max-w-[calc(100%-32px)] -translate-x-1/2 flex-col items-center gap-2 sm:bottom-6"
+          aria-live='polite'
+          aria-atomic='false'
+          data-name='UIToastRegion'
+          className='pointer-events-none fixed bottom-[80px] left-1/2 z-60 flex w-max max-w-[calc(100%-32px)] -translate-x-1/2 flex-col items-center gap-2 sm:bottom-6'
         >
           {toasts.map((item) => (
             <UIToastItem

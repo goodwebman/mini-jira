@@ -1,4 +1,5 @@
-import { forwardRef, memo, type TableHTMLAttributes } from 'react';
+import { type TableHTMLAttributes, forwardRef, memo } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 
 export interface IUITableProps extends TableHTMLAttributes<HTMLTableElement> {

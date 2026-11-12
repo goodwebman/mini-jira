@@ -1,8 +1,12 @@
-import { forwardRef, memo, type HTMLAttributes, type ReactNode } from 'react';
-import { cn } from '@/shared/lib/cn';
-import { Slot, type RenderElement } from '@/shared/lib/dom';
+import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
 
-export interface IUIListItemProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+import { cn } from '@/shared/lib/cn';
+import { type RenderElement, Slot } from '@/shared/lib/dom';
+
+export interface IUIListItemProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   readonly testId?: string;
   /** Аватар или иконка слева. */
   readonly media?: ReactNode;
@@ -31,21 +35,38 @@ export interface IUIListItemProps extends Omit<HTMLAttributes<HTMLDivElement>, '
  * />
  */
 const UIListItemBase = forwardRef<HTMLDivElement, IUIListItemProps>(
-  ({ className, testId, media, title, description, actions, href, render, divided = true, ...props }, ref) => {
+  (
+    {
+      className,
+      testId,
+      media,
+      title,
+      description,
+      actions,
+      href,
+      render,
+      divided = true,
+      ...props
+    },
+    ref,
+  ) => {
     const interactive = href != null || render != null;
 
     const content = (
       <>
         {media}
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-medium">{title}</span>
+        <span className='flex min-w-0 flex-1 flex-col'>
+          <span className='truncate font-medium'>{title}</span>
           {description != null && (
-            <span className="truncate text-caption text-muted-foreground">{description}</span>
+            <span className='truncate text-caption text-muted-foreground'>
+              {description}
+            </span>
           )}
         </span>
       </>
     );
-    const contentClass = 'flex min-w-0 flex-1 items-center gap-3 py-2 text-foreground no-underline';
+    const contentClass =
+      'flex min-w-0 flex-1 items-center gap-3 py-2 text-foreground no-underline';
 
     return (
       <div
@@ -64,13 +85,19 @@ const UIListItemBase = forwardRef<HTMLDivElement, IUIListItemProps>(
         {...props}
       >
         {interactive ? (
-          <Slot href={href} render={render} className={cn(contentClass, 'rounded-card focus-ring')}>
+          <Slot
+            href={href}
+            render={render}
+            className={cn(contentClass, 'rounded-card focus-ring')}
+          >
             {content}
           </Slot>
         ) : (
           <div className={contentClass}>{content}</div>
         )}
-        {actions != null && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
+        {actions != null && (
+          <div className='flex shrink-0 items-center gap-1'>{actions}</div>
+        )}
       </div>
     );
   },

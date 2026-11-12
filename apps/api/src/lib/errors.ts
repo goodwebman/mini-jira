@@ -3,6 +3,7 @@ import type { OpenAPIHonoOptions } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+
 import type { AppEnv } from './context.js';
 
 const ERROR_TABLE: Record<ErrorCode, [ContentfulStatusCode, string]> = {
@@ -14,9 +15,15 @@ const ERROR_TABLE: Record<ErrorCode, [ContentfulStatusCode, string]> = {
   REFRESH_MISSING: [401, 'Нужно войти в систему'],
   REFRESH_INVALID: [401, 'Нужно войти заново'],
   REFRESH_EXPIRED: [401, 'Сессия истекла, войдите заново'],
-  REFRESH_REUSED: [401, 'Сессия завершена из соображений безопасности, войдите заново'],
+  REFRESH_REUSED: [
+    401,
+    'Сессия завершена из соображений безопасности, войдите заново',
+  ],
   FORBIDDEN_ORIGIN: [403, 'Запрос с чужого сайта отклонён'],
-  SALT_INVALID: [403, 'Не удалось проверить запрос. Обновите страницу и проверьте время на устройстве'],
+  SALT_INVALID: [
+    403,
+    'Не удалось проверить запрос. Обновите страницу и проверьте время на устройстве',
+  ],
   ROLE_FORBIDDEN: [403, 'Вашей роли не хватает прав на это действие'],
   STATUS_MOVE_FORBIDDEN: [403, 'Нельзя перевести задачу в этот статус'],
   TASK_TAKE_LOCKED: [403, 'Администратор запретил брать эту задачу в работу'],
@@ -28,8 +35,14 @@ const ERROR_TABLE: Record<ErrorCode, [ContentfulStatusCode, string]> = {
   BOARD_KEY_TAKEN: [409, 'Такой ключ уже есть'],
   ALREADY_MEMBER: [409, 'Этот человек уже на доске'],
   TASK_LINK_EXISTS: [409, 'Эти задачи уже связаны'],
-  TASK_NOT_PAUSABLE: [409, 'Поставить на паузу можно только задачу в работе, на ревью или в тесте'],
-  TASK_NOT_LOCKABLE: [409, 'Запретить брать в работу можно только задачу в статусе «К работе»'],
+  TASK_NOT_PAUSABLE: [
+    409,
+    'Поставить на паузу можно только задачу в работе, на ревью или в тесте',
+  ],
+  TASK_NOT_LOCKABLE: [
+    409,
+    'Запретить брать в работу можно только задачу в статусе «К работе»',
+  ],
   VALIDATION_ERROR: [422, 'Проверьте заполнение полей'],
   WRONG_PASSWORD: [422, 'Неверный пароль'],
   CANNOT_REMOVE_SELF: [422, 'Нельзя убрать себя с доски'],
@@ -69,11 +82,18 @@ function errorBody(
   fields?: Record<string, string>,
 ): ApiError {
   return {
-    error: { code, message, ...(fields ? { fields } : {}), requestId: c.get('requestId') },
+    error: {
+      code,
+      message,
+      ...(fields ? { fields } : {}),
+      requestId: c.get('requestId'),
+    },
   };
 }
 
-export const validationHook: NonNullable<OpenAPIHonoOptions<AppEnv>['defaultHook']> = (result) => {
+export const validationHook: NonNullable<
+  OpenAPIHonoOptions<AppEnv>['defaultHook']
+> = (result) => {
   if (result.success) return;
   if (result.target === 'param') throw new AppError('BAD_REQUEST');
 
@@ -90,7 +110,10 @@ export function handleError(err: Error, c: Context<AppEnv>) {
     for (const [name, value] of Object.entries(err.options.headers ?? {})) {
       c.header(name, value);
     }
-    return c.json(errorBody(c, err.code, err.message, err.options.fields), err.status);
+    return c.json(
+      errorBody(c, err.code, err.message, err.options.fields),
+      err.status,
+    );
   }
 
   // Битый JSON: валидатор Hono бросает HTTPException(400).
@@ -112,7 +135,10 @@ export function handleError(err: Error, c: Context<AppEnv>) {
       stack: safe.stack,
     }),
   );
-  return c.json(errorBody(c, 'INTERNAL_ERROR', ERROR_TABLE.INTERNAL_ERROR[1]), 500);
+  return c.json(
+    errorBody(c, 'INTERNAL_ERROR', ERROR_TABLE.INTERNAL_ERROR[1]),
+    500,
+  );
 }
 
 export function handleNotFound(c: Context<AppEnv>) {

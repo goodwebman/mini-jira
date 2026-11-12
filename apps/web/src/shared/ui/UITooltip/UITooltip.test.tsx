@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { UIPopover } from '@/shared/ui/UIPopover';
+
 import { UITooltip } from './UITooltip';
 
 describe('UITooltip', () => {
@@ -13,42 +15,70 @@ describe('UITooltip', () => {
   });
 
   const hover = () => {
-    fireEvent.mouseEnter(document.querySelector('[data-name="UITooltip"]') as Element);
-    act(() => { vi.advanceTimersByTime(300); });
+    fireEvent.mouseEnter(
+      document.querySelector('[data-name="UITooltip"]') as Element,
+    );
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
   };
 
   it('появляется после задержки и связывается с триггером', () => {
-    render(<UITooltip content="Подсказка"><button type="button">Кнопка</button></UITooltip>);
+    render(
+      <UITooltip content='Подсказка'>
+        <button type='button'>Кнопка</button>
+      </UITooltip>,
+    );
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     hover();
     expect(screen.getByRole('button')).toHaveAccessibleDescription('Подсказка');
   });
 
   it('уход мыши отменяет ещё не показанную подсказку', () => {
-    render(<UITooltip content="Подсказка"><button type="button">Кнопка</button></UITooltip>);
+    render(
+      <UITooltip content='Подсказка'>
+        <button type='button'>Кнопка</button>
+      </UITooltip>,
+    );
     const root = document.querySelector('[data-name="UITooltip"]') as Element;
     fireEvent.mouseEnter(root);
     fireEvent.mouseLeave(root);
-    act(() => { vi.advanceTimersByTime(1000); });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
   it('Escape закрывает подсказку', () => {
-    render(<UITooltip content="Подсказка"><button type="button">Кнопка</button></UITooltip>);
+    render(
+      <UITooltip content='Подсказка'>
+        <button type='button'>Кнопка</button>
+      </UITooltip>,
+    );
     hover();
     fireEvent.keyDown(document.body, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
   it('пустой контент подсказку не показывает', () => {
-    render(<UITooltip content=""><button type="button">Кнопка</button></UITooltip>);
+    render(
+      <UITooltip content=''>
+        <button type='button'>Кнопка</button>
+      </UITooltip>,
+    );
     hover();
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 
   it('размонтирование снимает таймер', () => {
-    const { unmount } = render(<UITooltip content="Подсказка"><button type="button">Кнопка</button></UITooltip>);
-    fireEvent.mouseEnter(document.querySelector('[data-name="UITooltip"]') as Element);
+    const { unmount } = render(
+      <UITooltip content='Подсказка'>
+        <button type='button'>Кнопка</button>
+      </UITooltip>,
+    );
+    fireEvent.mouseEnter(
+      document.querySelector('[data-name="UITooltip"]') as Element,
+    );
     unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
@@ -57,8 +87,15 @@ describe('UITooltip', () => {
 describe('UIPopover', () => {
   const setup = (onClick?: () => void) =>
     render(
-      <UIPopover trigger={<button type="button" onClick={onClick}>Открыть</button>} ariaLabel="Фильтры">
-        <button type="button">Внутри</button>
+      <UIPopover
+        trigger={
+          <button type='button' onClick={onClick}>
+            Открыть
+          </button>
+        }
+        ariaLabel='Фильтры'
+      >
+        <button type='button'>Внутри</button>
       </UIPopover>,
     );
 

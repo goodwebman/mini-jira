@@ -1,10 +1,11 @@
 import {
+  type ChangeEvent,
+  type TextareaHTMLAttributes,
   forwardRef,
   memo,
   useState,
-  type ChangeEvent,
-  type TextareaHTMLAttributes,
 } from 'react';
+
 import { cn } from '@/shared/lib/cn';
 import { FieldError } from '@/shared/ui/UIField/FieldError';
 import { fieldControlVariants } from '@/shared/ui/UIField/field.styles';
@@ -44,7 +45,8 @@ const UITextareaBase = forwardRef<HTMLTextAreaElement, IUITextareaProps>(
     const [uncontrolledLength, setUncontrolledLength] = useState(() =>
       typeof defaultValue === 'string' ? defaultValue.length : 0,
     );
-    const length = typeof value === 'string' ? value.length : uncontrolledLength;
+    const length =
+      typeof value === 'string' ? value.length : uncontrolledLength;
 
     const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
       setUncontrolledLength(event.target.value.length);
@@ -73,12 +75,16 @@ const UITextareaBase = forwardRef<HTMLTextAreaElement, IUITextareaProps>(
           {...props}
         />
         {(control.errorText || maxLength != null) && (
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              {control.errorText && <FieldError id={control.errorId}>{control.errorText}</FieldError>}
+          <div className='flex items-start justify-between gap-3'>
+            <div className='min-w-0'>
+              {control.errorText && (
+                <FieldError id={control.errorId}>
+                  {control.errorText}
+                </FieldError>
+              )}
             </div>
             {maxLength != null && (
-              <span className="mt-1 shrink-0 text-small text-muted-foreground tabular-nums">
+              <span className='mt-1 shrink-0 text-small text-muted-foreground tabular-nums'>
                 {length}/{maxLength}
               </span>
             )}

@@ -1,7 +1,12 @@
 import { AuthError } from '../errors';
 import { LocalLocks } from './local-locks';
 import { createMemoryPlatform } from './memory-platform';
-import type { AuthChannel, AuthMarkers, AuthPlatform, AuthResumeInfo } from './types';
+import type {
+  AuthChannel,
+  AuthMarkers,
+  AuthPlatform,
+  AuthResumeInfo,
+} from './types';
 
 interface ScopeEventTarget {
   addEventListener(type: string, listener: (event: Event) => void): void;
@@ -18,7 +23,10 @@ export interface BrowserScope extends ScopeEventTarget {
 
 function isBrowserScope(scope: unknown): scope is BrowserScope {
   const candidate = scope as Partial<BrowserScope>;
-  return typeof candidate.document === 'object' && typeof candidate.location === 'object';
+  return (
+    typeof candidate.document === 'object' &&
+    typeof candidate.location === 'object'
+  );
 }
 
 async function withWebLock<T>(
@@ -40,22 +48,32 @@ async function withWebLock<T>(
   } catch (error) {
     // A busy lock must never be bypassed; unavailable APIs fall back to the local queue.
     if (!acquired && controller.signal.aborted) throw new AuthError('timeout');
-    if (!acquired && error instanceof DOMException &&
-      (error.name === 'SecurityError' || error.name === 'NotSupportedError')) return fallback();
+    if (
+      !acquired &&
+      error instanceof DOMException &&
+      (error.name === 'SecurityError' || error.name === 'NotSupportedError')
+    )
+      return fallback();
     throw error;
   } finally {
     clearTimeout(timer);
   }
 }
 
-function openBroadcastChannel(scope: BrowserScope, name: string): AuthChannel | null {
+function openBroadcastChannel(
+  scope: BrowserScope,
+  name: string,
+): AuthChannel | null {
   if (!scope.BroadcastChannel) return null;
   let channel: BroadcastChannel;
   try {
     channel = new scope.BroadcastChannel(name);
   } catch (error) {
-    if (error instanceof DOMException &&
-      (error.name === 'SecurityError' || error.name === 'NotSupportedError')) return null;
+    if (
+      error instanceof DOMException &&
+      (error.name === 'SecurityError' || error.name === 'NotSupportedError')
+    )
+      return null;
     throw error;
   }
   return {
@@ -73,7 +91,9 @@ function openBroadcastChannel(scope: BrowserScope, name: string): AuthChannel | 
 // просто доживает до конца вкладки.
 function createMarkers(scope: BrowserScope): AuthMarkers {
   const fallback = new Set<string>();
-  const attempt = <T>(action: (storage: NonNullable<BrowserScope['localStorage']>) => T) => {
+  const attempt = <T>(
+    action: (storage: NonNullable<BrowserScope['localStorage']>) => T,
+  ) => {
     try {
       return scope.localStorage ? { value: action(scope.localStorage) } : null;
     } catch {
@@ -81,7 +101,9 @@ function createMarkers(scope: BrowserScope): AuthMarkers {
     }
   };
   return {
-    has: (key) => fallback.has(key) || (attempt((storage) => storage.getItem(key) !== null)?.value ?? false),
+    has: (key) =>
+      fallback.has(key) ||
+      (attempt((storage) => storage.getItem(key) !== null)?.value ?? false),
     set: (key) => {
       if (!attempt((storage) => storage.setItem(key, '1'))) fallback.add(key);
     },
@@ -102,16 +124,20 @@ export function createBrowserPlatform(scope: BrowserScope): AuthPlatform {
     withLock: (name, task, { timeoutMs }) => {
       const webLocks = scope.navigator?.locks;
       return webLocks
-        ? withWebLock(webLocks, name, task, timeoutMs, () => localLocks.run(name, task, timeoutMs))
+        ? withWebLock(webLocks, name, task, timeoutMs, () =>
+            localLocks.run(name, task, timeoutMs),
+          )
         : localLocks.run(name, task, timeoutMs);
     },
     openChannel: (name) => openBroadcastChannel(scope, name),
     onResume: (listener: (info: AuthResumeInfo) => void) => {
       const onVisibility = () => {
-        if (scope.document.visibilityState === 'visible') listener({ restoredFromCache: false });
+        if (scope.document.visibilityState === 'visible')
+          listener({ restoredFromCache: false });
       };
       const onPageShow = (event: Event) => {
-        if ((event as PageTransitionEvent).persisted) listener({ restoredFromCache: true });
+        if ((event as PageTransitionEvent).persisted)
+          listener({ restoredFromCache: true });
       };
       scope.document.addEventListener('visibilitychange', onVisibility);
       scope.addEventListener('pageshow', onPageShow);
@@ -131,5 +157,7 @@ export function createBrowserPlatform(scope: BrowserScope): AuthPlatform {
 
 /** Браузер, если он есть. Иначе окружение без него: импорт модуля безопасен на сервере. */
 export function detectPlatform(): AuthPlatform {
-  return isBrowserScope(globalThis) ? createBrowserPlatform(globalThis) : createMemoryPlatform();
+  return isBrowserScope(globalThis)
+    ? createBrowserPlatform(globalThis)
+    : createMemoryPlatform();
 }

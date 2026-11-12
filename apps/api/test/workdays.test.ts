@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   addDays,
   countWorkdays,
@@ -37,7 +38,9 @@ describe('workdays', () => {
   });
 
   it('начало дня по поясу', () => {
-    expect(startOfDayInZone('2026-11-09', MSK).toISOString()).toBe('2026-11-08T21:00:00.000Z');
+    expect(startOfDayInZone('2026-11-09', MSK).toISOString()).toBe(
+      '2026-11-08T21:00:00.000Z',
+    );
   });
 
   it('рабочие дни считаются включительно', () => {
