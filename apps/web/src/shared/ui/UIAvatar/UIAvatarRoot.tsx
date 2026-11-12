@@ -13,7 +13,7 @@ export interface IUIAvatarProps
   /** Имя: из него берутся инициалы, тинт и доступная подпись. */
   readonly name: string;
   /** Фото. Если не загрузилось, показываются инициалы. */
-  readonly src?: string | null;
+  readonly src?: null | string;
 }
 
 /**
@@ -28,7 +28,7 @@ const UIAvatarRootBase = forwardRef<HTMLSpanElement, IUIAvatarProps>(
     { className, testId, name, src, size, tint, title = name, ...props },
     ref,
   ) => {
-    const [failedSrc, setFailedSrc] = useState<string | null>(null);
+    const [failedSrc, setFailedSrc] = useState<null | string>(null);
     const showImage = src != null && src !== '' && src !== failedSrc;
 
     return (

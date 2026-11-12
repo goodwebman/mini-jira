@@ -23,7 +23,7 @@ export interface IUICardProps
   extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof cardVariants> {
   readonly testId?: string;
   /** Семантический тег. */
-  readonly as?: 'div' | 'section' | 'article' | 'aside';
+  readonly as?: 'article' | 'aside' | 'div' | 'section';
 }
 
 /**

@@ -188,7 +188,7 @@ describe('браузерная платформа', () => {
           setItem: () => {
             throw new DOMException('Full', 'QuotaExceededError');
           },
-          removeItem: () => undefined,
+          removeItem: () => {},
         },
       });
       const { markers } = createBrowserPlatform(scope);
@@ -353,7 +353,7 @@ describe('LocalLocks', () => {
 
   it('разные имена не мешают друг другу', async () => {
     const locks = new LocalLocks();
-    void locks.run('a', () => new Promise(() => undefined), 60_000);
+    void locks.run('a', () => new Promise(() => {}), 60_000);
     await expect(locks.run('b', async () => 'free', 60_000)).resolves.toBe(
       'free',
     );

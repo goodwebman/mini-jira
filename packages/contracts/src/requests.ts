@@ -207,26 +207,38 @@ export const saltHeadersSchema = z.object({
 // Параметры пути
 
 const positiveInt = () => z.coerce.number().int().positive().max(MAX_INT);
+const BOARD_ID_DESCRIPTION = 'Числовой id доски';
+const TASK_KEY_DESCRIPTION = 'Ключ задачи';
+const SEARCH_DESCRIPTION = 'Поиск по названию и ключу';
 
 export const boardIdParamSchema = z.object({
-  boardId: positiveInt().meta({ description: 'Числовой id доски', example: 9 }),
+  boardId: positiveInt().meta({
+    description: BOARD_ID_DESCRIPTION,
+    example: 9,
+  }),
 });
 export const boardMemberParamSchema = z.object({
-  boardId: positiveInt().meta({ description: 'Числовой id доски', example: 9 }),
+  boardId: positiveInt().meta({
+    description: BOARD_ID_DESCRIPTION,
+    example: 9,
+  }),
   userId: z.uuid().describe('Id участника'),
 });
 export const sprintNumberParamSchema = z.object({
-  boardId: positiveInt().meta({ description: 'Числовой id доски', example: 9 }),
+  boardId: positiveInt().meta({
+    description: BOARD_ID_DESCRIPTION,
+    example: 9,
+  }),
   number: positiveInt().meta({
     description: 'Номер спринта на доске',
     example: 14,
   }),
 });
 export const taskKeyParamSchema = z.object({
-  key: taskKeyField().describe('Ключ задачи'),
+  key: taskKeyField().describe(TASK_KEY_DESCRIPTION),
 });
 export const taskLinkParamSchema = z.object({
-  key: taskKeyField().describe('Ключ задачи'),
+  key: taskKeyField().describe(TASK_KEY_DESCRIPTION),
   targetKey: taskKeyField().describe('Ключ связанной задачи'),
 });
 
@@ -239,7 +251,7 @@ export const navSummaryQuerySchema = z.object({
 });
 
 export const myTasksQuerySchema = z.object({
-  q: z.string().trim().optional().describe('Поиск по названию и ключу'),
+  q: z.string().trim().optional().describe(SEARCH_DESCRIPTION),
   status: taskStatusSchema.optional(),
   role: taskRoleSchema.optional().describe('Роль пользователя в задаче'),
   page: positiveInt().default(1),
@@ -264,7 +276,7 @@ export const userSearchQuerySchema = z.object({
 });
 
 export const boardsQuerySchema = z.object({
-  q: z.string().trim().optional().describe('Поиск по названию и ключу'),
+  q: z.string().trim().optional().describe(SEARCH_DESCRIPTION),
   filter: z.enum(['all', 'favorite']).optional(),
 });
 
@@ -273,7 +285,7 @@ export const sprintsQuerySchema = z.object({
 });
 
 export const taskSearchQuerySchema = z.object({
-  q: z.string().trim().optional().describe('Поиск по названию и ключу'),
+  q: z.string().trim().optional().describe(SEARCH_DESCRIPTION),
   excludeLinkedTo: taskKeyField()
     .optional()
     .describe('Убрать саму эту задачу и уже связанные с ней'),

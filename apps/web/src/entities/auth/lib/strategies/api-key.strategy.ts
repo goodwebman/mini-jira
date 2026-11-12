@@ -18,7 +18,7 @@ export interface ApiKeyLoginInput {
 
 export interface ApiKeyStrategyOptions<TUser> {
   /** Ключ из конфигурации: сервер или расширение. На веб-странице так ключ утечёт в бандл. */
-  readonly provideKey?: () => MaybePromise<string | null>;
+  readonly provideKey?: () => MaybePromise<null | string>;
   readonly headerName?: string;
   /** Проверяет ключ и возвращает пользователя. На неверный ключ бросает ошибку со статусом 401. */
   readonly verify?: (

@@ -1,20 +1,20 @@
 /** Размещение floating-элемента относительно якоря. */
 export type Placement =
-  | 'top'
-  | 'top-start'
-  | 'top-end'
   | 'bottom'
-  | 'bottom-start'
   | 'bottom-end'
+  | 'bottom-start'
   | 'left'
-  | 'left-start'
   | 'left-end'
+  | 'left-start'
   | 'right'
+  | 'right-end'
   | 'right-start'
-  | 'right-end';
+  | 'top'
+  | 'top-end'
+  | 'top-start';
 
-type Side = 'top' | 'bottom' | 'left' | 'right';
-type Align = 'center' | 'start' | 'end';
+type Side = 'bottom' | 'left' | 'right' | 'top';
+type Align = 'center' | 'end' | 'start';
 
 export interface AnchorRect {
   readonly top: number;

@@ -119,4 +119,4 @@ export const UISegmented = memo(forwardRef(UISegmentedInner)) as <
   T extends string,
 >(
   props: IUISegmentedProps<T> & RefAttributes<HTMLDivElement>,
-) => ReactElement | null;
+) => null | ReactElement;

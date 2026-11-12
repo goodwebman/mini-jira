@@ -39,7 +39,7 @@ describe('user search', () => {
       client,
       userSearchQueryOptions({ q: ' А ' }),
     );
-    const unsubscribe = observer.subscribe(() => undefined);
+    const unsubscribe = observer.subscribe(() => {});
     expect(transport).not.toHaveBeenCalled();
     const data = {
       items: [{ id: 'u1', name: 'Анна', job: '', colorIndex: 0 }],

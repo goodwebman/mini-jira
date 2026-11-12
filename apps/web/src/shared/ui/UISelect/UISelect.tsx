@@ -21,7 +21,7 @@ export interface IUISelectOption {
 
 export interface IUISelectProps
   extends
-    Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size' | 'multiple'>,
+    Omit<SelectHTMLAttributes<HTMLSelectElement>, 'multiple' | 'size'>,
     VariantProps<typeof fieldControlVariants> {
   readonly testId?: string;
   /** Список опций. Можно вместо него передать `<option>` через children. */

@@ -80,6 +80,7 @@ describe('AuthError', () => {
     const original = new TypeError('Failed to fetch');
     const error = toAuthError(original);
     expect(error.cause).toBe(original);
+    // eslint-disable-next-line unicorn/prefer-structured-clone -- Проверяется JSON-сериализация ошибки, а не копирование объекта.
     expect(JSON.parse(JSON.stringify(error))).not.toHaveProperty('cause');
   });
 
@@ -144,7 +145,7 @@ describe('withDeadline', () => {
     let received: AbortSignal | undefined;
     const pending = withDeadline(1_000, (signal) => {
       received = signal;
-      return new Promise<void>(() => undefined);
+      return new Promise<void>(() => {});
     });
     const outcome = pending.catch((error: unknown) => error);
     await vi.advanceTimersByTimeAsync(1_000);

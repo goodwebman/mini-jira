@@ -257,7 +257,7 @@ export class DigestStrategy<TUser> implements AuthStrategy<
     return { action: 'retry' };
   }
 
-  #applyNextNonce(header: string | null, credentials: DigestCredentials): void {
+  #applyNextNonce(header: null | string, credentials: DigestCredentials): void {
     if (!header) return;
     const nextNonce = parseChallenges(`Digest ${header}`)[0]?.params.get(
       'nextnonce',
@@ -267,7 +267,7 @@ export class DigestStrategy<TUser> implements AuthStrategy<
     credentials.counter = 0;
   }
 
-  #selectChallenge(header: string | null): DigestChallenge | null {
+  #selectChallenge(header: null | string): DigestChallenge | null {
     if (!header) return null;
     for (const { scheme, params } of parseChallenges(header)) {
       if (scheme !== 'digest') continue;

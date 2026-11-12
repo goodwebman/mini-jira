@@ -1,16 +1,16 @@
 export type AuthErrorCode =
-  | 'unauthorized'
-  | 'forbidden'
-  | 'rate_limited'
-  | 'bad_request'
-  | 'server'
-  | 'network'
-  | 'timeout'
   | 'aborted'
+  | 'bad_request'
   | 'bad_response'
-  | 'session_changed'
-  | 'misconfigured'
   | 'destroyed'
+  | 'forbidden'
+  | 'misconfigured'
+  | 'network'
+  | 'rate_limited'
+  | 'server'
+  | 'session_changed'
+  | 'timeout'
+  | 'unauthorized'
   | 'unknown';
 
 const RETRYABLE_CODES: ReadonlySet<AuthErrorCode> = new Set([
@@ -49,13 +49,13 @@ export interface AuthErrorOptions {
 export type AuthErrorBodyReader = (
   body: unknown,
 ) =>
-  | Pick<AuthErrorOptions, 'message' | 'serverCode' | 'details'>
   | null
+  | Pick<AuthErrorOptions, 'details' | 'message' | 'serverCode'>
   | undefined;
 
 interface ResponseWithBody {
   readonly status: number;
-  readonly headers: { get(name: string): string | null };
+  readonly headers: { get(name: string): null | string };
   clone(): { json(): Promise<unknown> };
 }
 
@@ -76,7 +76,7 @@ function codeForStatus(status: number): AuthErrorCode {
   return 'bad_response';
 }
 
-function parseRetryAfter(value: string | null): number | undefined {
+function parseRetryAfter(value: null | string): number | undefined {
   if (!value) return undefined;
   const seconds = Number(value);
   if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
@@ -151,7 +151,7 @@ function readStatus(error: object): number | undefined {
   const source = error as {
     status?: unknown;
     statusCode?: unknown;
-    response?: { status?: unknown } | null;
+    response?: null | { status?: unknown };
   };
   const value = source.status ?? source.statusCode ?? source.response?.status;
   return typeof value === 'number' && value >= 100 && value < 600

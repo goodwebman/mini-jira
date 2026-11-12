@@ -1,5 +1,9 @@
 # goodWebManTasks
 
+ESLint и FSD: `npm run lint`; проверка правил на примерах: `npm run test:lint`. Подключение и покрытие проверок: [docs/eslint.md](docs/eslint.md).
+Полная локальная проверка: `npm run validate` (включая тесты фронтенда).
+Правила импортов описаны в [docs/fsd.md](docs/fsd.md), сравнение с `pc` и приоритеты подготовки к production — в [docs/production-readiness.md](docs/production-readiness.md).
+
 Мини-Jira: канбан-доски, задачи, спринты и KPI. Монорепозиторий на npm workspaces.
 
 | Папка                | Что внутри                                                                             |

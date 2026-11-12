@@ -40,8 +40,10 @@ export function niceScale(
   const rough = safeMax / targetTicks;
   const magnitude = 10 ** Math.floor(Math.log10(rough));
   const normalized = rough / magnitude;
-  const nice =
-    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  let nice = 10;
+  if (normalized <= 1) nice = 1;
+  else if (normalized <= 2) nice = 2;
+  else if (normalized <= 5) nice = 5;
   const step = Math.max(1, Math.round(nice * magnitude));
   return { step, top: Math.ceil(safeMax / step) * step };
 }
@@ -90,7 +92,7 @@ export function gridPath(plot: ChartPlot): string {
 /** Линия по точкам; `null` разрывает её. */
 export function linePath(
   plot: ChartPlot,
-  values: readonly (number | null)[],
+  values: readonly (null | number)[],
   count: number,
 ): string {
   let path = '';
@@ -122,7 +124,7 @@ export function clampIndex(index: number, count: number): number {
   return Math.min(count - 1, Math.max(0, index));
 }
 
-export function maxOf(values: readonly (number | null)[]): number {
+export function maxOf(values: readonly (null | number)[]): number {
   return values.reduce<number>(
     (max, value) => (value != null && value > max ? value : max),
     0,
@@ -131,7 +133,7 @@ export function maxOf(values: readonly (number | null)[]): number {
 
 /** Последний индекс, где хотя бы у одной серии есть значение. */
 export function lastDefinedIndex(
-  series: readonly { values: readonly (number | null)[] }[],
+  series: readonly { values: readonly (null | number)[] }[],
 ): number {
   return series.reduce((last, { values }) => {
     const index = values.findLastIndex((value) => value != null);

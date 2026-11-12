@@ -1,6 +1,6 @@
 import { env } from '@/shared/config';
 
-export function getConfiguredApiUrl(): string | null {
+export function getConfiguredApiUrl(): null | string {
   return env.apiUrl.replace(/\/+$/u, '') || null;
 }
 

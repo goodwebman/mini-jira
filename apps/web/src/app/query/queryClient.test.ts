@@ -12,8 +12,8 @@ import {
   AuthError,
   type AuthEvent,
   bindAuthToQueryClient,
-} from '@/entities/auth/lib';
-import { AuthStore } from '@/entities/auth/lib/auth-store';
+} from '@/entities/auth';
+import { AuthStore } from '@/entities/auth/testing';
 import { boardsQueryOptions } from '@/entities/board';
 import { HttpError, configureApiTransport } from '@/shared/api';
 
@@ -185,7 +185,7 @@ describe('application query client', () => {
     '%s очищает кэш, renewed сохраняет',
     (type) => {
       const client = createQueryClient();
-      const store = new AuthStore<unknown>(() => undefined);
+      const store = new AuthStore<unknown>(() => {});
       const unbind = bindAuthToQueryClient(store, client);
       client.setQueryData(['profile', 'detail'], {
         name: 'Предыдущий пользователь',
@@ -194,18 +194,25 @@ describe('application query client', () => {
       expect(client.getQueryData(['profile', 'detail'])).toEqual({
         name: 'Предыдущий пользователь',
       });
-      const event: AuthEvent<unknown> =
-        type === 'login'
-          ? { type, state: store.state, origin: 'local', identityChanged: true }
-          : type === 'kick'
-            ? {
-                type,
-                state: store.state,
-                origin: 'local',
-                reason: 'unauthorized',
-                error: null,
-              }
-            : { type, state: store.state, origin: 'local' };
+      let event: AuthEvent<unknown>;
+      if (type === 'login') {
+        event = {
+          type,
+          state: store.state,
+          origin: 'local',
+          identityChanged: true,
+        };
+      } else if (type === 'kick') {
+        event = {
+          type,
+          state: store.state,
+          origin: 'local',
+          reason: 'unauthorized',
+          error: null,
+        };
+      } else {
+        event = { type, state: store.state, origin: 'local' };
+      }
       store.emit(event);
       expect(client.getQueryData(['profile', 'detail'])).toBeUndefined();
       unbind();
@@ -216,7 +223,7 @@ describe('application query client', () => {
   it('выход отменяет запрос и поздний ответ не возвращает данные в кэш', async () => {
     vi.stubEnv('VITE_API_URL', '/api/v1');
     const client = createQueryClient();
-    const store = new AuthStore<unknown>(() => undefined);
+    const store = new AuthStore<unknown>(() => {});
     const unbind = bindAuthToQueryClient(store, client);
     let resolveRequest!: (response: Response) => void;
     let signal: AbortSignal | null | undefined;

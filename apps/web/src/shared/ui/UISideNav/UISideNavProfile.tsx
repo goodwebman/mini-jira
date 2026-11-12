@@ -11,7 +11,7 @@ export interface IUISideNavProfileProps extends Omit<
   readonly testId?: string;
   readonly name: string;
   /** Фото пользователя. */
-  readonly avatarSrc?: string | null;
+  readonly avatarSrc?: null | string;
   /** Вторая строка. */
   readonly caption?: string;
   readonly active?: boolean;

@@ -3,10 +3,11 @@ import { type CSSProperties, type ReactNode, memo } from 'react';
 import { cn } from '@/shared/lib/cn';
 
 export interface IUIChartLegendItem {
+  readonly id: string;
   readonly label: ReactNode;
   readonly color: string;
   /** Вид метки: `line`, `dashed`, `dotted` — для линий, остальные — для заливок. */
-  readonly marker?: 'dot' | 'square' | 'line' | 'dashed' | 'dotted';
+  readonly marker?: 'dashed' | 'dot' | 'dotted' | 'line' | 'square';
   /** Значение справа. Показывается в режиме `list`. */
   readonly value?: ReactNode;
 }
@@ -18,7 +19,7 @@ export interface IUIChartLegendProps {
   readonly className?: string;
 }
 
-const LINE_STYLE: Record<'line' | 'dashed' | 'dotted', string> = {
+const LINE_STYLE: Record<'dashed' | 'dotted' | 'line', string> = {
   line: 'solid',
   dashed: 'dashed',
   dotted: 'dotted',
@@ -64,8 +65,8 @@ function UIChartLegendBase({
         data-name='UIChartLegend'
         className={cn('flex min-w-0 flex-col gap-1', className)}
       >
-        {items.map((item, index) => (
-          <div key={index} className='flex items-center gap-2 text-small'>
+        {items.map((item) => (
+          <div key={item.id} className='flex items-center gap-2 text-small'>
             <LegendMarker marker={item.marker ?? 'square'} color={item.color} />
             <span className='min-w-0 flex-1 truncate'>{item.label}</span>
             {item.value != null && (
@@ -87,8 +88,8 @@ function UIChartLegendBase({
         className,
       )}
     >
-      {items.map((item, index) => (
-        <span key={index} className='flex items-center gap-[6px]'>
+      {items.map((item) => (
+        <span key={item.id} className='flex items-center gap-[6px]'>
           <LegendMarker marker={item.marker ?? 'square'} color={item.color} />
           {item.label}
         </span>

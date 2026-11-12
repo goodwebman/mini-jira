@@ -21,11 +21,11 @@ import { useChartBox } from './use-chart-box';
 export interface IUILineChartSeries {
   readonly name: string;
   /** Значения по точкам оси X; `null` — данных нет, линия прерывается. */
-  readonly values: readonly (number | null)[];
+  readonly values: readonly (null | number)[];
   /** Цвет; по умолчанию следующий из палитры. */
   readonly color?: string;
   /** `solid` — факт, `dashed` — идеал, `dotted` — прогноз. */
-  readonly variant?: 'solid' | 'dashed' | 'dotted';
+  readonly variant?: 'dashed' | 'dotted' | 'solid';
   /** Заливка под линией. */
   readonly area?: boolean;
   /** Маркер на последней точке. */
@@ -76,7 +76,7 @@ function UILineChartBase({
   className,
 }: IUILineChartProps) {
   const { ref, width, height, unit } = useChartBox('tall', heightProp);
-  const [hovered, setHovered] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<null | number>(null);
 
   const count = labels.length;
   const plot = createPlot(
@@ -197,6 +197,7 @@ function UILineChartBase({
               ? []
               : [
                   {
+                    id: item.name,
                     color: seriesColor(index, item.color),
                     label: item.name,
                     value: formatValue(value),

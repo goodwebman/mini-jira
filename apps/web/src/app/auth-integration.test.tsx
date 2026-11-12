@@ -7,13 +7,13 @@ import {
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import App from '@/App';
+import App from './App';
 
 const auth = vi.hoisted(() => ({
   state: { status: 'unknown', phase: 'idle', user: null, error: null } as {
     status: string;
     phase: string;
-    user: { name: string } | null;
+    user: null | { name: string };
     error: Error | null;
   },
   login: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('@/entities/auth', () => ({
   useAuth: () => auth.state,
   authService: { login: auth.login, logout: auth.logout },
 }));
-vi.mock('@/kit-gallery/KitGallery', () => ({
+vi.mock('@/pages/kit-gallery', () => ({
   KitGallery: () => <div>Protected content</div>,
 }));
 

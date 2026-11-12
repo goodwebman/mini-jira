@@ -8,7 +8,7 @@ export function useMergedRefs<T>(
   second: Ref<T> | undefined,
 ): RefCallback<T> {
   return useCallback(
-    (node: T | null) => mergeRefs(first, second)(node),
+    (node: null | T) => mergeRefs(first, second)(node),
     [first, second],
   );
 }

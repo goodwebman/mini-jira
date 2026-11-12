@@ -56,7 +56,7 @@ function bearerApi(overrides: Partial<BearerApi<TestUser, unknown>> = {}) {
       accessToken: 'refreshed-token',
       user: makeUser(),
     })),
-    logout: vi.fn(async () => undefined),
+    logout: vi.fn(async () => {}),
     ...overrides,
   } satisfies BearerApi<TestUser, unknown>;
 }
@@ -839,14 +839,14 @@ describe('withSsoRedirect', () => {
       restore: vi.fn(async () => null),
       login: vi.fn(async () => ({ credentials: 'c', user: makeUser() })),
       renew: vi.fn(async () => ({ credentials: 'c2' })),
-      logout: vi.fn(async () => undefined),
+      logout: vi.fn(async () => {}),
       decorate: vi.fn(() => ({})),
     };
     const strategy = withSsoRedirect<
       string,
       TestUser,
       { password: string },
-      'google' | 'github'
+      'github' | 'google'
     >(base as unknown as AuthStrategy<string, TestUser, { password: string }>, {
       buildUrl: (provider, returnTo) =>
         `/auth/${provider}/start?next=${encodeURIComponent(returnTo)}`,

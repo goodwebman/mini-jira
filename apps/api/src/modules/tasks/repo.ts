@@ -96,7 +96,7 @@ export type TaskCardRow = Awaited<ReturnType<typeof cardQuery>>[number];
 export async function findCard(
   db: Db,
   taskId: string,
-): Promise<TaskCardRow | null> {
+): Promise<null | TaskCardRow> {
   const [row] = await cardQuery(db).where(eq(tasks.id, taskId));
   return row ?? null;
 }

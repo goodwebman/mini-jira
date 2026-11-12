@@ -52,7 +52,7 @@ export function LoginPage() {
       );
     }
   }
-  async function sso(provider: 'google' | 'github') {
+  async function sso(provider: 'github' | 'google') {
     setError('');
     try {
       await authService.login({ sso: provider, returnTo });
@@ -66,7 +66,10 @@ export function LoginPage() {
         {register ? 'Регистрация' : 'Вход в mini-jira'}
       </h1>
       {error && <UIAlert tone='danger'>{error}</UIAlert>}
-      <form onSubmit={submit} className='flex flex-col gap-4'>
+      <form
+        onSubmit={(event) => void submit(event)}
+        className='flex flex-col gap-4'
+      >
         <fieldset disabled={busy} className='flex flex-col gap-4'>
           {register && (
             <UIField key='name' label='Имя'>

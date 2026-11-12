@@ -30,7 +30,7 @@ export interface IUIKanbanColumnProps extends Omit<
   readonly onAdd?: () => void;
   readonly addLabel?: string;
   /** Подсветка при перетаскивании: `ok` — можно бросить, `bad` — нельзя. */
-  readonly dropState?: 'ok' | 'bad' | null;
+  readonly dropState?: 'bad' | 'ok' | null;
 }
 
 /**

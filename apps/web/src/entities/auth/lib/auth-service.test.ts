@@ -176,7 +176,7 @@ describe('холодный старт', () => {
   it('после сбоя сети сам повторяет запуск и восстанавливает сессию', async () => {
     vi.useFakeTimers();
     const restore = vi
-      .fn<() => Promise<TestGrant | null>>()
+      .fn<() => Promise<null | TestGrant>>()
       .mockRejectedValueOnce(networkDown())
       .mockResolvedValue(makeGrant('t1'));
     const { auth, eventTypes } = createAuth({ strategy: { restore } });
@@ -194,7 +194,7 @@ describe('холодный старт', () => {
 
   it('событие online запускает повтор сразу', async () => {
     const restore = vi
-      .fn<() => Promise<TestGrant | null>>()
+      .fn<() => Promise<null | TestGrant>>()
       .mockRejectedValueOnce(networkDown())
       .mockResolvedValue(null);
     const { auth, platform } = createAuth({ strategy: { restore } });
@@ -205,7 +205,7 @@ describe('холодный старт', () => {
   });
 
   it('запрос до bootstrap сам запускает его и дожидается сессии', async () => {
-    const gate = deferred<TestGrant | null>();
+    const gate = deferred<null | TestGrant>();
     const { auth } = createAuth({
       strategy: { restore: vi.fn(() => gate.promise) },
     });
@@ -384,8 +384,8 @@ describe('обработка 401', () => {
     const { auth, browser } = await createSignedIn({ strategy: { renew } });
     const server = createServer('renewed-token');
 
-    await auth.execute(TARGET, server.send).catch(() => undefined);
-    await auth.execute(TARGET, server.send).catch(() => undefined);
+    await auth.execute(TARGET, server.send).catch(() => {});
+    await auth.execute(TARGET, server.send).catch(() => {});
     expect(renew).toHaveBeenCalledTimes(1);
 
     browser.advance(2_000);
@@ -406,9 +406,9 @@ describe('обработка 401', () => {
     const { auth, browser } = await createSignedIn({ strategy: { renew } });
     const server = createServer('renewed-token');
 
-    await auth.execute(TARGET, server.send).catch(() => undefined);
+    await auth.execute(TARGET, server.send).catch(() => {});
     browser.advance(59_000);
-    await auth.execute(TARGET, server.send).catch(() => undefined);
+    await auth.execute(TARGET, server.send).catch(() => {});
     expect(renew).toHaveBeenCalledTimes(1);
 
     browser.advance(2_000);
@@ -621,7 +621,7 @@ describe('отмена и таймауты', () => {
   it('зависший refresh не запирает очередь и не закрывает сессию', async () => {
     vi.useFakeTimers();
     const { auth, eventTypes } = await createSignedIn({
-      strategy: { renew: vi.fn(() => new Promise<TestGrant>(() => undefined)) },
+      strategy: { renew: vi.fn(() => new Promise<TestGrant>(() => {})) },
       config: { operationTimeoutMs: 1_000 },
     });
     const server = createServer();
@@ -643,19 +643,19 @@ describe('отмена и таймауты', () => {
       strategy: {
         renew: vi.fn(({ signal }) => {
           received = signal;
-          return new Promise<TestGrant>(() => undefined);
+          return new Promise<TestGrant>(() => {});
         }),
       },
       config: { operationTimeoutMs: 1_000 },
     });
-    void auth.execute(TARGET, createServer().send).catch(() => undefined);
+    void auth.execute(TARGET, createServer().send).catch(() => {});
     await vi.advanceTimersByTimeAsync(1_000);
     expect(received?.aborted).toBe(true);
   });
 
   it('зависший fetchUser не блокирует следующие обновления', async () => {
     vi.useFakeTimers();
-    const fetchUser = vi.fn(() => new Promise<TestUser>(() => undefined));
+    const fetchUser = vi.fn(() => new Promise<TestUser>(() => {}));
     const { auth } = await createSignedIn({
       config: { fetchUser, operationTimeoutMs: 1_000 },
     });
@@ -748,7 +748,7 @@ describe('сессия сменилась, пока шла операция', ()
 
     await auth.establish(makeGrant('boris-token', makeUser('boris')));
     renewGate.resolve(makeGrant('anna-renewed'));
-    await request.catch(() => undefined);
+    await request.catch(() => {});
     await flush();
 
     expect(server.send).toHaveBeenCalledTimes(1);
@@ -807,7 +807,7 @@ describe('сессия сменилась, пока шла операция', ()
   });
 
   it('вход не отменяется тем, что параллельно закончилось восстановление сессии', async () => {
-    const restore = deferred<TestGrant | null>();
+    const restore = deferred<null | TestGrant>();
     const { auth } = createAuth({
       strategy: { restore: vi.fn(() => restore.promise) },
     });
@@ -882,7 +882,7 @@ describe('вход', () => {
         }),
       },
     });
-    await auth.login({}).catch(() => undefined);
+    await auth.login({}).catch(() => {});
     expect(auth.getSnapshot().status).toBe('authenticated');
   });
 
@@ -1050,10 +1050,10 @@ describe('выход', () => {
   it('вызывающий logout не ждёт очередь за зависшим refresh', async () => {
     vi.useFakeTimers();
     const { auth } = await createSignedIn({
-      strategy: { renew: vi.fn(() => new Promise<TestGrant>(() => undefined)) },
+      strategy: { renew: vi.fn(() => new Promise<TestGrant>(() => {})) },
       config: { logoutTimeoutMs: 500 },
     });
-    void auth.execute(TARGET, createServer().send).catch(() => undefined);
+    void auth.execute(TARGET, createServer().send).catch(() => {});
     await vi.advanceTimersByTimeAsync(0);
 
     const logout = auth.logout();
@@ -1065,7 +1065,7 @@ describe('выход', () => {
   it('зависший logout заканчивается по таймауту', async () => {
     vi.useFakeTimers();
     const { auth } = await createSignedIn({
-      strategy: { logout: vi.fn(() => new Promise<void>(() => undefined)) },
+      strategy: { logout: vi.fn(() => new Promise<void>(() => {})) },
       config: { logoutTimeoutMs: 500 },
     });
     const logout = auth.logout();
@@ -1094,7 +1094,7 @@ describe('выход', () => {
     await firstTab.auth.logout();
     firstTab.auth.destroy();
 
-    const logout = vi.fn(async () => undefined);
+    const logout = vi.fn(async () => {});
     const restore = vi.fn(async () => makeGrant('cookie-still-valid'));
     const reloaded = createAuth({ browser, strategy: { logout, restore } });
     const state = await reloaded.auth.bootstrap();
@@ -1203,7 +1203,7 @@ describe('выход', () => {
         }),
       },
     });
-    void auth.execute(TARGET, createServer().send).catch(() => undefined);
+    void auth.execute(TARGET, createServer().send).catch(() => {});
     await flush();
     const logout = auth.logout();
     await flush();
@@ -1387,7 +1387,7 @@ describe('несколько вкладок', () => {
       browser,
       strategy: {
         restore: vi
-          .fn<() => Promise<TestGrant | null>>()
+          .fn<() => Promise<null | TestGrant>>()
           .mockResolvedValueOnce(null)
           .mockResolvedValue(makeGrant('own-token')),
       },
@@ -1414,7 +1414,7 @@ describe('несколько вкладок', () => {
       browser,
       strategy: {
         restore: vi
-          .fn<() => Promise<TestGrant | null>>()
+          .fn<() => Promise<null | TestGrant>>()
           .mockResolvedValueOnce(makeGrant('anna-b'))
           .mockResolvedValue(makeGrant('boris-b', makeUser('boris'))),
       },
@@ -1526,11 +1526,7 @@ describe('несколько вкладок', () => {
   it('занятая блокировка даёт unknown с таймаутом без обхода очереди', async () => {
     vi.useFakeTimers();
     const browser = new TestBrowser();
-    void browser.locks.run(
-      'test:session',
-      () => new Promise(() => undefined),
-      60_000,
-    );
+    void browser.locks.run('test:session', () => new Promise(() => {}), 60_000);
     const { auth, strategy } = createAuth({
       browser,
       config: { operationTimeoutMs: 1_000 },
@@ -1748,7 +1744,7 @@ describe('данные пользователя', () => {
     const { auth, platform, eventTypes, strategy } = await createSignedIn({
       strategy: {
         restore: vi
-          .fn<() => Promise<TestGrant | null>>()
+          .fn<() => Promise<null | TestGrant>>()
           .mockResolvedValueOnce(makeGrant('t1'))
           .mockResolvedValue(null),
       },
@@ -1763,7 +1759,7 @@ describe('данные пользователя', () => {
 
 describe('хранилище между запусками', () => {
   function createPersistence(
-    initial: PersistedSession<string, TestUser> | null = null,
+    initial: null | PersistedSession<string, TestUser> = null,
   ) {
     const log: string[] = [];
     let record = initial;
@@ -1851,7 +1847,7 @@ describe('хранилище между запусками', () => {
 
 describe('destroy', () => {
   it('во время старта: ни записей, ни событий', async () => {
-    const gate = deferred<TestGrant | null>();
+    const gate = deferred<null | TestGrant>();
     const save = vi.fn();
     const { auth, eventTypes } = createAuth({
       strategy: { restore: vi.fn(() => gate.promise) },

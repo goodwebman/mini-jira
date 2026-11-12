@@ -24,7 +24,7 @@ import { useDialogContext } from './dialog-context';
 
 const dialogPanelVariants = cva(
   [
-    'relative flex h-full w-full flex-col bg-surface shadow-modal outline-none animate-dialog-in',
+    'relative flex flex-col bg-surface shadow-modal outline-none animate-dialog-in size-full',
     'sm:h-auto sm:max-h-full sm:rounded-modal',
   ],
   {

@@ -21,7 +21,7 @@ export interface AuthResumeInfo {
 /** Всё, что сервису нужно от окружения. Благодаря этому ядро работает и вне браузера. */
 export interface AuthPlatform {
   now(): number;
-  origin(): string | null;
+  origin(): null | string;
   isVisible(): boolean;
   /** Wait at most timeoutMs; reject without running task if the lock remains busy. */
   withLock<T>(

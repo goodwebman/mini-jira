@@ -434,7 +434,7 @@ describe('авторизация', () => {
     const stubGithub = (identity: {
       id: number;
       login?: string;
-      name?: string | null;
+      name?: null | string;
       emails?: { email: string; primary: boolean; verified: boolean }[];
     }) => {
       vi.stubGlobal(

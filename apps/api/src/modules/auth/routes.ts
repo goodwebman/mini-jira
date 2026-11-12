@@ -40,6 +40,7 @@ import {
 import * as service from './service.js';
 
 const DEFAULT_NEXT = '/boards';
+const USER_AGENT_HEADER = 'User-Agent';
 
 const safeNext = (next: string | undefined) =>
   next && next.startsWith('/') && !next.startsWith('//') ? next : DEFAULT_NEXT;
@@ -156,7 +157,7 @@ function registerOAuthRoutes(
         const { refreshToken } = await service.loginWithOAuth(
           deps,
           identity,
-          c.req.header('User-Agent') ?? null,
+          c.req.header(USER_AGENT_HEADER) ?? null,
         );
         setRefreshCookie(c, refreshToken, true, deps.env);
         return c.redirect(`${deps.env.APP_URL}${safeNext(saved.next)}`, 302);
@@ -209,7 +210,7 @@ export function authRoutes(deps: AppDeps) {
       const auth = await service.register(
         deps,
         c.req.valid('json'),
-        c.req.header('User-Agent') ?? null,
+        c.req.header(USER_AGENT_HEADER) ?? null,
       );
       return c.json(applyAuth(c, auth), 201);
     },
@@ -246,7 +247,7 @@ export function authRoutes(deps: AppDeps) {
       const auth = await service.login(
         deps,
         c.req.valid('json'),
-        c.req.header('User-Agent') ?? null,
+        c.req.header(USER_AGENT_HEADER) ?? null,
       );
       return c.json(applyAuth(c, auth), 200);
     },

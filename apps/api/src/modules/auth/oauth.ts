@@ -2,10 +2,10 @@ import type { Env } from '../../lib/env.js';
 
 export type OAuthFailure =
   | 'denied'
-  | 'state_mismatch'
-  | 'no_verified_email'
+  | 'email_not_trusted'
   | 'failed'
-  | 'email_not_trusted';
+  | 'no_verified_email'
+  | 'state_mismatch';
 
 export class OAuthFlowError extends Error {
   constructor(readonly failure: OAuthFailure) {
@@ -42,7 +42,7 @@ export const oauthCallbackUrl = (env: Env, provider: OAuthProvider) =>
   `${env.APP_URL}/api/v1/auth/${provider}/callback`;
 
 export const displayName = (
-  name: string | null | undefined,
+  name: null | string | undefined,
   fallback: string,
 ) => (name?.trim() || fallback).slice(0, MAX_NAME_LENGTH);
 

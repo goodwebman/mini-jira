@@ -5,7 +5,7 @@ import { type Breakpoint, useBreakpoint } from '@/shared/lib/hooks';
 /** Ширина до первого замера: в браузере замер успевает до paint. */
 const FALLBACK_WIDTH = 640;
 
-export type ChartHeightPreset = 'tall' | 'regular';
+export type ChartHeightPreset = 'regular' | 'tall';
 
 const HEIGHTS: Record<ChartHeightPreset, Record<Breakpoint, number>> = {
   tall: { wide: 340, desktop: 280, laptop: 260, tablet: 240, phone: 220 },

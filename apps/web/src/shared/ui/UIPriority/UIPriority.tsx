@@ -4,7 +4,7 @@ import { cn } from '@/shared/lib/cn';
 import { type UIIconComponent, UIIcons } from '@/shared/ui/icons';
 
 /** Приоритеты задач. Совпадают с `TaskPriority` из @gwmt/contracts. */
-export type UITaskPriority = 'crit' | 'high' | 'med' | 'low';
+export type UITaskPriority = 'crit' | 'high' | 'low' | 'med';
 
 const PRIORITY_ICON: Record<UITaskPriority, UIIconComponent> = {
   crit: UIIcons.AlertTriangle,

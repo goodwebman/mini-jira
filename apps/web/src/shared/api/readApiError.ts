@@ -6,14 +6,14 @@ const FALLBACK_MESSAGE = 'Что-то пошло не так, попробуйт
 
 export interface ApiErrorInfo {
   /** HTTP-статус; `null`, если ответа от сервера не было. */
-  readonly status: number | null;
+  readonly status: null | number;
   /** Машинный код из тела ответа; `null`, если тело не в формате API. */
   readonly code: ErrorCode | null;
   /** Готовый текст для тоста. */
   readonly message: string;
   /** Тексты ошибок под полями формы (обычно на 422). */
   readonly fields: Readonly<Record<string, string>>;
-  readonly requestId: string | null;
+  readonly requestId: null | string;
 }
 
 /**
@@ -42,6 +42,6 @@ export function readApiError(error: unknown): ApiErrorInfo {
   return info(null, FALLBACK_MESSAGE);
 }
 
-function info(status: number | null, message: string): ApiErrorInfo {
+function info(status: null | number, message: string): ApiErrorInfo {
   return { status, code: null, message, fields: {}, requestId: null };
 }

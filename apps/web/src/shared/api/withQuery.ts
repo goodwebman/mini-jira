@@ -1,7 +1,7 @@
 /** Добавляет query-параметры, сохраняя 0 и false и пропуская пустые значения. */
 export function withQuery(
   path: string,
-  params: Record<string, string | number | boolean | undefined>,
+  params: Record<string, boolean | number | string | undefined>,
 ): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {

@@ -133,7 +133,7 @@ describe('board queries', () => {
       );
     });
     const observer = new QueryObserver(client, boardsQueryOptions());
-    const unsubscribe = observer.subscribe(() => undefined);
+    const unsubscribe = observer.subscribe(() => {});
     expect(requestSignal?.aborted).toBe(false);
     await client.cancelQueries({ queryKey: boardQueryKeys.all });
     expect(requestSignal?.aborted).toBe(true);

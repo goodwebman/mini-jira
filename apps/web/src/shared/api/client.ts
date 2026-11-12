@@ -34,12 +34,12 @@ async function request<T>(
     headers: finalHeaders,
     body: body === undefined || isFormData ? body : JSON.stringify(body),
   });
-  const payload: unknown =
-    response.status === 204
-      ? undefined
-      : response.headers.get('content-type')?.includes('application/json')
-        ? await response.json().catch(() => null)
-        : await response.text();
+  let payload: unknown;
+  if (response.status !== 204) {
+    payload = response.headers.get('content-type')?.includes('application/json')
+      ? await response.json().catch(() => null)
+      : await response.text();
+  }
 
   if (!response.ok) throw new HttpError(response, payload);
   return payload as T;

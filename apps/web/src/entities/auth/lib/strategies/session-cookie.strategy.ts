@@ -19,7 +19,7 @@ export interface SessionCookieApi<TUser, TLoginInput> {
   login(
     input: TLoginInput,
     context: StrategyContext,
-  ): Promise<TUser | AuthRedirect>;
+  ): Promise<AuthRedirect | TUser>;
   /** На 401 должен бросать ошибку со статусом: так сервис понимает, что сессии нет. */
   getUser(context: StrategyContext): Promise<TUser>;
   logout?(context: StrategyContext): Promise<void>;
@@ -30,7 +30,7 @@ export interface SessionCookieStrategyOptions<TUser, TLoginInput> {
   /** Cookie уходит браузером сам, поэтому изменяющие запросы нужно защищать от CSRF. */
   readonly csrf?: {
     readonly headerName: string;
-    readonly readToken: () => MaybePromise<string | null>;
+    readonly readToken: () => MaybePromise<null | string>;
   };
   /** `include` нужен, только если API на другом origin. */
   readonly credentialsMode?: 'include' | 'same-origin';

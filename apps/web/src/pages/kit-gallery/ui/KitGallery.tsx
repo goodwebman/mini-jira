@@ -56,8 +56,10 @@ import {
   useToast,
 } from '@/shared/ui';
 
-type LinkType = 'rel' | 'blocks' | 'dup';
-type DialogSize = 'sm' | 'md' | 'lg';
+type LinkType = 'blocks' | 'dup' | 'rel';
+const CHART_COLOR = 'var(--chart-1)';
+const CHART_NEUTRAL_COLOR = 'var(--chart-neutral)';
+type DialogSize = 'lg' | 'md' | 'sm';
 
 const SECTIONS = [
   { id: 'buttons', title: 'Кнопки' },
@@ -138,7 +140,7 @@ const DAYS = [
   '13.11',
   '14.11',
 ];
-const BURN_REMAINING: readonly (number | null)[] = [
+const BURN_REMAINING: readonly (null | number)[] = [
   64,
   60,
   55,
@@ -154,7 +156,7 @@ const BURN_IDEAL: readonly number[] = DAYS.map((_, index) =>
   Math.round(64 * (1 - index / 9)),
 );
 
-const FLOW: Record<UITaskStatus, readonly (number | null)[]> = {
+const FLOW: Record<UITaskStatus, readonly (null | number)[]> = {
   todo: [30, 28, 26, 24, 20, 18, 16, 14, null, null],
   work: [10, 12, 14, 13, 12, 12, 11, 10, null, null],
   review: [4, 4, 5, 6, 7, 7, 8, 8, null, null],
@@ -640,8 +642,18 @@ function ChartsBlock() {
       <Panel>
         <UIChartLegend
           items={[
-            { label: 'Осталось', color: 'var(--chart-1)', marker: 'line' },
-            { label: 'Идеал', color: 'var(--chart-neutral)', marker: 'dashed' },
+            {
+              id: 'remaining',
+              label: 'Осталось',
+              color: CHART_COLOR,
+              marker: 'line',
+            },
+            {
+              id: 'ideal',
+              label: 'Идеал',
+              color: CHART_NEUTRAL_COLOR,
+              marker: 'dashed',
+            },
           ]}
         />
         <UILineChart
@@ -671,6 +683,7 @@ function ChartsBlock() {
             items={STATUSES.slice()
               .reverse()
               .map((status) => ({
+                id: status,
                 label: STATUS_NAMES[status],
                 color: `var(--status-${status})`,
                 marker: 'square' as const,
@@ -691,8 +704,8 @@ function ChartsBlock() {
         <Panel>
           <UIChartLegend
             items={[
-              { label: 'План', color: 'var(--chart-plan)' },
-              { label: 'Выполнено', color: 'var(--chart-1)' },
+              { id: 'plan', label: 'План', color: 'var(--chart-plan)' },
+              { id: 'done', label: 'Выполнено', color: CHART_COLOR },
             ]}
           />
           <UIBarChart
@@ -709,7 +722,7 @@ function ChartsBlock() {
               {
                 name: 'Выполнено',
                 values: [36, 40, 35, 41, 38, 42],
-                color: 'var(--chart-1)',
+                color: CHART_COLOR,
                 mutedColor: 'var(--chart-soft)',
               },
             ]}
@@ -733,6 +746,7 @@ function ChartsBlock() {
               variant='list'
               className='min-w-[180px] flex-1'
               items={STATUSES.map((status, index) => ({
+                id: status,
                 label: STATUS_NAMES[status],
                 color: `var(--status-${status})`,
                 value: `${String(5 + index * 3)} SP`,
@@ -745,9 +759,15 @@ function ChartsBlock() {
             <UIChartTooltip
               title='День 8'
               rows={[
-                { color: 'var(--chart-1)', label: 'Факт', value: '22 SP' },
                 {
-                  color: 'var(--chart-neutral)',
+                  id: 'actual',
+                  color: CHART_COLOR,
+                  label: 'Факт',
+                  value: '22 SP',
+                },
+                {
+                  id: 'ideal',
+                  color: CHART_NEUTRAL_COLOR,
                   label: 'Идеал',
                   value: '9 SP',
                 },

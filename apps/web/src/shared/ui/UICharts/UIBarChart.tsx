@@ -87,7 +87,7 @@ function UIBarChartBase({
   className,
 }: IUIBarChartProps) {
   const { ref, width, height, unit } = useChartBox('regular', heightProp);
-  const [hovered, setHovered] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<null | number>(null);
 
   const count = labels.length;
   const plot = createPlot(
@@ -215,7 +215,7 @@ function UIBarChartBase({
         highlightedValue != null &&
         highlightedValue > 0 && (
           <span
-            className='pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-caption font-semibold text-foreground'
+            className='pointer-events-none absolute text-caption font-semibold text-foreground -translate-1/2'
             style={{
               left: barX(highlighted, labelBar) + barWidth / 2,
               top: plot.y(highlightedValue) - Math.round(9 * unit),
@@ -248,6 +248,7 @@ function UIBarChartBase({
           x={slotCenter(active)}
           flip={active >= count / 2}
           rows={series.map((item, bar) => ({
+            id: item.name,
             color: seriesColor(bar, item.color),
             label: item.name,
             value: formatValue(item.values[active] ?? 0),

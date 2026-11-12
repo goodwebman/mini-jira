@@ -52,7 +52,7 @@ export async function updateMe(
 
 function isUniqueViolation(err: unknown): boolean {
   const source = err instanceof Error && err.cause ? err.cause : err;
-  return (source as { code?: string } | null)?.code === '23505';
+  return (source as null | { code?: string })?.code === '23505';
 }
 
 export async function changePassword(

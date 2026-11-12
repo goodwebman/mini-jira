@@ -1,4 +1,4 @@
-function decodePayload(token: string): { exp?: unknown; iat?: unknown } | null {
+function decodePayload(token: string): null | { exp?: unknown; iat?: unknown } {
   const payload = token.split('.')[1];
   if (!payload) return null;
   try {
@@ -18,7 +18,7 @@ function decodePayload(token: string): { exp?: unknown; iat?: unknown } | null {
  * нельзя: они могут расходиться с сервером на часы, а длительность от этого не зависит.
  * Подпись не проверяется, поэтому значение годится только для планирования refresh.
  */
-export function readJwtTtlMs(token: string): number | null {
+export function readJwtTtlMs(token: string): null | number {
   const payload = decodePayload(token);
   if (typeof payload?.exp !== 'number' || typeof payload.iat !== 'number')
     return null;

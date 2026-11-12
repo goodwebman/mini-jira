@@ -14,7 +14,7 @@ const options = [
 ] as const;
 
 function Controlled({ initial }: { initial?: Value }) {
-  const [value, setValue] = useState<Value | undefined>(initial);
+  const [value, setValue] = useState<undefined | Value>(initial);
   return (
     <UISegmented
       aria-label='Выбор'

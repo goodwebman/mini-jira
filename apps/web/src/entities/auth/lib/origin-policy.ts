@@ -8,7 +8,7 @@ export interface OriginPolicyOptions {
   readonly redirectOrigins?: readonly string[];
   readonly allowInsecureOrigins?: boolean;
   readonly baseUrl?: string;
-  readonly selfOrigin: () => string | null;
+  readonly selfOrigin: () => null | string;
 }
 
 function normalizeOrigin(entry: string, allowInsecure: boolean): string {
@@ -45,7 +45,7 @@ export class OriginPolicy {
   readonly #trusted: ReadonlySet<string>;
   readonly #redirects: ReadonlySet<string>;
   readonly #baseUrl: string | undefined;
-  readonly #selfOrigin: () => string | null;
+  readonly #selfOrigin: () => null | string;
 
   constructor(options: OriginPolicyOptions) {
     const allowInsecure = options.allowInsecureOrigins ?? false;
@@ -64,7 +64,7 @@ export class OriginPolicy {
     this.#selfOrigin = options.selfOrigin;
   }
 
-  #parse(url: string): URL | null {
+  #parse(url: string): null | URL {
     try {
       return new URL(url, this.#baseUrl ?? this.#selfOrigin() ?? undefined);
     } catch {
@@ -104,7 +104,7 @@ export class OriginPolicy {
  * на чужой origin, поэтому отсеиваются. Символы вручную не перебираем, чтобы не разойтись с ним.
  */
 export function sanitizeReturnTo(
-  value: string | null | undefined,
+  value: null | string | undefined,
   fallback = '/',
 ): string {
   if (typeof value !== 'string' || !value.startsWith('/')) return fallback;

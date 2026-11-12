@@ -12,15 +12,14 @@ import {
 } from './fixtures.js';
 import { type TestApp, createTestApp, createUser, json } from './helpers.js';
 
-const actorOf = (team: Team, role: BoardRole) =>
-  role === 'admin' ? team.admin : role === 'worker' ? team.worker : team.guest;
+const actorOf = (team: Team, role: BoardRole) => team[role];
 
 type Case = [
   name: string,
   admin: number,
   worker: number,
   guest: number,
-  run: (t: TestApp, team: Team, token: string) => Response | Promise<Response>,
+  run: (t: TestApp, team: Team, token: string) => Promise<Response> | Response,
 ];
 
 const matrix: Case[] = [

@@ -25,11 +25,11 @@ export interface KpiInterval {
 export interface KpiTask {
   sp: number;
   addedAt: Date;
-  completedInDays: number | null;
+  completedInDays: null | number;
   authorId: string;
   reviewerId: string;
-  testerId: string | null;
-  designerId: string | null;
+  testerId: null | string;
+  designerId: null | string;
   intervals: KpiInterval[];
 }
 
@@ -58,12 +58,12 @@ export interface KpiTeamEntry {
 /** Всё, что считается по данным спринта. В снимок попадают только userId и числа. */
 export type SprintKpiSnapshot = Pick<
   SprintKpi,
-  | 'isEmpty'
-  | 'summary'
-  | 'days'
   | 'byStatus'
-  | 'stages'
+  | 'days'
+  | 'isEmpty'
   | 'slowestStage'
+  | 'stages'
+  | 'summary'
   | 'velocity'
 > & {
   todayIndex: number;
@@ -86,8 +86,8 @@ const emptyFlow = (): Record<TaskStatus, number> => ({
   done: 0,
 });
 
-function statusBefore(task: KpiTask, cutoff: Date): TaskStatus | null {
-  let status: TaskStatus | null = null;
+function statusBefore(task: KpiTask, cutoff: Date): null | TaskStatus {
+  let status: null | TaskStatus = null;
   for (const interval of task.intervals) {
     if (interval.enteredAt < cutoff) status = interval.status;
   }

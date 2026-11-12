@@ -3,6 +3,7 @@ import { type CSSProperties, type ReactNode, memo } from 'react';
 import { cn } from '@/shared/lib/cn';
 
 export interface IUIChartTooltipRow {
+  readonly id: string;
   readonly color: string;
   readonly label: ReactNode;
   readonly value: ReactNode;
@@ -47,8 +48,8 @@ function UIChartTooltipBase({
       )}
     >
       <strong className='font-semibold'>{title}</strong>
-      {rows.map((row, index) => (
-        <span key={index} className='flex items-center gap-[6px]'>
+      {rows.map((row) => (
+        <span key={row.id} className='flex items-center gap-[6px]'>
           <span
             aria-hidden='true'
             className='size-[8px] rounded-full'

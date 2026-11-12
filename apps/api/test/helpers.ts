@@ -57,7 +57,7 @@ export async function createTestApp(startAt?: Date) {
   const request = (
     method: string,
     path: string,
-    token?: string | null,
+    token?: null | string,
     body?: unknown,
   ) =>
     app.request(`/api/v1${path}`, {
@@ -100,7 +100,7 @@ export function signedPost(
   body?: unknown,
   headers: Record<string, string> = {},
 ) {
-  const email = (body as { email?: unknown } | undefined)?.email;
+  const email = (body as undefined | { email?: unknown })?.email;
   return t.app.request(`/api/v1${path}`, {
     method: 'POST',
     headers: {

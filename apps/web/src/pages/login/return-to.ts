@@ -1,4 +1,4 @@
-export function safeReturnTo(value: string | null): string {
+export function safeReturnTo(value: null | string): string {
   if (
     !value ||
     !value.startsWith('/') ||

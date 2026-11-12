@@ -1,6 +1,6 @@
 import { QueryClient, isCancelledError } from '@tanstack/react-query';
 
-import { AuthError, shouldRetryQuery } from '@/entities/auth/lib';
+import { AuthError, shouldRetryQuery } from '@/entities/auth';
 import { HttpError, readApiError } from '@/shared/api';
 
 /** HTTP 4xx окончательны; refresh и повтор 401 уже выполняет auth-транспорт. */

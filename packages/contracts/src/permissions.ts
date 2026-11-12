@@ -2,12 +2,12 @@ import { type BoardRole, TASK_STATUSES, type TaskStatus } from './enums.js';
 
 export type BoardAction =
   | 'members.manage'
+  | 'task.comment'
   | 'task.create'
   | 'task.edit'
+  | 'task.link'
   | 'task.lock'
-  | 'task.pause'
-  | 'task.comment'
-  | 'task.link';
+  | 'task.pause';
 
 export type StatusMoveError =
   'ROLE_FORBIDDEN' | 'STATUS_MOVE_FORBIDDEN' | 'TASK_TAKE_LOCKED';
@@ -21,7 +21,7 @@ export interface MoveTask {
   status: TaskStatus;
   isTakeLocked: boolean;
   reviewerId: string;
-  testerId: string | null;
+  testerId: null | string;
 }
 
 const WORKER_ACTIONS: ReadonlySet<BoardAction> = new Set<BoardAction>([
@@ -39,7 +39,7 @@ export function statusMoveError(
   actor: MoveActor,
   task: MoveTask,
   to: TaskStatus,
-): StatusMoveError | null {
+): null | StatusMoveError {
   if (actor.role === 'guest') return 'ROLE_FORBIDDEN';
   if (actor.role === 'admin' || to === task.status) return null;
   if (task.status === 'todo' && task.isTakeLocked) return 'TASK_TAKE_LOCKED';
@@ -69,7 +69,7 @@ export function allowedStatuses(
 export function createStatusError(
   role: BoardRole,
   status: TaskStatus,
-): StatusMoveError | null {
+): null | StatusMoveError {
   if (!can(role, 'task.create')) return 'ROLE_FORBIDDEN';
   return role === 'admin' || status === 'todo' ? null : 'STATUS_MOVE_FORBIDDEN';
 }

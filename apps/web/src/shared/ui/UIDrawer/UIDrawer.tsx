@@ -23,7 +23,7 @@ export interface IUIDrawerProps extends Omit<
   readonly actions?: ReactNode;
 }
 
-type DrawerPanelProps = Omit<IUIDrawerProps, 'open' | 'onOpenChange'> & {
+type DrawerPanelProps = Omit<IUIDrawerProps, 'onOpenChange' | 'open'> & {
   readonly onClose: () => void;
 };
 

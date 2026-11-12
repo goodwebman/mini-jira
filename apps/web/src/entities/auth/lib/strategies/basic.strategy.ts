@@ -61,7 +61,8 @@ export class BasicStrategy<TUser> implements AuthStrategy<
         message: 'Логин Basic не может содержать двоеточие',
       });
     }
-    const authorization = `Basic ${encodeBase64(`${username}:${password}`)}`;
+    const encoded = encodeBase64(`${username}:${password}`);
+    const authorization = `Basic ${encoded}`;
     return {
       credentials: { authorization },
       user: await this.#verify(authorization, context),

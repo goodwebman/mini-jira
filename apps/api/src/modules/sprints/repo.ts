@@ -29,7 +29,7 @@ export async function findActiveSprintWithTimezone(db: Db, boardId: number) {
 export async function findActiveSprint(
   db: Db,
   boardId: number,
-): Promise<SprintRow | null> {
+): Promise<null | SprintRow> {
   const [row] = await db
     .select()
     .from(sprints)
@@ -41,7 +41,7 @@ export async function findActiveSprint(
 export async function lockActiveSprint(
   db: Db,
   boardId: number,
-): Promise<SprintRow | null> {
+): Promise<null | SprintRow> {
   const [row] = await db
     .select()
     .from(sprints)

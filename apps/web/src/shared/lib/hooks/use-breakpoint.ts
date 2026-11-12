@@ -7,7 +7,7 @@ export const BREAKPOINTS = { sm: 520, md: 800, lg: 1280, xl: 1800 } as const;
  * Текущий макет из дизайна:
  * `phone` (375) · `tablet` (640) · `laptop` (960) · `desktop` (1440) · `wide` (1920).
  */
-export type Breakpoint = 'phone' | 'tablet' | 'laptop' | 'desktop' | 'wide';
+export type Breakpoint = 'desktop' | 'laptop' | 'phone' | 'tablet' | 'wide';
 
 /**
  * Для JS-логики, которую не выразить классами (другая разметка на телефоне и т.п.).

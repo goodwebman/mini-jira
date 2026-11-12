@@ -16,6 +16,7 @@ function UISideNavBoardVizBase({ columns }: IUISideNavBoardVizProps) {
     >
       {columns.map((count, column) => (
         <div
+          // eslint-disable-next-line @eslint-react/no-array-index-key -- Колонки миниатюры обозначают позиции; это счётчики без состояния и идентификаторов задач.
           key={column}
           className='flex min-w-0 flex-1 flex-col flex-wrap content-start gap-[3px] overflow-hidden rounded-tag bg-(--tile-soft) p-[3px]'
         >
@@ -50,6 +51,7 @@ function UISideNavTasksVizBase({ items }: IUISideNavTasksVizProps) {
     >
       {items.slice(0, 3).map((item, index) => (
         <div
+          // eslint-disable-next-line @eslint-react/no-array-index-key -- Декоративные строки без состояния, названия задач могут повторяться.
           key={index}
           className='flex w-full flex-none items-center gap-2 text-small'
         >

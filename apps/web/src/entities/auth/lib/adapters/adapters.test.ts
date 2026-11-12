@@ -107,7 +107,7 @@ describe('createAuthFetch', () => {
   });
 
   it('тело первого ответа освобождается перед повтором', async () => {
-    const cancel = vi.fn(async () => undefined);
+    const cancel = vi.fn(async () => {});
     const first = new Response('denied', { status: 401 });
     Object.defineProperty(first, 'body', { value: { cancel } });
     const fetch = vi
@@ -329,7 +329,7 @@ function createFakeAxios(
     eject: (id: number) => void handlers.delete(id),
   });
 
-  const instance = {
+  return {
     interceptors: {
       request: makeInterceptors(requestHandlers),
       response: makeInterceptors(responseHandlers),
@@ -366,7 +366,6 @@ function createFakeAxios(
       return chain;
     },
   };
-  return instance;
 }
 
 describe('attachAuthToAxios', () => {

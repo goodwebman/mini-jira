@@ -1,22 +1,22 @@
 import type { AuthFetch } from './adapters/fetch';
 import type { AuthError } from './errors';
 
-export type MaybePromise<T> = T | Promise<T>;
+export type MaybePromise<T> = Promise<T> | T;
 export type Unsubscribe = () => void;
 
 /** `unknown`: сессия ещё не проверена, экран не должен мигать гостем. */
-export type AuthStatus = 'unknown' | 'authenticated' | 'guest';
+export type AuthStatus = 'authenticated' | 'guest' | 'unknown';
 export type AuthPhase =
-  'idle' | 'restoring' | 'signing-in' | 'renewing' | 'redirecting';
+  'idle' | 'redirecting' | 'renewing' | 'restoring' | 'signing-in';
 
 /** Снимок не содержит секретов: его можно класть в React, Redux и devtools. */
 export interface AuthState<TUser> {
   readonly status: AuthStatus;
   readonly phase: AuthPhase;
-  readonly user: TUser | null;
+  readonly user: null | TUser;
   /** Последняя преодолимая проблема: сеть, 5xx. Сессию она не закрывает. */
   readonly error: AuthError | null;
-  readonly updatedAt: number | null;
+  readonly updatedAt: null | number;
 }
 
 /** `remote`: событие пришло из другой вкладки. */
@@ -24,7 +24,13 @@ export type AuthOrigin = 'local' | 'remote';
 export type AuthKickReason = 'unauthorized' | (string & {});
 
 export type AuthEvent<TUser> =
-  | { readonly type: 'ready'; readonly state: AuthState<TUser> }
+  | {
+      readonly type: 'kick';
+      readonly state: AuthState<TUser>;
+      readonly origin: AuthOrigin;
+      readonly reason: AuthKickReason;
+      readonly error: AuthError | null;
+    }
   | {
       readonly type: 'login';
       readonly state: AuthState<TUser>;
@@ -37,13 +43,7 @@ export type AuthEvent<TUser> =
       readonly state: AuthState<TUser>;
       readonly origin: AuthOrigin;
     }
-  | {
-      readonly type: 'kick';
-      readonly state: AuthState<TUser>;
-      readonly origin: AuthOrigin;
-      readonly reason: AuthKickReason;
-      readonly error: AuthError | null;
-    }
+  | { readonly type: 'ready'; readonly state: AuthState<TUser> }
   | { readonly type: 'renewed'; readonly state: AuthState<TUser> }
   | { readonly type: 'user'; readonly state: AuthState<TUser> };
 
@@ -78,7 +78,7 @@ export interface AuthAttempt extends AuthDecoration {
 
 export interface AuthResponseInfo {
   readonly status: number;
-  header(name: string): string | null;
+  header(name: string): null | string;
   /** Тело как JSON. Читается лениво, только если стратегии оно нужно. */
   json(): Promise<unknown>;
 }
@@ -87,17 +87,17 @@ export type AuthVerdict =
   /** Ответ не про авторизацию. */
   | { readonly action: 'pass' }
   /** Реквизиты устарели: обновить и повторить запрос. */
-  | { readonly action: 'renew' }
+  | { readonly action: 'reject'; readonly reason?: AuthKickReason }
   /** Стратегия уже поправила реквизиты сама (digest nonce): просто повторить. */
-  | { readonly action: 'retry' }
+  | { readonly action: 'renew' }
   /** Сессия мертва. */
-  | { readonly action: 'reject'; readonly reason?: AuthKickReason };
+  | { readonly action: 'retry' };
 
 export interface AuthGrant<TCredentials, TUser> {
   readonly credentials: TCredentials;
-  readonly user?: TUser | null;
+  readonly user?: null | TUser;
   /** Срок жизни от момента получения. Длительность, а не дата: часы клиента могут врать. */
-  readonly expiresInMs?: number | null;
+  readonly expiresInMs?: null | number;
 }
 
 /** Вход уводит браузер на другую страницу: SSO, OAuth, SAML. */
@@ -110,11 +110,11 @@ export interface StrategyContext {
 }
 
 export interface CredentialContext<TCredentials> extends StrategyContext {
-  readonly credentials: TCredentials | null;
+  readonly credentials: null | TCredentials;
 }
 
 export interface RestoreContext<TCredentials, TUser> extends StrategyContext {
-  readonly stored: PersistedSession<TCredentials, TUser> | null;
+  readonly stored: null | PersistedSession<TCredentials, TUser>;
 }
 
 /**
@@ -151,8 +151,8 @@ export interface AuthStrategy<TCredentials, TUser, TLoginInput> {
 
 export interface PersistedSession<TCredentials, TUser> {
   readonly credentials: TCredentials;
-  readonly user: TUser | null;
-  readonly expiresAt: number | null;
+  readonly user: null | TUser;
+  readonly expiresAt: null | number;
 }
 
 /**
@@ -162,7 +162,7 @@ export interface PersistedSession<TCredentials, TUser> {
  * токен оттуда читается любым XSS.
  */
 export interface AuthPersistence<TCredentials, TUser> {
-  load(): MaybePromise<PersistedSession<TCredentials, TUser> | null>;
+  load(): MaybePromise<null | PersistedSession<TCredentials, TUser>>;
   save(session: PersistedSession<TCredentials, TUser>): MaybePromise<void>;
   clear(): MaybePromise<void>;
 }

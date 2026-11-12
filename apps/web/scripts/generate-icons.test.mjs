@@ -6,7 +6,25 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { attrsToJsx, parseSvg, toPascal } from './generate-icons.mjs';
+import {
+  attrsToJsx,
+  buildComponent,
+  parseSvg,
+  toPascal,
+} from './generate-icons.mjs';
+
+test('buildComponent: один SVG-примитив без Fragment, несколько с Fragment', () => {
+  const single = buildComponent('test', '0 0 24 24', '      <path d="M1 1"/>');
+  assert.ok(single.includes('<path d="M1 1"/>'));
+  assert.ok(!single.includes('<>'));
+  const multiple = buildComponent(
+    'test',
+    '0 0 24 24',
+    '      <path/><circle/>',
+  );
+  assert.ok(multiple.includes('<>'));
+  assert.ok(multiple.includes('<path/><circle/>'));
+});
 
 test('toPascal: kebab → PascalCase', () => {
   assert.equal(toPascal('chevron-down'), 'ChevronDown');

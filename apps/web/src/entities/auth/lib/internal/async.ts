@@ -75,7 +75,7 @@ export class SerialQueue {
     this.#onError = onError;
   }
 
-  add(task: () => void | Promise<void>): void {
+  add(task: () => Promise<void> | void): void {
     this.#tail = this.#tail.then(task).catch(this.#onError);
   }
 

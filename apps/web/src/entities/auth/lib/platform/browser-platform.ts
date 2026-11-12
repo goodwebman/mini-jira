@@ -17,7 +17,7 @@ export interface BrowserScope extends ScopeEventTarget {
   readonly location: { readonly origin: string; assign(url: string): void };
   readonly document: ScopeEventTarget & { readonly visibilityState: string };
   readonly navigator?: { readonly locks?: LockManager };
-  readonly localStorage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+  readonly localStorage?: Pick<Storage, 'getItem' | 'removeItem' | 'setItem'>;
   readonly BroadcastChannel?: typeof BroadcastChannel;
 }
 

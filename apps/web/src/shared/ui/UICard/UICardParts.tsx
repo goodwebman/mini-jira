@@ -23,7 +23,7 @@ export const UICardHeader = memo(UICardHeaderBase);
 
 export interface IUICardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
   /** `sm` — заголовок виджета, `md` — заголовок блока формы. */
-  readonly size?: 'sm' | 'md';
+  readonly size?: 'md' | 'sm';
   /** Уровень заголовка в документе. */
   readonly as?: 'h2' | 'h3' | 'h4';
 }

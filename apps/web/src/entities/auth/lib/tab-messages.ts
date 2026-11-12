@@ -1,11 +1,11 @@
 /** Сообщения между вкладками. Только факты, токены канал не пересекают. */
 export type TabMessage =
-  | { readonly type: 'logout' }
   | { readonly type: 'kick'; readonly reason: string }
-  | { readonly type: 'login'; readonly identity: string | null };
+  | { readonly type: 'login'; readonly identity: null | string }
+  | { readonly type: 'logout' };
 
 /** Канал читает любой код этого origin, поэтому форму сообщения проверяем. */
-export function parseTabMessage(raw: unknown): TabMessage | null {
+export function parseTabMessage(raw: unknown): null | TabMessage {
   if (typeof raw !== 'object' || raw === null) return null;
   const message = raw as {
     type?: unknown;

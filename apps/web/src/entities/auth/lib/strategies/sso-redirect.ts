@@ -37,7 +37,7 @@ export function withSsoRedirect<
 ): AuthStrategy<
   TCredentials,
   TUser,
-  TLoginInput | (SsoLoginInput & { sso: TProvider })
+  (SsoLoginInput & { sso: TProvider }) | TLoginInput
 > {
   return {
     name: `${strategy.name}+sso`,

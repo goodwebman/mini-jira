@@ -12,6 +12,7 @@ import {
   UIAreaChart,
   UIBarChart,
   UIChartLegend,
+  UIChartTooltip,
   UIDonutChart,
   UILineChart,
 } from './index';
@@ -175,13 +176,49 @@ describe('UIDonutChart', () => {
 });
 
 describe('UIChartLegend', () => {
+  it.each(['inline', 'list'] as const)(
+    'сохраняет DOM строки по id при перестановке: %s',
+    (variant) => {
+      const first = { id: 'first', label: 'Первая', color: 'red' };
+      const second = { id: 'second', label: 'Вторая', color: 'red' };
+      const { rerender } = render(
+        <UIChartLegend variant={variant} items={[first, second]} />,
+      );
+      const original = screen.getByText('Первая');
+      rerender(
+        <UIChartLegend
+          variant={variant}
+          items={[second, { ...first, label: 'Обновлённая' }]}
+        />,
+      );
+      expect(screen.getByText('Обновлённая')).toBe(original);
+    },
+  );
   it('в режиме list показывает значения', () => {
     render(
       <UIChartLegend
         variant='list'
-        items={[{ label: 'Готово', color: 'red', value: '5 SP' }]}
+        items={[{ id: 'done', label: 'Готово', color: 'red', value: '5 SP' }]}
       />,
     );
     expect(screen.getByText('5 SP')).toBeInTheDocument();
+  });
+});
+
+describe('UIChartTooltip', () => {
+  it('сохраняет DOM строки по id при перестановке', () => {
+    const first = { id: 'first', label: 'Первая', color: 'red', value: 1 };
+    const second = { id: 'second', label: 'Вторая', color: 'red', value: 2 };
+    const { rerender } = render(
+      <UIChartTooltip title='Данные' rows={[first, second]} />,
+    );
+    const original = screen.getByText(/Первая/);
+    rerender(
+      <UIChartTooltip
+        title='Данные'
+        rows={[second, { ...first, label: 'Обновлённая' }]}
+      />,
+    );
+    expect(screen.getByText(/Обновлённая/)).toBe(original);
   });
 });

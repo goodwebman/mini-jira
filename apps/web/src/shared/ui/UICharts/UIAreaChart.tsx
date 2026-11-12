@@ -18,7 +18,7 @@ import { useChartBox } from './use-chart-box';
 export interface IUIAreaChartSeries {
   readonly name: string;
   /** Значения по точкам; `null` — данных пока нет (будущие дни спринта). */
-  readonly values: readonly (number | null)[];
+  readonly values: readonly (null | number)[];
   readonly color?: string;
 }
 
@@ -47,7 +47,7 @@ function UIAreaChartBase({
   className,
 }: IUIAreaChartProps) {
   const { ref, width, height, unit } = useChartBox('regular', heightProp);
-  const [hovered, setHovered] = useState<number | null>(null);
+  const [hovered, setHovered] = useState<null | number>(null);
 
   const count = labels.length;
   const lastIndex = lastDefinedIndex(series);
@@ -161,6 +161,7 @@ function UIAreaChartBase({
           flip={active > count / 2}
           rows={series
             .map((item, index) => ({
+              id: item.name,
               color: seriesColor(index, item.color),
               label: item.name,
               value: formatValue(item.values[active] ?? 0),

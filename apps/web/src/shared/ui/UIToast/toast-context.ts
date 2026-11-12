@@ -11,7 +11,7 @@ export interface ToastContextValue {
   readonly dismiss: (id: string) => void;
 }
 
-export const ToastContext = createContext<ToastContextValue | null>(null);
+export const ToastContext = createContext<null | ToastContextValue>(null);
 
 /**
  * Показ уведомлений.

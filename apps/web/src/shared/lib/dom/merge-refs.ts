@@ -2,7 +2,7 @@ import type { Ref, RefCallback } from 'react';
 
 type Cleanup = () => void;
 
-function assignRef<T>(ref: Ref<T> | undefined, node: T | null): Cleanup | void {
+function assignRef<T>(ref: Ref<T> | undefined, node: null | T): Cleanup | void {
   if (typeof ref === 'function') {
     return ref(node);
   }
@@ -22,7 +22,7 @@ export function mergeRefs<T>(...refs: (Ref<T> | undefined)[]): RefCallback<T> {
   return (node) => {
     const cleanups = refs.map((ref) => assignRef(ref, node));
     if (!cleanups.some((cleanup) => typeof cleanup === 'function')) {
-      return undefined;
+      return;
     }
     return () => {
       refs.forEach((ref, index) => {

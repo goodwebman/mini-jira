@@ -318,8 +318,8 @@ interface GenTask {
   sp: number;
   authorId: string;
   reviewerId: string;
-  testerId: string | null;
-  designerId: string | null;
+  testerId: null | string;
+  designerId: null | string;
   createdAt: Date;
   sprintId: string;
   intervals: GenInterval[];
@@ -393,7 +393,7 @@ function advanceTask(
   }
 }
 
-function completedInDays(task: GenTask): number | null {
+function completedInDays(task: GenTask): null | number {
   if (currentStatus(task) !== 'done') return null;
   const started = task.intervals.find(
     (interval) => interval.status !== 'todo',
@@ -777,11 +777,9 @@ export async function seedDatabase(tx: Db, now: Date, passwordHash: string) {
 
     await tx.insert(boardMembers).values(
       board.members.map((code, index) => {
-        const role: BoardRole = board.admins.includes(code)
-          ? 'admin'
-          : board.guests.includes(code)
-            ? 'guest'
-            : 'worker';
+        let role: BoardRole = 'worker';
+        if (board.admins.includes(code)) role = 'admin';
+        else if (board.guests.includes(code)) role = 'guest';
         return {
           boardId: board.id,
           userId: userIds[code],

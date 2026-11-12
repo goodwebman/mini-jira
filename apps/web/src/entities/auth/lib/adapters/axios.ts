@@ -42,7 +42,7 @@ interface AxiosResponseLike {
 
 function setHeader(config: AxiosConfig, name: string, value: string): void {
   const headers = config.headers as
-    { set?: (name: string, value: string) => void } | undefined;
+    undefined | { set?: (name: string, value: string) => void };
   if (typeof headers?.set === 'function') headers.set(name, value);
   else config.headers = { ...headers, [name]: value };
 }

@@ -45,7 +45,7 @@ async function fetchIdentity(env: Env, code: string): Promise<OAuthIdentity> {
   const headers = { ...API_HEADERS, Authorization: `Bearer ${accessToken}` };
   const [profile, emails] = await Promise.all([
     fetch('https://api.github.com/user', { headers }).then((r) =>
-      readOAuthJson<{ id: number; login: string; name: string | null }>(r),
+      readOAuthJson<{ id: number; login: string; name: null | string }>(r),
     ),
     fetch('https://api.github.com/user/emails', { headers }).then((r) =>
       readOAuthJson<{ email: string; primary: boolean; verified: boolean }[]>(

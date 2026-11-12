@@ -13,7 +13,7 @@ import { UIIcons } from '@/shared/ui/icons';
 
 export interface IUICheckboxProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  'type' | 'size'
+  'size' | 'type'
 > {
   readonly testId?: string;
   /** Текст рядом с чекбоксом. Без него задай `aria-label`. */

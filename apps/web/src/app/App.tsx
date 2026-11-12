@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 
-import { AuthGuard } from './app/AuthGuard';
-import { authService, useAuth } from './entities/auth';
-import { KitGallery } from './kit-gallery/KitGallery';
-import { LoginPage } from './pages/login/LoginPage';
-import { safeReturnTo } from './pages/login/return-to';
-import { UIButton, UISkeleton } from './shared/ui';
+import { authService, useAuth } from '@/entities/auth';
+import { KitGallery } from '@/pages/kit-gallery';
+import { LoginPage, safeReturnTo } from '@/pages/login';
+import { UIButton, UISkeleton } from '@/shared/ui';
+
+import { AuthGuard } from './AuthGuard';
 
 export default function App() {
   const { status, user } = useAuth();

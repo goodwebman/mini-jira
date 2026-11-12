@@ -2,14 +2,14 @@ import { AuthError } from '../errors';
 import { LocalLocks } from './local-locks';
 import type { AuthPlatform } from './types';
 
-const noop = () => undefined;
+const noop = () => {};
 
 /**
  * Окружение без браузера: SSR, Node, тесты. На сервере создавайте отдельный
  * `AuthService` на каждый запрос: общий экземпляр отдаст токен одного пользователя другому.
  */
 export function createMemoryPlatform(
-  options: { origin?: string | null } = {},
+  options: { origin?: null | string } = {},
 ): AuthPlatform {
   const markers = new Set<string>();
   const locks = new LocalLocks();

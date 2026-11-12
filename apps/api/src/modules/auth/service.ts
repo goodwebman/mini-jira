@@ -53,7 +53,7 @@ async function startSession(
   tx: Db,
   userId: string,
   remember: boolean,
-  userAgent: string | null,
+  userAgent: null | string,
   now: Date,
 ) {
   const session = await repo.insertSession(tx, {
@@ -90,7 +90,7 @@ export interface IssuedAuth {
 export async function register(
   deps: AppDeps,
   body: RegisterBody,
-  userAgent: string | null,
+  userAgent: null | string,
 ): Promise<IssuedAuth> {
   const passwordHash = await hashPassword(body.password);
   const now = deps.now();
@@ -137,7 +137,7 @@ async function assertNotThrottled(db: Db, key: string, now: Date) {
 export async function login(
   deps: AppDeps,
   body: LoginBody,
-  userAgent: string | null,
+  userAgent: null | string,
 ): Promise<IssuedAuth> {
   const now = deps.now();
   const throttleKey = `login:${body.email.toLowerCase()}`;
@@ -173,9 +173,9 @@ export async function login(
 }
 
 type RefreshOutcome =
-  | { kind: 'rotated'; token: string }
   | { kind: 'concurrent'; token: string }
-  | { kind: 'reused' };
+  | { kind: 'reused' }
+  | { kind: 'rotated'; token: string };
 
 export type RefreshResult = IssuedAuth | { reused: true };
 
@@ -262,7 +262,7 @@ const providerColumns = (identity: OAuthIdentity) =>
 export async function loginWithOAuth(
   deps: AppDeps,
   identity: OAuthIdentity,
-  userAgent: string | null,
+  userAgent: null | string,
 ): Promise<{ refreshToken: string }> {
   const now = deps.now();
   const session = await deps.withTx(async (tx) => {

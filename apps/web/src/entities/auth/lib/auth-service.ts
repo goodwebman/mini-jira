@@ -83,16 +83,16 @@ export interface AuthServiceConfig<TUser, TLoginInput, TCredentials> {
 }
 
 type RenewalOutcome =
-  { readonly ok: true } | { readonly ok: false; readonly error: AuthError };
+  { readonly ok: false; readonly error: AuthError } | { readonly ok: true };
 
 type SessionEnd =
-  | { readonly type: 'logout'; readonly origin: AuthOrigin }
   | {
       readonly type: 'kick';
       readonly origin: AuthOrigin;
       readonly reason: AuthKickReason;
       readonly error: AuthError | null;
-    };
+    }
+  | { readonly type: 'logout'; readonly origin: AuthOrigin };
 
 const isRedirect = (value: object): value is AuthRedirect =>
   'redirectTo' in value;
@@ -151,9 +151,9 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   readonly #disposers: Unsubscribe[] = [];
 
   // Приватное поле: секрет не попадёт ни в снимок состояния, ни в JSON.stringify сервиса.
-  #credentials: TCredentials | null = null;
-  #expiresAt: number | null = null;
-  #renewAt: number | null = null;
+  #credentials: null | TCredentials = null;
+  #expiresAt: null | number = null;
+  #renewAt: null | number = null;
 
   #epoch = 0;
   #version = 0;
@@ -165,18 +165,18 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   #isBootstrapAttempted = false;
 
   #channel: AuthChannel | null = null;
-  #bootstrapRun: Promise<AuthState<TUser>> | null = null;
-  #loginRun: Promise<AuthState<TUser>> | null = null;
-  #logoutRun: Promise<AuthState<TUser>> | null = null;
-  #renewal: Promise<RenewalOutcome> | null = null;
-  #resyncRun: Promise<void> | null = null;
-  #userRefresh: Promise<AuthState<TUser>> | null = null;
+  #bootstrapRun: null | Promise<AuthState<TUser>> = null;
+  #loginRun: null | Promise<AuthState<TUser>> = null;
+  #logoutRun: null | Promise<AuthState<TUser>> = null;
+  #renewal: null | Promise<RenewalOutcome> = null;
+  #resyncRun: null | Promise<void> = null;
+  #userRefresh: null | Promise<AuthState<TUser>> = null;
 
   #renewBlockedUntil = 0;
   #renewFailure: AuthError | null = null;
   #userCheckedAt = 0;
-  #bootstrapRetry: ReturnType<typeof setTimeout> | null = null;
-  #pollTimer: ReturnType<typeof setInterval> | null = null;
+  #bootstrapRetry: null | ReturnType<typeof setTimeout> = null;
+  #pollTimer: null | ReturnType<typeof setInterval> = null;
 
   /** Готовый авторизованный `fetch`. Подходит всем библиотекам, принимающим свой fetch. */
   readonly fetch: AuthFetch = createAuthFetch(this);
@@ -312,7 +312,7 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
           this.#userCheckedAt = this.#platform.now();
           this.#applyUser(user);
         },
-        () => undefined,
+        () => {},
       )
       .then(() => this.getSnapshot())
       .finally(() => {
@@ -489,7 +489,7 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
         unwrap: () => {
           throw error;
         },
-        discard: () => undefined,
+        discard: () => {},
       };
     }
   }
@@ -543,10 +543,10 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     return this.#strategy.restore({ stored, signal });
   }
 
-  async #loadPersisted(): Promise<PersistedSession<
+  async #loadPersisted(): Promise<null | PersistedSession<
     TCredentials,
     TUser
-  > | null> {
+  >> {
     const { persistence } = this.#config;
     if (!persistence) return null;
     try {
@@ -609,7 +609,7 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
   async #revokeOrphan(grant: AuthGrant<TCredentials, TUser>): Promise<void> {
     await withDeadline(this.#logoutTimeoutMs, async (signal) => {
       await this.#strategy.logout?.({ credentials: grant.credentials, signal });
-    }).catch(() => undefined);
+    }).catch(() => {});
   }
 
   async #runLogout(): Promise<AuthState<TUser>> {
@@ -631,18 +631,16 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
 
   // HttpOnly-cookie из JS не удалить. Если сервер недоступен, запоминаем намерение
   // и довершаем выход при следующей возможности.
-  async #revokeOnServer(credentials: TCredentials | null): Promise<void> {
+  async #revokeOnServer(credentials: null | TCredentials): Promise<void> {
     if (!this.#strategy.logout) return;
     this.#platform.markers.set(this.#pendingLogoutKey);
     const finished = this.#exclusive(() => this.#tryServerLogout(credentials));
     // За блокировкой может стоять зависший refresh. Выход на сервере дойдёт сам, а вызывающего
     // держать долго нельзя: состояние уже сброшено, и приложению пора уводить пользователя.
-    await withDeadline(this.#logoutTimeoutMs, () => finished).catch(
-      () => undefined,
-    );
+    await withDeadline(this.#logoutTimeoutMs, () => finished).catch(() => {});
   }
 
-  async #tryServerLogout(credentials: TCredentials | null): Promise<boolean> {
+  async #tryServerLogout(credentials: null | TCredentials): Promise<boolean> {
     try {
       await withDeadline(this.#logoutTimeoutMs, async (signal) => {
         await this.#strategy.logout?.({ credentials, signal });
@@ -816,7 +814,7 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     this.#store.emit({ type: 'ready', state: this.getSnapshot() });
   }
 
-  #currentIdentity(): string | null {
+  #currentIdentity(): null | string {
     const { user } = this.getSnapshot();
     return user === null ? null : (this.#config.identify?.(user) ?? null);
   }
@@ -1008,9 +1006,7 @@ export class AuthService<TUser, TLoginInput = unknown, TCredentials = unknown>
     this.#renewFailure = null;
     if (this.getSnapshot().status === 'unknown') void this.bootstrap();
     if (this.#platform.markers.has(this.#pendingLogoutKey)) {
-      void this.#exclusive(() => this.#flushPendingLogout()).catch(
-        () => undefined,
-      );
+      void this.#exclusive(() => this.#flushPendingLogout()).catch(() => {});
     }
   }
 

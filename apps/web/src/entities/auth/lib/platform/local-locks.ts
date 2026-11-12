@@ -1,6 +1,6 @@
 import { withDeadline } from '../internal/async';
 
-const noop = () => undefined;
+const noop = () => {};
 
 /** Очередь FIFO внутри одной вкладки: запасной вариант, когда Web Locks недоступен. */
 export class LocalLocks {

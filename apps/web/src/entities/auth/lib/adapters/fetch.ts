@@ -84,8 +84,7 @@ export function createAuthFetch(
             (await options.effectiveStatus?.(response)) ?? response.status,
           ),
         // Не прочитанное тело держит соединение.
-        discard: (response) =>
-          void response.body?.cancel().catch(() => undefined),
+        discard: (response) => void response.body?.cancel().catch(() => {}),
       },
     );
   };

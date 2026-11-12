@@ -14,7 +14,7 @@ import {
 
 const fieldMessage = (schema: z.ZodType, value: unknown, field: string) => {
   const result = schema.safeParse(value);
-  if (result.success) return undefined;
+  if (result.success) return;
   return result.error.issues.find((issue) => issue.path[0] === field)?.message;
 };
 

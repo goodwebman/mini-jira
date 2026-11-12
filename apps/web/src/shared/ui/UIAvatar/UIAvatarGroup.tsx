@@ -9,7 +9,7 @@ export interface IUIAvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
   /** Сколько аватаров показать; остальные свернутся в «+N». */
   readonly max?: number;
   /** Размер счётчика «+N»: должен совпадать с размером аватаров. */
-  readonly size?: 'xs' | 'sm';
+  readonly size?: 'sm' | 'xs';
 }
 
 const OVERLAP: Record<NonNullable<IUIAvatarGroupProps['size']>, string> = {

@@ -10,7 +10,7 @@ import { cn } from '@/shared/lib/cn';
 
 export interface IUISwitchProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  'type' | 'size'
+  'size' | 'type'
 > {
   readonly testId?: string;
   /** Текст рядом с переключателем. Без него задай `aria-label`. */

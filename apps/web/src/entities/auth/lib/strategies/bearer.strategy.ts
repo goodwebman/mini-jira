@@ -13,20 +13,20 @@ import { readJwtTtlMs } from './jwt';
 export interface BearerCredentials {
   readonly accessToken: string;
   /** В браузере `null`: refresh живёт в httpOnly-cookie и JS его не видит. */
-  readonly refreshToken: string | null;
+  readonly refreshToken: null | string;
 }
 
 export interface BearerTokens<TUser> {
   readonly accessToken: string;
-  readonly refreshToken?: string | null;
+  readonly refreshToken?: null | string;
   /** Если не задан, срок читается из JWT. Непрозрачный токен обновляется только по 401. */
-  readonly expiresInMs?: number | null;
-  readonly user?: TUser | null;
+  readonly expiresInMs?: null | number;
+  readonly user?: null | TUser;
 }
 
 export interface BearerApiContext extends StrategyContext {
-  readonly accessToken: string | null;
-  readonly refreshToken: string | null;
+  readonly accessToken: null | string;
+  readonly refreshToken: null | string;
 }
 
 /** Запросы только через обычный fetch, не через авторизованный. */
@@ -34,7 +34,7 @@ export interface BearerApi<TUser, TLoginInput> {
   login(
     input: TLoginInput,
     context: StrategyContext,
-  ): Promise<BearerTokens<TUser> | AuthRedirect>;
+  ): Promise<AuthRedirect | BearerTokens<TUser>>;
   /** Без этого метода получается простой Bearer: 401 заканчивает сессию. */
   refresh?(context: BearerApiContext): Promise<BearerTokens<TUser>>;
   logout?(context: BearerApiContext): Promise<void>;
@@ -139,7 +139,7 @@ export class BearerStrategy<TUser, TLoginInput> implements AuthStrategy<
 
   #toGrant(
     tokens: BearerTokens<TUser>,
-    previousRefreshToken: string | null,
+    previousRefreshToken: null | string,
   ): AuthGrant<BearerCredentials, TUser> {
     const { accessToken } = tokens;
     if (

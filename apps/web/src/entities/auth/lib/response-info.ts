@@ -7,7 +7,7 @@ interface ResponseShape {
   clone?: () => { json(): Promise<unknown> };
 }
 
-function readHeader(headers: unknown, name: string): string | null {
+function readHeader(headers: unknown, name: string): null | string {
   if (typeof headers !== 'object' || headers === null) return null;
   const { get } = headers as { get?: unknown };
   if (typeof get === 'function') {

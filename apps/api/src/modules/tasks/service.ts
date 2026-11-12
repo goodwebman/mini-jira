@@ -43,7 +43,7 @@ type Timed = {
   statusEnteredAt: Date;
   pausedAt: Date | null;
   pausedTotalSec: number;
-  completedInDays: number | null;
+  completedInDays: null | number;
 };
 
 export const toTimer = (task: Timed): TaskTimer => ({
@@ -82,8 +82,8 @@ async function loadCard(db: Db, taskId: string): Promise<TaskCard> {
   return toTaskCard(row);
 }
 
-type AssigneeField = 'authorId' | 'reviewerId' | 'testerId' | 'designerId';
-type Assignees = Partial<Record<AssigneeField, string | null | undefined>>;
+type AssigneeField = 'authorId' | 'designerId' | 'reviewerId' | 'testerId';
+type Assignees = Partial<Record<AssigneeField, null | string | undefined>>;
 
 const ASSIGNEE_FIELDS: AssigneeField[] = [
   'authorId',
@@ -200,7 +200,7 @@ const toMoveTask = (task: {
   status: TaskStatus;
   takeLocked: boolean;
   reviewerId: string;
-  testerId: string | null;
+  testerId: null | string;
 }): MoveTask => ({
   status: task.status,
   isTakeLocked: task.takeLocked,

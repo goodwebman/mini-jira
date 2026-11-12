@@ -60,17 +60,20 @@ function formatInner(inner) {
     .join('\n');
 }
 
-function buildComponent(name, viewBox, inner) {
+export function buildComponent(name, viewBox, inner) {
   const Pascal = toPascal(name);
+  // Исходники плоские; одиночный самозакрывающийся SVG-примитив не нуждается во Fragment.
+  const children =
+    /^\s*<(?:path|circle|line|rect|polyline|polygon)\b[^>]*\/>\s*$/.test(inner)
+      ? `  ${inner.trim()}`
+      : `  <>\n${inner}\n  </>`;
   return `${BANNER}
 import { createIcon } from '../create-icon';
 
 export const ${Pascal} = createIcon(
   '${name}',
   '${viewBox}',
-  <>
-${inner}
-  </>,
+${children},
 );
 `;
 }
@@ -147,9 +150,9 @@ function main() {
   writeOrCheck(REGISTRY_FILE, buildRegistry(names), diffs);
 
   if (CHECK_ONLY && diffs.length > 0) {
+    const changed = diffs.map((d) => `  - ${d}`).join('\n');
     console.error(
-      'Сгенерированные иконки устарели. Запусти `npm run icons:build`:\n' +
-        diffs.map((d) => `  - ${d}`).join('\n'),
+      `Сгенерированные иконки устарели. Запусти \`npm run icons:build\`:\n${changed}`,
     );
     process.exit(1);
   }

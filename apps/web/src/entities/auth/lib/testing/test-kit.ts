@@ -33,8 +33,8 @@ export const makeUser = (id = 'anna', name = id): TestUser => ({ id, name });
 
 export const makeGrant = (
   token: string,
-  user: TestUser | null = makeUser(),
-  expiresInMs?: number | null,
+  user: null | TestUser = makeUser(),
+  expiresInMs?: null | number,
 ): TestGrant => ({ credentials: token, user, expiresInMs });
 
 export function deferred<T = void>() {
@@ -137,7 +137,7 @@ export function createStrategy(overrides: Partial<TestStrategy> = {}) {
     renew: vi.fn<NonNullable<TestStrategy['renew']>>(async () =>
       makeGrant('renewed-token'),
     ),
-    logout: vi.fn<NonNullable<TestStrategy['logout']>>(async () => undefined),
+    logout: vi.fn<NonNullable<TestStrategy['logout']>>(async () => {}),
     decorate: vi.fn<TestStrategy['decorate']>((token) => ({
       headers: { Authorization: `Bearer ${token}` },
     })),
@@ -176,7 +176,7 @@ export function createAuth(
 export async function createSignedIn(
   options: Parameters<typeof createAuth>[0] & {
     token?: string;
-    ttlMs?: number | null;
+    ttlMs?: null | number;
   } = {},
 ) {
   const token = options.token ?? 'first-token';
@@ -198,7 +198,7 @@ const authorizationOf = (attempt: AuthAttempt) =>
 /** Сервер: принимает только перечисленные токены и записывает, что пришло. */
 export function createServer(...acceptedTokens: string[]) {
   const accepted = new Set(acceptedTokens.map((token) => `Bearer ${token}`));
-  const received: (string | null)[] = [];
+  const received: (null | string)[] = [];
   const send = vi.fn(async (attempt: AuthAttempt) => {
     const authorization = authorizationOf(attempt);
     received.push(authorization);
