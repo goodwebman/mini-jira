@@ -95,6 +95,7 @@ export default defineConfig([
       'apps/web/src/**/*.{ts,tsx}',
       'apps/api/{src,test}/**/*.ts',
       'packages/contracts/{src,test}/**/*.ts',
+      'packages/monitoring/{src,test}/**/*.ts',
     ],
     languageOptions: {
       parserOptions: {
@@ -102,6 +103,7 @@ export default defineConfig([
           './apps/web/tsconfig.app.json',
           './apps/api/tsconfig.json',
           './packages/contracts/tsconfig.json',
+          './packages/monitoring/tsconfig.json',
         ],
         tsconfigRootDir: repoRoot,
       },

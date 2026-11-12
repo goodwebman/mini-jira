@@ -7,7 +7,7 @@
     "node": "24.x"
   },
   "scripts": {
-    "build": "cd ../.. && npm run build:contracts",
+    "build": "cd ../.. && npm run build:shared",
     "dev": "tsx watch src/dev.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -21,9 +21,11 @@
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
     "@gwmt/contracts": "*",
+    "@gwmt/monitoring": "*",
     "@hono/swagger-ui": "^0.6.2",
     "@hono/zod-openapi": "^1.6.3",
     "@neondatabase/serverless": "^1.2.0",
+    "@sentry/node": "^11.12.0",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.17",

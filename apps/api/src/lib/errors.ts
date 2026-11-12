@@ -5,6 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
 import type { AppEnv } from './context.js';
+import { monitoring } from './monitoring.js';
 
 const ERROR_TABLE: Record<ErrorCode, [ContentfulStatusCode, string]> = {
   BAD_REQUEST: [400, 'Неверный формат запроса'],
@@ -105,15 +106,17 @@ export const validationHook: NonNullable<
   throw new AppError('VALIDATION_ERROR', { fields });
 };
 
-export function handleError(err: Error, c: Context<AppEnv>) {
+export async function handleError(err: Error, c: Context<AppEnv>) {
   if (err instanceof AppError) {
     for (const [name, value] of Object.entries(err.options.headers ?? {})) {
       c.header(name, value);
     }
-    return c.json(
-      errorBody(c, err.code, err.message, err.options.fields),
-      err.status,
-    );
+    if (err.status < 500) {
+      return c.json(
+        errorBody(c, err.code, err.message, err.options.fields),
+        err.status,
+      );
+    }
   }
 
   // Битый JSON: валидатор Hono бросает HTTPException(400).
@@ -124,6 +127,17 @@ export function handleError(err: Error, c: Context<AppEnv>) {
   // DrizzleQueryError кладёт параметры запроса (хэши токенов, email) в message и stack,
   // поэтому логируем его cause, где остаётся только ошибка Postgres.
   const safe = err.cause instanceof Error ? err.cause : err;
+  // Per-event context avoids leaking one concurrent request's identity into another.
+  monitoring.captureException(safe, {
+    tags: { source: 'api' },
+    user: c.get('userId') ? { id: c.get('userId') } : {},
+    contexts: {
+      http: { method: c.req.method, route: c.req.routePath },
+      correlation: { requestId: c.get('requestId') },
+    },
+  });
+  // Serverless runtimes may freeze the process as soon as the response is returned.
+  await monitoring.flush();
   console.error(
     JSON.stringify({
       level: 'error',

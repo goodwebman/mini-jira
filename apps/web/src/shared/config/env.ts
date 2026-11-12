@@ -18,4 +18,18 @@ export const env = {
   get isProd(): boolean {
     return import.meta.env.PROD;
   },
+  get sentryDsn(): string {
+    return read(import.meta.env.VITE_SENTRY_DSN);
+  },
+  get sentryEnabled(): boolean {
+    return read(import.meta.env.VITE_SENTRY_ENABLED) === 'true';
+  },
+  get sentryEnvironment(): string {
+    return (
+      read(import.meta.env.VITE_SENTRY_ENVIRONMENT) || import.meta.env.MODE
+    );
+  },
+  get sentryRelease(): string {
+    return read(import.meta.env.VITE_SENTRY_RELEASE);
+  },
 } as const;

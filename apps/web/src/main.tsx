@@ -1,3 +1,7 @@
+// sort-imports-ignore
+// Monitoring must initialize before the application module graph.
+import './app/monitoring';
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 

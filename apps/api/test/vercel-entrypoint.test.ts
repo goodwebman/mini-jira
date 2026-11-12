@@ -18,6 +18,18 @@ const IMPORTS_HONO =
   /(?:from|require|import)\s*(?:\(\s*)?["']hono["']\s*(?:\))?/;
 
 describe('сборка на Vercel', () => {
+  it('инициализирует мониторинг до модулей приложения и читает локальный .env до создания клиента', () => {
+    const entry = readFileSync(resolve(root, 'src/index.ts'), 'utf8');
+    expect(entry.match(/^import\s+[^;]+;/m)?.[0]).toBe(
+      "import './instrument.js';",
+    );
+    const dev = readFileSync(resolve(root, 'src/dev.ts'), 'utf8');
+    expect(dev.indexOf("process.loadEnvFile('.env')")).toBeLessThan(
+      dev.indexOf("await import('./instrument.js')"),
+    );
+    expect(dev).not.toMatch(/import\s+\{\s*createApp\s*\}\s+from/);
+  });
+
   it('билдер выбирает src/index.ts, а не фабрику из src/app.ts', () => {
     const detected = CANDIDATES.flatMap((name) =>
       EXTENSIONS.map((ext) => `${name}.${ext}`),

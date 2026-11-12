@@ -1,3 +1,7 @@
+// sort-imports-ignore
+// Monitoring must initialize before the application module graph.
+import './instrument.js';
+
 // Импорт из голого hono обязателен: по нему Vercel находит точку входа. См. src/app.ts.
 import type { Hono } from 'hono';
 

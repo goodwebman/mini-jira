@@ -2,15 +2,17 @@
 
 ESLint и FSD: `npm run lint`; проверка правил на примерах: `npm run test:lint`. Подключение и покрытие проверок: [docs/eslint.md](docs/eslint.md).
 Полная локальная проверка: `npm run validate` (включая тесты фронтенда).
+Sentry для frontend и API: [бесплатное подключение, source maps и перенос в другой проект](docs/sentry.md).
 Правила импортов описаны в [docs/fsd.md](docs/fsd.md), сравнение с `pc` и приоритеты подготовки к production — в [docs/production-readiness.md](docs/production-readiness.md).
 
 Мини-Jira: канбан-доски, задачи, спринты и KPI. Монорепозиторий на npm workspaces.
 
-| Папка                | Что внутри                                                                             |
-| -------------------- | -------------------------------------------------------------------------------------- |
-| `apps/api`           | Бэкенд: Hono, Drizzle, Neon. Деплоится на Vercel                                       |
-| `apps/web`           | Фронтенд: React и Vite                                                                 |
-| `packages/contracts` | Общие zod-схемы, типы, подписи и правила доступа `permissions.ts`. Собирается в `dist` |
+| Папка                 | Что внутри                                                                             |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| `apps/api`            | Бэкенд: Hono, Drizzle, Neon. Деплоится на Vercel                                       |
+| `apps/web`            | Фронтенд: React и Vite                                                                 |
+| `packages/contracts`  | Общие zod-схемы, типы, подписи и правила доступа `permissions.ts`. Собирается в `dist` |
+| `packages/monitoring` | Переносимое ядро Sentry для frontend и API, без зависимостей от приложения             |
 
 ## Запуск
 
@@ -104,7 +106,7 @@ import {
 } from '@gwmt/contracts';
 ```
 
-Перед запуском фронта contracts должен быть собран: `npm run build:contracts`, а для пересборки при изменениях `npm run dev:contracts`. Сборка на Vercel уже настроена так, что contracts собирается первым.
+Перед запуском фронта общие пакеты должны быть собраны: `npm run build:shared`. Для пересборки contracts при изменениях используйте `npm run dev:contracts`; после изменения ядра мониторинга — `npm run build -w @gwmt/monitoring`. Сборка на Vercel уже собирает общие пакеты первой.
 
 Если нужен сгенерированный клиент, файл подходит для генераторов, и у каждой ручки есть `operationId`:
 

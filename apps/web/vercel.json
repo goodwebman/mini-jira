@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && npm run build:contracts && npm run build -w mini-jira",
+  "buildCommand": "cd ../.. && npm run build:shared && npm run build -w mini-jira",
   "rewrites": [
     {
       "source": "/api/:path*",

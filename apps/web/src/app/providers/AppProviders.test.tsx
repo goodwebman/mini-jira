@@ -8,6 +8,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { monitoring } from '@/app/monitoring';
 import { queryClient } from '@/app/query/queryClient';
 
 import { AppProviders } from './AppProviders';
@@ -50,6 +51,7 @@ describe('AppProviders', () => {
   });
 
   it('shows the fallback after a render error and reloads on request', () => {
+    const capture = vi.spyOn(monitoring, 'captureException');
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const reload = vi.fn();
     vi.stubGlobal('location', { reload });
@@ -62,6 +64,13 @@ describe('AppProviders', () => {
       </AppProviders>,
     );
     expect(screen.getByRole('alert')).toHaveTextContent('Что-то пошло не так');
+    expect(capture).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ message: 'Render failed' }),
+      {
+        tags: { source: 'react' },
+        contexts: { react: { componentStack: expect.any(String) } },
+      },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Обновить страницу' }));
     expect(reload).toHaveBeenCalledOnce();
   });

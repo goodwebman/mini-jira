@@ -1,11 +1,12 @@
 import { serve } from '@hono/node-server';
 import { existsSync } from 'node:fs';
 
-import { createApp } from './app.js';
 import { createDatabase } from './db/client.js';
 import { loadEnv } from './lib/env.js';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
+await import('./instrument.js');
+const { createApp } = await import('./app.js');
 const env = loadEnv();
 
 const app = createApp({
