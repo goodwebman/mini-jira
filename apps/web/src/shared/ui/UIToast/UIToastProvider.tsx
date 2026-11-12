@@ -55,7 +55,7 @@ export function UIToastProvider({ children }: IUIToastProviderProps) {
           aria-live='polite'
           aria-atomic='false'
           data-name='UIToastRegion'
-          className='pointer-events-none fixed bottom-[80px] left-1/2 z-60 flex w-max max-w-[calc(100%-32px)] -translate-x-1/2 flex-col items-center gap-2 sm:bottom-6'
+          className='pointer-events-none fixed bottom-20 left-1/2 z-60 flex w-max max-w-[calc(100%-32px)] -translate-x-1/2 flex-col items-center gap-2 sm:bottom-6'
         >
           {toasts.map((item) => (
             <UIToastItem

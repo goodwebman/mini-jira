@@ -17,11 +17,111 @@ import { AuthStore } from '@/entities/auth/lib/auth-store';
 import { boardsQueryOptions } from '@/entities/board';
 import { HttpError, configureApiTransport } from '@/shared/api';
 
-import { createQueryClient } from './queryClient';
+import { bindQueryClientToasts, createQueryClient } from './queryClient';
 
 afterEach(() => vi.unstubAllEnvs());
 
 describe('application query client', () => {
+  it('показывает один тост после исчерпания повторных попыток запроса', async () => {
+    const client = createQueryClient();
+    const toast = vi.fn();
+    const unbind = bindQueryClientToasts(client, toast);
+    const error = new HttpError(new Response(null, { status: 503 }), {
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Сервис временно недоступен',
+        requestId: 'req-1',
+      },
+    });
+    const queryFn = vi.fn().mockRejectedValue(error);
+
+    await expect(
+      client.fetchQuery({ queryKey: ['toast'], queryFn, retryDelay: 0 }),
+    ).rejects.toBe(error);
+
+    expect(queryFn).toHaveBeenCalledTimes(2);
+    expect(toast).toHaveBeenCalledExactlyOnceWith('Сервис временно недоступен');
+    unbind();
+    client.clear();
+  });
+
+  it('показывает ошибку мутации и отписывается от обоих кэшей', async () => {
+    const client = createQueryClient();
+    const toast = vi.fn();
+    const unbind = bindQueryClientToasts(client, toast);
+    const error = new AuthError('network');
+    const mutationFn = vi.fn().mockRejectedValue(error);
+    await expect(
+      client
+        .getMutationCache()
+        .build(client, { mutationFn })
+        .execute(undefined),
+    ).rejects.toBe(error);
+    expect(toast).toHaveBeenCalledExactlyOnceWith('Нет соединения с сервером');
+
+    unbind();
+    toast.mockClear();
+    await expect(
+      client
+        .getMutationCache()
+        .build(client, { mutationFn })
+        .execute(undefined),
+    ).rejects.toBe(error);
+    await expect(
+      client.fetchQuery({
+        queryKey: ['unbound'],
+        queryFn: mutationFn,
+        retry: false,
+      }),
+    ).rejects.toBe(error);
+    expect(toast).not.toHaveBeenCalled();
+    client.clear();
+  });
+
+  it.each([
+    new AuthError('aborted'),
+    new AuthError('session_changed'),
+    new DOMException('Aborted', 'AbortError'),
+  ])('не показывает тост для отменённой операции: %s', async (error) => {
+    const client = createQueryClient();
+    const toast = vi.fn();
+    const unbind = bindQueryClientToasts(client, toast);
+    await expect(
+      client.fetchQuery({
+        queryKey: ['cancelled'],
+        queryFn: () => Promise.reject(error),
+        retry: false,
+      }),
+    ).rejects.toBe(error);
+    expect(toast).not.toHaveBeenCalled();
+    unbind();
+    client.clear();
+  });
+
+  it('не показывает тост, если повторный запрос успешен или запрос отменён клиентом', async () => {
+    const client = createQueryClient();
+    const toast = vi.fn();
+    const unbind = bindQueryClientToasts(client, toast);
+    await client.fetchQuery({
+      queryKey: ['recovered'],
+      queryFn: vi
+        .fn()
+        .mockRejectedValueOnce(new TypeError('Offline'))
+        .mockResolvedValueOnce([]),
+      retryDelay: 0,
+    });
+    const request = client.fetchQuery({
+      queryKey: ['pending'],
+      queryFn: () => new Promise(() => {}),
+    });
+    const rejected = expect(request).rejects.toThrow();
+    await client.cancelQueries({ queryKey: ['pending'] });
+    await rejected;
+    expect(toast).not.toHaveBeenCalled();
+    unbind();
+    client.clear();
+  });
+
   it.each([400, 401, 403, 404, 409, 422])(
     'HTTP %s не повторяется',
     async (status) => {

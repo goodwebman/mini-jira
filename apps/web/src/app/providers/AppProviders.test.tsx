@@ -1,5 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { queryClient } from '@/app/query/queryClient';
@@ -8,11 +14,28 @@ import { AppProviders } from './AppProviders';
 
 afterEach(() => {
   cleanup();
+  queryClient.clear();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
 describe('AppProviders', () => {
+  it('показывает ошибку query client в тосте', async () => {
+    render(<AppProviders>Application</AppProviders>);
+    await act(async () => {
+      await expect(
+        queryClient.fetchQuery({
+          queryKey: ['notification'],
+          queryFn: () => Promise.reject(new Error('Internal details')),
+          retry: false,
+        }),
+      ).rejects.toThrow('Internal details');
+    });
+    expect(
+      screen.getByText('Что-то пошло не так, попробуйте ещё раз'),
+    ).toBeInTheDocument();
+  });
+
   it('provides the existing query client to children', () => {
     function Child() {
       expect(useQueryClient()).toBe(queryClient);
