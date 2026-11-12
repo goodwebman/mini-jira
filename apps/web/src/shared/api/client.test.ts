@@ -55,6 +55,23 @@ describe('env и API URL', () => {
 });
 
 describe('apiClient', () => {
+  it('preserves a safe response request ID for correlation and rejects arbitrary header content', async () => {
+    for (const [header, expected] of [
+      ['request-123', 'request-123'],
+      ['private@example.com', undefined],
+      ['x'.repeat(129), undefined],
+    ]) {
+      transport.mockResolvedValue(
+        new Response(null, {
+          status: 500,
+          headers: { 'X-Request-Id': header! },
+        }),
+      );
+      await expect(apiClient.get('/tasks')).rejects.toMatchObject({
+        requestId: expected,
+      });
+    }
+  });
   it('отправляет JSON через авторизованный транспорт и сохраняет signal и заголовки', async () => {
     transport.mockResolvedValue(json({ id: 1 }));
     const signal = new AbortController().signal;

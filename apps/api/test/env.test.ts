@@ -16,6 +16,13 @@ const valid = {
 };
 
 describe('loadEnv', () => {
+  it('validates the API port without changing the default', () => {
+    expect(loadEnv(valid).PORT).toBe(3000);
+    expect(loadEnv({ ...valid, PORT: '3001' }).PORT).toBe(3001);
+    for (const PORT of ['0', '65536', 'invalid', '1.5']) {
+      expect(() => loadEnv({ ...valid, PORT })).toThrow('PORT');
+    }
+  });
   it('принимает полный набор', () => {
     expect(loadEnv(valid).APP_URL).toBe('https://gwmt-web.vercel.app');
   });

@@ -15,6 +15,6 @@ const app = createApp({
   now: () => new Date(),
 });
 
-serve({ fetch: app.fetch, port: 3000 }, (info) => {
+serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   console.log(`API: http://localhost:${info.port}/api/v1`);
 });

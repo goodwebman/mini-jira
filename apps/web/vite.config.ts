@@ -45,7 +45,7 @@ export default defineConfig(({ mode, command }) => {
     },
     server: {
       proxy: {
-        '/api': 'http://localhost:3000',
+        '/api': env.API_PROXY_TARGET || 'http://localhost:3000',
       },
     },
   };

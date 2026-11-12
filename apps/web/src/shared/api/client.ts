@@ -5,6 +5,7 @@ export class HttpError extends Error {
   readonly status: number;
   readonly statusText: string;
   readonly body: unknown;
+  readonly requestId: string | undefined;
 
   constructor(response: Response, body: unknown) {
     super(`API ${response.status} ${response.statusText}`);
@@ -12,6 +13,9 @@ export class HttpError extends Error {
     this.status = response.status;
     this.statusText = response.statusText;
     this.body = body;
+    const requestId = response.headers.get('X-Request-Id');
+    this.requestId =
+      requestId && /^[\w.:-]{1,128}$/.test(requestId) ? requestId : undefined;
   }
 }
 

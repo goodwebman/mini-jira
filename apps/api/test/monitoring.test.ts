@@ -37,7 +37,11 @@ describe('API monitoring', () => {
     );
     expect(response.status).toBe(500);
     expect(monitoring.captureException).toHaveBeenCalledExactlyOnceWith(error, {
-      tags: { source: 'api' },
+      tags: {
+        source: 'api',
+        request_id: 'request-one',
+        'http.status_code': '500',
+      },
       user: { id: 'one' },
       contexts: {
         http: { method: 'GET', route: '/failure/:id' },

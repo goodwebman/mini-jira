@@ -1,5 +1,8 @@
 # Sentry: подключение, проверка и перенос
 
+Практический разбор ошибок, запросов и стектрейсов:
+[Как читать ошибки mini-jira в Sentry](sentry-errors.md).
+
 В проект подключены Sentry React и Node SDK **v11**. Общее ядро —
 `packages/monitoring`; конфигурация приложения — `apps/web/src/app/monitoring.ts`
 и `apps/api/src/lib/monitoring.ts`. Без DSN SDK не инициализируется.
@@ -30,9 +33,10 @@
 5. Из корня запустите `npm install`, затем `npm run dev`.
    `*_ENABLED=true` нужен для локальной проверки. В production наличие DSN
    включает мониторинг автоматически. Чтобы выключить его, уберите DSN.
-6. На Vercel задайте `VITE_SENTRY_DSN` в проекте **web**, `SENTRY_DSN` в
-   проекте **api**, затем выполните redeploy обоих проектов. Настройки Vite
+6. На Vercel задайте `VITE_SENTRY_DSN` и `SENTRY_DSN` в едином проекте
+   **mini-jira** с сервисами web/api, затем выполните redeploy. Настройки Vite
    встраиваются при сборке. Локальные `.env` не коммитятся.
+   Первый деплой: [vercel-services.md](vercel-services.md).
 
 DSN содержит публичный ключ отправки и может присутствовать в браузере.
 `SENTRY_AUTH_TOKEN` — секрет загрузки артефактов, ему нельзя давать префикс
@@ -52,7 +56,7 @@ Sentry всё равно действует: после исчерпания с�
 Предпочтителен Organization Token для CI; для Personal Token официальная
 инструкция указывает Project: Read & Write и Release: Admin.
 
-В build environment проекта **web** на Vercel задайте:
+В build environment единого проекта Vercel задайте:
 
 ```dotenv
 SENTRY_AUTH_TOKEN=YOUR_SECRET_TOKEN

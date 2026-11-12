@@ -2,6 +2,7 @@ import type { Monitoring } from '@gwmt/monitoring';
 import { type QueryClient, isCancelledError } from '@tanstack/react-query';
 
 import type { AuthEvent, AuthState } from '@/entities/auth';
+import { HttpError } from '@/shared/api';
 
 interface AuthSource<TUser> {
   getSnapshot(): AuthState<TUser>;
@@ -38,7 +39,17 @@ export function bindQueryMonitoring(
 ): () => void {
   const capture = (error: unknown, source: string) => {
     if (!isCancelledError(error))
-      monitoring.captureException(error, { tags: { source } });
+      monitoring.captureException(error, {
+        tags: {
+          source,
+          ...(error instanceof HttpError
+            ? {
+                'http.status_code': String(error.status),
+                ...(error.requestId ? { request_id: error.requestId } : {}),
+              }
+            : {}),
+        },
+      });
   };
   const offQueries = client.getQueryCache().subscribe((event) => {
     if (event.type === 'updated' && event.action.type === 'error')

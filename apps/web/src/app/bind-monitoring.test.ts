@@ -102,9 +102,15 @@ describe('monitoring bindings', () => {
     const { sdk, monitoring } = setup();
     const client = createQueryClient();
     const unbind = bindQueryMonitoring(client, monitoring);
-    const error = new HttpError(new Response(null, { status: 503 }), {
-      private: 'private',
-    });
+    const error = new HttpError(
+      new Response(null, {
+        status: 503,
+        headers: { 'X-Request-Id': 'request-one' },
+      }),
+      {
+        private: 'private',
+      },
+    );
     const queryFn = vi.fn().mockRejectedValue(error);
     await expect(
       client.fetchQuery({
@@ -115,7 +121,11 @@ describe('monitoring bindings', () => {
     ).rejects.toBe(error);
     expect(queryFn).toHaveBeenCalledTimes(2);
     expect(sdk.captureException).toHaveBeenCalledExactlyOnceWith(error, {
-      tags: { source: 'query' },
+      tags: {
+        source: 'query',
+        request_id: 'request-one',
+        'http.status_code': '503',
+      },
     });
     unbind();
     client.clear();

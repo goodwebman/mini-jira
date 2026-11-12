@@ -18,6 +18,36 @@ const IMPORTS_HONO =
   /(?:from|require|import)\s*(?:\(\s*)?["']hono["']\s*(?:\))?/;
 
 describe('сборка на Vercel', () => {
+  it('routes the API before the SPA and builds/migrates services from their own roots', () => {
+    const config = JSON.parse(
+      readFileSync(resolve(root, '../../vercel.json'), 'utf8'),
+    );
+    expect(config.services.api).toMatchObject({
+      root: 'apps/api',
+      framework: 'hono',
+      entrypoint: 'src/index.ts',
+    });
+    expect(config.services.api.buildCommand).toBe(
+      'npm run build && npm run db:migrate',
+    );
+    expect(config.services.web).toMatchObject({
+      root: 'apps/web',
+      framework: 'vite',
+      outputDirectory: 'dist',
+    });
+    const route = (path: string) =>
+      config.rewrites.find(
+        (rule: { source: string }) =>
+          rule.source === '/(.*)' ||
+          (rule.source === '/api/:path*' &&
+            (path === '/api' || path.startsWith('/api/'))),
+      )?.destination;
+    for (const path of ['/api/v1/health', '/api/v1/auth/refresh', '/api'])
+      expect(route(path)).toEqual({ service: 'api' });
+    for (const path of ['/', '/boards/1', '/assets/app.js', '/api-example'])
+      expect(route(path)).toEqual({ service: 'web' });
+    expect(existsSync(resolve(root, '../web/vercel.json'))).toBe(false);
+  });
   it('инициализирует мониторинг до модулей приложения и читает локальный .env до создания клиента', () => {
     const entry = readFileSync(resolve(root, 'src/index.ts'), 'utf8');
     expect(entry.match(/^import\s+[^;]+;/m)?.[0]).toBe(

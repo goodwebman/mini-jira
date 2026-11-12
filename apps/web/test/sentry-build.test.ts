@@ -4,6 +4,15 @@ import { describe, expect, it } from 'vitest';
 import { sentryBuildOptions } from '../sentry-build.ts';
 
 describe('source map upload policy', () => {
+  it('fails the build when source map upload fails', () => {
+    const options = sentryBuildOptions(
+      { SENTRY_AUTH_TOKEN: 'secret', SENTRY_ORG: 'org', SENTRY_PROJECT: 'web' },
+      '/dist',
+    );
+    expect(() => options?.errorHandler?.(new Error('upload failed'))).toThrow(
+      'upload failed',
+    );
+  });
   it('does not generate/upload source maps without credentials', () => {
     expect(sentryBuildOptions({}, '/dist')).toBeNull();
     expect(

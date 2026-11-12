@@ -129,7 +129,11 @@ export async function handleError(err: Error, c: Context<AppEnv>) {
   const safe = err.cause instanceof Error ? err.cause : err;
   // Per-event context avoids leaking one concurrent request's identity into another.
   monitoring.captureException(safe, {
-    tags: { source: 'api' },
+    tags: {
+      source: 'api',
+      request_id: c.get('requestId'),
+      'http.status_code': '500',
+    },
     user: c.get('userId') ? { id: c.get('userId') } : {},
     contexts: {
       http: { method: c.req.method, route: c.req.routePath },

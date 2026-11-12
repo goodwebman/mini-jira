@@ -18,6 +18,9 @@ export function sentryBuildOptions(
     org,
     project,
     telemetry: false,
+    errorHandler: (error) => {
+      throw error;
+    },
     release: {
       name:
         env.SENTRY_RELEASE?.trim() ||

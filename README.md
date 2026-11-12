@@ -3,6 +3,7 @@
 ESLint и FSD: `npm run lint`; проверка правил на примерах: `npm run test:lint`. Подключение и покрытие проверок: [docs/eslint.md](docs/eslint.md).
 Полная локальная проверка: `npm run validate` (включая тесты фронтенда).
 Sentry для frontend и API: [бесплатное подключение, source maps и перенос в другой проект](docs/sentry.md).
+[Как найти и понять ошибку в Sentry, связать frontend с API](docs/sentry-errors.md).
 Правила импортов описаны в [docs/fsd.md](docs/fsd.md), сравнение с `pc` и приоритеты подготовки к production — в [docs/production-readiness.md](docs/production-readiness.md).
 
 Мини-Jira: канбан-доски, задачи, спринты и KPI. Монорепозиторий на npm workspaces.
@@ -135,31 +136,21 @@ npx openapi-typescript docs/openapi.json -o apps/web/src/api/schema.d.ts
 
 ## Деплой
 
-Два проекта Vercel из одного репозитория:
+Приложение разворачивается **одним проектом Vercel через Services**.
+В корневом ercel.json описаны Hono API (pps/api) и Vite frontend (pps/web).
+Root Directory при импорте — ./, Application Preset — Services.
+/api/... направляется в API, остальные адреса — во frontend на том же домене.
 
-| Проект     | Root Directory |
-| ---------- | -------------- |
-| `gwmt-api` | `apps/api`     |
-| `gwmt-web` | `apps/web`     |
+Пошаговая настройка на экране импорта, Neon через Vercel Marketplace,
+переменные, миграции и проверка:
+[docs/vercel-services.md](docs/vercel-services.md).
 
-1. Создайте проект Neon. Регион функций Vercel должен совпадать с регионом базы: по умолчанию у Vercel это `iad1`, для Франкфурта выберите `fra1` в настройках проекта.
-2. Создайте оба проекта. В настройках Root Directory должна быть включена опция «Include files outside the root directory», иначе не соберётся `packages/contracts`.
-3. Заполните переменные окружения в `gwmt-api`. `APP_URL` это домен `gwmt-web`.
-4. Примените миграции локально с боевой строкой подключения: `npm run db:migrate`. При старте функции они не запускаются.
-5. Если имя `gwmt-api.vercel.app` оказалось занято, поменяйте домен в `apps/web/vercel.json`.
-6. Создайте OAuth App на GitHub с callback `https://<web>/api/v1/auth/github/callback`. Для локальной разработки нужен отдельный OAuth App с `http://localhost:5173/api/v1/auth/github/callback`.
-7. Создайте в Google Cloud Console OAuth-клиент типа Web application. Добавьте Authorized redirect URI `https://<web>/api/v1/auth/google/callback` и для локальной разработки `http://localhost:5173/api/v1/auth/google/callback`, один клиент может держать оба. Пока приложение в статусе Testing, войти смогут только добавленные тестовые пользователи.
+API build применяет миграции к базе из DATABASE_URL_UNPOOLED выбранного
+окружения. Не подключайте preview deployments к production-базе.
+Frontend source maps загружаются в Sentry при наличии build-токена.
 
-Браузер ходит только на домен web, а запросы к `/api` уходят на бэкенд через rewrite. `vercel.app` входит в Public Suffix List, поэтому между разными `*.vercel.app` refresh-cookie не работает. CORS не нужен и не включён.
-
-Проверка после деплоя: `https://<web>/api/v1/health` отвечает 200.
-
-### Что нельзя ломать в сборке
-
-- В `apps/api/src/app.ts` нельзя импортировать из голого пакета `hono`, даже типы, а в `src/index.ts` такой импорт обязателен. Vercel берёт точкой входа первый файл с этим импортом, и `src/app.ts` проверяется раньше.
-- `module` должен быть задан прямо в `apps/api/tsconfig.json`. Vercel читает этот файл без учёта `extends` и иначе выключает `strict`, после чего билд падает, хотя локальный `tsc` проходит.
-
-Оба правила закреплены в `apps/api/test/vercel-entrypoint.test.ts`.
+Vercel Services находится в Beta. Первую облачную сборку нужно проверить
+после подключения Neon и добавления переменных проекта.
 
 ## Что обновить на фронте после мутации
 
