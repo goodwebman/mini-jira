@@ -27,7 +27,7 @@
     "db:generate": "npm run db:generate -w @gwmt/api",
     "db:migrate": "npm run db:migrate -w @gwmt/api",
     "db:seed": "npm run build:contracts && npm run db:seed -w @gwmt/api",
-    "typecheck": "npm run build:contracts && npm run typecheck -w @gwmt/contracts -w @gwmt/api",
+    "typecheck": "npm run build:contracts && npm run typecheck -w @gwmt/contracts -w @gwmt/api -w mini-jira",
     "test": "npm run build:contracts && npm run test -w @gwmt/contracts -w @gwmt/api"
   },
   "devDependencies": {

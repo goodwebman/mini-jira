@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-# Run both checks here: pre-commit runs before Git makes the message available.
+# Run checks here: pre-commit runs before Git makes the message available.
 status=0
 
 printf '\n%s\n' 'Проверка сообщения коммита (commitlint)...'
@@ -25,6 +25,22 @@ else
     'ОШИБКА: проверка файлов не пройдена. Выше указаны файлы, строки и правила либо ошибки запуска инструментов.' \
     'ESLint блокирует коммит при ошибках и предупреждениях (--max-warnings 0).' \
     'Проверить вручную: npm run lint и npm run format:check.'
+fi
+
+printf '\n%s\n' 'Проверка всего рабочего дерева (ESLint), включая файлы вне git add...'
+if node node_modules/eslint/bin/eslint.js . --max-warnings 0; then
+  printf '%s\n' 'ESLint рабочего дерева: OK.'
+else
+  status=1
+  printf '%s\n' 'ОШИБКА ESLint: исправьте нарушения в указанных выше файлах и строках.'
+fi
+
+printf '\n%s\n' 'Проверка TypeScript (contracts / api / web), включая файлы вне git add...'
+if npm run typecheck; then
+  printf '%s\n' 'TypeScript: OK.'
+else
+  status=1
+  printf '%s\n' 'ОШИБКА TypeScript: исправьте ошибки типов и неизвестные имена в указанных выше файлах и строках.'
 fi
 
 if [ "$status" -ne 0 ]; then
