@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 
 import { shouldRetryQuery } from '@/entities/auth/lib';
-import { ApiError } from '@/shared/api';
+import { HttpError } from '@/shared/api';
 
 /** HTTP 4xx окончательны; refresh и повтор 401 уже выполняет auth-транспорт. */
 export function createQueryClient(): QueryClient {
@@ -11,7 +11,7 @@ export function createQueryClient(): QueryClient {
         staleTime: 30_000,
         retry: (failureCount, error) => {
           if (
-            error instanceof ApiError &&
+            error instanceof HttpError &&
             error.status >= 400 &&
             error.status < 500 &&
             error.status !== 429

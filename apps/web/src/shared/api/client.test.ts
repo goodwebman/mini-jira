@@ -112,7 +112,7 @@ describe('apiClient', () => {
   it('сохраняет HTTP-статус и тело ошибки', async () => {
     transport.mockResolvedValue(json({ error: 'forbidden' }, 403));
     await expect(apiClient.get('/tasks')).rejects.toMatchObject({
-      name: 'ApiError',
+      name: 'HttpError',
       status: 403,
       body: { error: 'forbidden' },
     });
@@ -126,7 +126,7 @@ describe('apiClient', () => {
       }),
     );
     await expect(apiClient.get('/tasks')).rejects.toMatchObject({
-      name: 'ApiError',
+      name: 'HttpError',
       status: 502,
     });
   });

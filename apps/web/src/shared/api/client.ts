@@ -1,14 +1,14 @@
 import { http } from './http';
 import { getApiUrl } from './requireApiUrl';
 
-export class ApiError extends Error {
+export class HttpError extends Error {
   readonly status: number;
   readonly statusText: string;
   readonly body: unknown;
 
   constructor(response: Response, body: unknown) {
     super(`API ${response.status} ${response.statusText}`);
-    this.name = 'ApiError';
+    this.name = 'HttpError';
     this.status = response.status;
     this.statusText = response.statusText;
     this.body = body;
@@ -41,7 +41,7 @@ async function request<T>(
         ? await response.json().catch(() => null)
         : await response.text();
 
-  if (!response.ok) throw new ApiError(response, payload);
+  if (!response.ok) throw new HttpError(response, payload);
   return payload as T;
 }
 

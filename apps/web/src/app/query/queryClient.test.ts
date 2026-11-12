@@ -15,7 +15,7 @@ import {
 } from '@/entities/auth/lib';
 import { AuthStore } from '@/entities/auth/lib/auth-store';
 import { boardsQueryOptions } from '@/entities/board';
-import { ApiError, configureApiTransport } from '@/shared/api';
+import { HttpError, configureApiTransport } from '@/shared/api';
 
 import { createQueryClient } from './queryClient';
 
@@ -26,7 +26,7 @@ describe('application query client', () => {
     'HTTP %s не повторяется',
     async (status) => {
       const client = createQueryClient();
-      const error = new ApiError(new Response(null, { status }), null);
+      const error = new HttpError(new Response(null, { status }), null);
       const queryFn = vi.fn().mockRejectedValue(error);
       await expect(
         client.fetchQuery({ queryKey: ['failure'], queryFn, retryDelay: 0 }),
@@ -38,7 +38,7 @@ describe('application query client', () => {
 
   it.each([429, 500, 503])('HTTP %s повторяется один раз', async (status) => {
     const client = createQueryClient();
-    const error = new ApiError(new Response(null, { status }), null);
+    const error = new HttpError(new Response(null, { status }), null);
     const queryFn = vi.fn().mockRejectedValue(error);
     await expect(
       client.fetchQuery({ queryKey: ['failure'], queryFn, retryDelay: 0 }),
