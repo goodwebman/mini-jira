@@ -47,7 +47,6 @@
     "@eslint-react/eslint-plugin": "^5.30.2",
     "@eslint/js": "^10.0.1",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
-    "browserslist-to-esbuild": "^2.1.1",
     "concurrently": "^10.0.7",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
