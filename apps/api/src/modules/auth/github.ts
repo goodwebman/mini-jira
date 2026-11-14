@@ -10,7 +10,7 @@ import {
 
 const API_HEADERS = {
   Accept: 'application/vnd.github+json',
-  'User-Agent': 'goodWebManTasks',
+  'User-Agent': 'mini-jira',
 };
 
 function authorizeUrl(env: Env, state: string): string {

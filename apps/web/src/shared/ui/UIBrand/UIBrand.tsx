@@ -14,10 +14,7 @@ export interface IUIBrandProps extends HTMLAttributes<HTMLDivElement> {
 
 /** Логотип продукта: значок и название. */
 const UIBrandBase = forwardRef<HTMLDivElement, IUIBrandProps>(
-  (
-    { className, testId, name = 'goodWebManTasks', nameClassName, ...props },
-    ref,
-  ) => (
+  ({ className, testId, name = 'mini-jira', nameClassName, ...props }, ref) => (
     <div
       ref={ref}
       data-name={testId ? `UIBrand-${testId}` : 'UIBrand'}
