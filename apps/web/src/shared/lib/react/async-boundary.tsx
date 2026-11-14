@@ -40,7 +40,10 @@ export function AsyncBoundary({
             const fromQuery = client
               .getQueryCache()
               .getAll()
-              .some((query) => query.state.error === error);
+              .some(
+                (query) =>
+                  query.state.status === 'error' && query.state.error === error,
+              );
             if (!fromQuery)
               reportRenderError(error, info.componentStack ?? undefined);
           }}

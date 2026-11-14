@@ -1,6 +1,7 @@
 /**
  * Тесткейсы: загрузка — fallback, потом данные; ошибка рендера уходит в репортёр со стеком,
- * ошибка запроса — нет (её уже отправил мониторинг кэша); «Повторить» перезапрашивает упавший запрос.
+ * throw null не путается с успешным запросом; ошибка запроса не дублируется;
+ * «Повторить» перезапрашивает упавший запрос.
  */
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -29,9 +30,9 @@ function Broken(): never {
   throw new Error('ошибка рендера');
 }
 
-const mount = (children: React.ReactNode) =>
+const mount = (children: React.ReactNode, client = createTestQueryClient()) =>
   render(
-    <TestProviders client={createTestQueryClient()}>
+    <TestProviders client={client}>
       <AsyncBoundary
         fallback={<span>загрузка</span>}
         renderError={({ error, retry }) => (
@@ -61,6 +62,19 @@ describe('AsyncBoundary', () => {
       expect.objectContaining({ message: 'ошибка рендера' }),
       expect.any(String),
     );
+  });
+
+  it('throw null не путает с отсутствием ошибки у успешного запроса', () => {
+    const client = createTestQueryClient();
+    client.setQueryData(['healthy'], 'готово');
+    function ThrowsNull(): never {
+      throw null;
+    }
+
+    mount(<ThrowsNull />, client);
+
+    expect(screen.getByRole('button', { name: 'ошибка' })).toBeInTheDocument();
+    expect(reporter).toHaveBeenCalledExactlyOnceWith(null, expect.any(String));
   });
 
   it('ошибку запроса не дублирует, «Повторить» перезапрашивает', async () => {
