@@ -3,7 +3,7 @@
  * Тесткейсы кэша задач:
  * - карточка из ответа мутации заменяет старую в доске и сливается с деталью;
  * - новая карточка добавляется в доску только своего (активного) спринта;
- * - комментарий дописывается в деталь;
+ * - комментарий дописывается в деталь, летящий старый ответ его не затирает;
  * - оптимистичный перенос сбрасывает таймер и запрет, летящий ответ доски его не перетирает;
  * - откат возвращает одну карточку и не трогает соседние и повторно перенесённую.
  */
@@ -61,7 +61,7 @@ describe('putTaskCardInCache', () => {
     expect(client.getQueryData(taskQueryKeys.board(11))).toBeUndefined();
   });
 
-  it('комментарий дописывается в деталь', () => {
+  it('комментарий дописывается в деталь', async () => {
     const client = createTestQueryClient();
     client.setQueryData(
       taskQueryKeys.detail('GWT-1'),
@@ -73,12 +73,44 @@ describe('putTaskCardInCache', () => {
       text: 'Готово',
       createdAt: '2026-11-06T09:00:00.000Z',
     };
-    appendTaskComment(client, 'GWT-1', comment);
+    await appendTaskComment(client, 'GWT-1', comment);
     expect(
       client.getQueryData<{ comments: unknown[] }>(
         taskQueryKeys.detail('GWT-1'),
       )?.comments,
     ).toEqual([comment]);
+  });
+
+  it('летящий ответ детали не затирает сохранённый комментарий', async () => {
+    const client = createTestQueryClient();
+    const detail = makeTaskDetail({ comments: [] });
+    const queryKey = taskQueryKeys.detail(detail.key);
+    client.setQueryData(queryKey, detail);
+    let release: () => void = () => {};
+    const stale = client
+      .fetchQuery({
+        queryKey,
+        staleTime: 0,
+        queryFn: () =>
+          new Promise<typeof detail>((resolve) => {
+            release = () => resolve(detail);
+          }),
+      })
+      .catch(() => {});
+    const comment = {
+      id: 'c1',
+      author: users.anna,
+      text: 'Готово',
+      createdAt: '2026-11-06T09:00:00.000Z',
+    };
+
+    await appendTaskComment(client, detail.key, comment);
+    release();
+    await stale;
+
+    expect(client.getQueryData<typeof detail>(queryKey)?.comments).toEqual([
+      comment,
+    ]);
   });
 });
 

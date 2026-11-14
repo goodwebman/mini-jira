@@ -38,13 +38,16 @@ export function putTaskCardInCache(client: QueryClient, card: TaskCard): void {
 }
 
 /** Ответ сервера на комментарий дописывается в деталь задачи без перезапроса. */
-export function appendTaskComment(
+export async function appendTaskComment(
   client: QueryClient,
   taskKey: string,
   comment: TaskComment,
-): void {
+): Promise<void> {
+  const queryKey = taskQueryKeys.detail(taskKey);
+  // Старый ответ детали не должен затереть уже сохранённый комментарий.
+  await client.cancelQueries({ queryKey, exact: true });
   client.setQueryData<TaskDetail>(
-    taskQueryKeys.detail(taskKey),
+    queryKey,
     (detail) =>
       detail && { ...detail, comments: [...detail.comments, comment] },
   );
