@@ -1,9 +1,10 @@
-# goodWebManTasks
+# mini-jira
 
 ESLint и FSD: `npm run lint`; проверка правил на примерах: `npm run test:lint`. Подключение и покрытие проверок: [docs/eslint.md](docs/eslint.md).
 Полная локальная проверка: `npm run validate` (включая тесты фронтенда).
 Sentry для frontend и API: [бесплатное подключение, source maps и перенос в другой проект](docs/sentry.md).
 [Как найти и понять ошибку в Sentry, связать frontend с API](docs/sentry-errors.md).
+Архитектура фронтенда, скоупы зависимостей и тесты: [docs/frontend-architecture.md](docs/frontend-architecture.md); почему без Redux/MobX/Zustand: [docs/adr/0001-state-management.md](docs/adr/0001-state-management.md).
 Правила импортов описаны в [docs/fsd.md](docs/fsd.md), сравнение с `pc` и приоритеты подготовки к production — в [docs/production-readiness.md](docs/production-readiness.md).
 
 Мини-Jira: канбан-доски, задачи, спринты и KPI. Монорепозиторий на npm workspaces.
@@ -65,7 +66,7 @@ npm run dev                             # фронтенд и бэкенд од�
 
 Для проверки всего репозитория: `npm run lint` и `npm run format:check`. Для исправлений: `npm run lint:fix` и `npm run format`.
 
-Веб-приложение подключает `AppProviders` из `src/app/providers`: Error Boundary показывает запасной экран с кнопкой перезагрузки при ошибке рендера, QueryClientProvider передаёт существующий клиент запросов.
+Веб-приложение подключает `AppProviders` из `src/app/providers`: Error Boundary показывает запасной экран с кнопкой перезагрузки при ошибке рендера, QueryClientProvider передаёт существующий клиент запросов. Дерево роутов собрано в `src/app/router/routes.tsx` из гардов сессии, скоупов зависимостей и роутов модулей (`src/app/router/modules`): вход и регистрация, доски, канбан, участники, задача, «Мои задачи», KPI и профиль.
 
 ## Контракт API
 
