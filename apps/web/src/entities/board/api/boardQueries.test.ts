@@ -95,7 +95,7 @@ describe('board queries', () => {
   it('загружает детали и участников доски', async () => {
     transport.mockResolvedValue(json(board));
     await expect(fetchBoard(9)).resolves.toEqual(board);
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/boards/9');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/boards/9');
   });
 
   it.each([0, -1, NaN, 1.5])(

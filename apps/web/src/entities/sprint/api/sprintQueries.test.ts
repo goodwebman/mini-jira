@@ -58,7 +58,9 @@ describe('sprint queries', () => {
     await expect(
       client.fetchQuery(boardSprintsQueryOptions(9)),
     ).resolves.toEqual(data);
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/boards/9/sprints?limit=8');
+    expect(transport.mock.calls[0]?.[0]).toBe(
+      '/api/v1/boards/9/sprints?limit=8',
+    );
     client.clear();
   });
 
@@ -92,7 +94,7 @@ describe('sprint queries', () => {
     await expect(
       client.fetchQuery(sprintKpiQueryOptions(9, 1)),
     ).resolves.toEqual(data);
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/boards/9/sprints/1/kpi');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/boards/9/sprints/1/kpi');
     client.clear();
   });
 

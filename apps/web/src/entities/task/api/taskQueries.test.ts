@@ -87,7 +87,7 @@ describe('task queries', () => {
     await expect(
       client.fetchQuery(myTasksQueryOptions({ page: 2, pageSize: 10 })),
     ).resolves.toEqual(page);
-    expect(transport.mock.calls[0][0]).toBe(
+    expect(transport.mock.calls[0]?.[0]).toBe(
       '/api/v1/me/tasks?page=2&pageSize=10',
     );
     client.clear();
@@ -110,7 +110,7 @@ describe('task queries', () => {
     await expect(client.fetchQuery(boardTasksQueryOptions(9))).resolves.toEqual(
       data,
     );
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/boards/9/tasks');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/boards/9/tasks');
     client.clear();
   });
 
@@ -130,7 +130,7 @@ describe('task queries', () => {
     await expect(client.fetchQuery(taskSearchQueryOptions())).resolves.toEqual(
       data,
     );
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/tasks/search?limit=6');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/tasks/search?limit=6');
     client.clear();
   });
 
@@ -152,7 +152,7 @@ describe('task queries', () => {
   it('некорректные детали отклоняются, ключ кодируется как сегмент пути', async () => {
     transport.mockResolvedValue(Response.json({ key: 'GWT-1' }));
     await expect(fetchTask('GWT-1/links')).rejects.toThrow();
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/tasks/GWT-1%2Flinks');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/tasks/GWT-1%2Flinks');
   });
 
   it('сетевая ошибка доходит до вызывающего кода', async () => {

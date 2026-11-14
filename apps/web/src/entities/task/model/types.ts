@@ -9,12 +9,10 @@ export type TaskSearchQuery = Partial<
 >;
 export type {
   BoardTasksResponse,
-  CreateCommentBody,
   CreateLinkBody,
   CreateTaskBody,
   MyTasksResponse,
   TaskCard,
-  TaskComment,
   TaskDetail,
   TaskLinkItem,
   TaskLinkType,

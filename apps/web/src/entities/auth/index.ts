@@ -5,3 +5,4 @@ export {
 } from './model/auth-instance';
 export * from './lib';
 export { useAuth } from './model/use-auth';
+export { useSessionUser } from './model/use-session-user';

@@ -6,7 +6,7 @@ import {
 } from '@gwmt/contracts';
 import { queryOptions } from '@tanstack/react-query';
 
-import { apiClient, withQuery } from '@/shared/api';
+import { QUERY_TAGS, apiClient, withQuery } from '@/shared/api';
 
 import type { NavSummaryQuery } from '../model';
 
@@ -47,6 +47,7 @@ export const profileQueryKeys = {
 export const profileQueryOptions = queryOptions({
   queryKey: profileQueryKeys.detail,
   queryFn: ({ signal }) => fetchProfile(signal),
+  meta: { tags: [QUERY_TAGS.profile] },
 });
 
 export function navSummaryQueryOptions(params: NavSummaryQuery = {}) {
@@ -54,10 +55,12 @@ export function navSummaryQueryOptions(params: NavSummaryQuery = {}) {
   return queryOptions({
     queryKey: profileQueryKeys.navSummary(query),
     queryFn: ({ signal }) => fetchNavSummary(query, signal),
+    meta: { tags: [QUERY_TAGS.tasks, QUERY_TAGS.boards] },
   });
 }
 
 export const myTaskStatsQueryOptions = queryOptions({
   queryKey: profileQueryKeys.taskStats,
   queryFn: ({ signal }) => fetchMyTaskStats(signal),
+  meta: { tags: [QUERY_TAGS.tasks] },
 });

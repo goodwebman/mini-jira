@@ -4,7 +4,7 @@ import {
 } from '@gwmt/contracts';
 import { queryOptions } from '@tanstack/react-query';
 
-import { apiClient, withQuery } from '@/shared/api';
+import { QUERY_TAGS, apiClient, withQuery } from '@/shared/api';
 
 import type { UserSearchQuery } from '../model';
 
@@ -45,6 +45,7 @@ export function userSearchQueryOptions(params: UserSearchQuery = {}) {
   return queryOptions({
     queryKey: userQueryKeys.search(query),
     queryFn: ({ signal }) => searchUsers(query, signal),
+    meta: { tags: [QUERY_TAGS.members] },
     enabled,
   });
 }

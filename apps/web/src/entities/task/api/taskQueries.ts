@@ -9,7 +9,8 @@ import {
 } from '@gwmt/contracts';
 import { queryOptions } from '@tanstack/react-query';
 
-import { apiClient, withQuery } from '@/shared/api';
+import { QUERY_TAGS, apiClient, withQuery } from '@/shared/api';
+import { syncServerClock } from '@/shared/lib/time';
 
 import type { MyTasksQuery, TaskSearchQuery } from '../model';
 
@@ -25,14 +26,16 @@ export function taskSearchPath(params: TaskSearchQuery = {}): string {
 export async function fetchBoardTasks(boardId: number, signal?: AbortSignal) {
   return apiClient
     .get<unknown>(`/boards/${boardId}/tasks`, { signal })
-    .then(boardTasksResponseSchema.parse);
+    .then(boardTasksResponseSchema.parse)
+    .then(syncServerClock);
 }
 
 /** GET `/tasks/{key}`. */
 export async function fetchTask(key: string, signal?: AbortSignal) {
   return apiClient
     .get<unknown>(`/tasks/${encodeURIComponent(key)}`, { signal })
-    .then(taskDetailSchema.parse);
+    .then(taskDetailSchema.parse)
+    .then(syncServerClock);
 }
 
 /** GET `/me/tasks` — пагинация и фильтры на сервере. */
@@ -42,7 +45,8 @@ export async function fetchMyTasks(
 ) {
   return apiClient
     .get<unknown>(myTasksPath(params), { signal })
-    .then(myTasksResponseSchema.parse);
+    .then(myTasksResponseSchema.parse)
+    .then(syncServerClock);
 }
 
 /** GET `/tasks/search` — поиск для связывания задач. */
@@ -69,6 +73,7 @@ export function boardTasksQueryOptions(boardId: number) {
   return queryOptions({
     queryKey: taskQueryKeys.board(boardId),
     queryFn: ({ signal }) => fetchBoardTasks(boardId, signal),
+    meta: { tags: [QUERY_TAGS.tasks] },
     enabled: Number.isInteger(boardId) && boardId > 0,
   });
 }
@@ -77,6 +82,7 @@ export function taskQueryOptions(key: string) {
   return queryOptions({
     queryKey: taskQueryKeys.detail(key),
     queryFn: ({ signal }) => fetchTask(key, signal),
+    meta: { tags: [QUERY_TAGS.tasks, QUERY_TAGS.members] },
     enabled: TASK_KEY_PATTERN.test(key),
   });
 }
@@ -86,6 +92,7 @@ export function myTasksQueryOptions(params: MyTasksQuery = {}) {
   return queryOptions({
     queryKey: taskQueryKeys.my(query),
     queryFn: ({ signal }) => fetchMyTasks(query, signal),
+    meta: { tags: [QUERY_TAGS.tasks] },
   });
 }
 
@@ -94,5 +101,6 @@ export function taskSearchQueryOptions(params: TaskSearchQuery = {}) {
   return queryOptions({
     queryKey: taskQueryKeys.search(query),
     queryFn: ({ signal }) => searchTasks(query, signal),
+    meta: { tags: [QUERY_TAGS.tasks] },
   });
 }

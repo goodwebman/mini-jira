@@ -5,7 +5,7 @@ import {
 } from '@gwmt/contracts';
 import { queryOptions } from '@tanstack/react-query';
 
-import { apiClient, withQuery } from '@/shared/api';
+import { QUERY_TAGS, apiClient, withQuery } from '@/shared/api';
 
 import type { BoardsQuery } from '../model';
 
@@ -42,6 +42,7 @@ export function boardsQueryOptions(params: BoardsQuery = {}) {
   return queryOptions({
     queryKey: boardQueryKeys.list(query),
     queryFn: ({ signal }) => fetchBoards(query, signal),
+    meta: { tags: [QUERY_TAGS.boards] },
   });
 }
 
@@ -49,6 +50,7 @@ export function boardQueryOptions(boardId: number) {
   return queryOptions({
     queryKey: boardQueryKeys.detail(boardId),
     queryFn: ({ signal }) => fetchBoard(boardId, signal),
+    meta: { tags: [QUERY_TAGS.boards, QUERY_TAGS.members] },
     enabled: Number.isInteger(boardId) && boardId > 0,
   });
 }

@@ -1,7 +1,7 @@
 // @vitest-environment node
 /**
  * Тесткейсы: создание/изменение и детали задачи; pause/resume/take-lock;
- * обе стороны links; комментарий с trim; валидация до сети; HTTP 403/409/422.
+ * обе стороны links; валидация до сети; HTTP 403/409/422.
  */
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +11,6 @@ import { configureApiTransport } from '@/shared/api';
 import {
   clearTaskTakeLock,
   createTask,
-  createTaskComment,
   createTaskLink,
   deleteTaskLink,
   pauseTask,
@@ -121,7 +120,7 @@ describe('task mutations', () => {
     await expect(client.fetchQuery(taskQueryOptions('GWT-1'))).resolves.toEqual(
       detail,
     );
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/tasks/GWT-1');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/tasks/GWT-1');
     client.clear();
   });
 
@@ -167,25 +166,6 @@ describe('task mutations', () => {
     expect(transport.mock.calls[1]).toEqual([
       '/api/v1/tasks/GWT-1/links/OTHER-2',
       expect.objectContaining({ method: 'DELETE' }),
-    ]);
-  });
-
-  it('пустой комментарий не отправляется, непустой сохраняется с trim', async () => {
-    await expect(createTaskComment('GWT-1', { text: '  ' })).rejects.toThrow();
-    expect(transport).not.toHaveBeenCalled();
-    const comment = {
-      id: 'c1',
-      author: user,
-      text: 'Готово',
-      createdAt: '2026-11-11T00:00:00Z',
-    };
-    transport.mockResolvedValue(Response.json(comment, { status: 201 }));
-    await expect(
-      createTaskComment('GWT-1', { text: ' Готово ' }),
-    ).resolves.toEqual(comment);
-    expect(transport.mock.calls[0]).toEqual([
-      '/api/v1/tasks/GWT-1/comments',
-      expect.objectContaining({ method: 'POST', body: '{"text":"Готово"}' }),
     ]);
   });
 

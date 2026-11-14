@@ -5,7 +5,8 @@ import {
 } from '@gwmt/contracts';
 import { queryOptions } from '@tanstack/react-query';
 
-import { apiClient, withQuery } from '@/shared/api';
+import { QUERY_TAGS, apiClient, withQuery } from '@/shared/api';
+import { syncServerClock } from '@/shared/lib/time';
 
 import type { SprintsQuery } from '../model';
 
@@ -38,7 +39,8 @@ export async function fetchSprintKpi(
 ) {
   return apiClient
     .get<unknown>(`/boards/${boardId}/sprints/${number}/kpi`, { signal })
-    .then(sprintKpiSchema.parse);
+    .then(sprintKpiSchema.parse)
+    .then(syncServerClock);
 }
 
 export const sprintQueryKeys = {
@@ -57,6 +59,7 @@ export function boardSprintsQueryOptions(
   return queryOptions({
     queryKey: sprintQueryKeys.list(boardId, query),
     queryFn: ({ signal }) => fetchBoardSprints(boardId, query, signal),
+    meta: { tags: [QUERY_TAGS.tasks] },
     enabled: Number.isInteger(boardId) && boardId > 0,
   });
 }
@@ -65,6 +68,7 @@ export function sprintKpiQueryOptions(boardId: number, number: number) {
   return queryOptions({
     queryKey: sprintQueryKeys.kpi(boardId, number),
     queryFn: ({ signal }) => fetchSprintKpi(boardId, number, signal),
+    meta: { tags: [QUERY_TAGS.tasks] },
     enabled:
       Number.isInteger(boardId) &&
       boardId > 0 &&

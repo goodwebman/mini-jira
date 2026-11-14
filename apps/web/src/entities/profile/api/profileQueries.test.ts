@@ -43,7 +43,7 @@ describe('profile', () => {
     await expect(client.fetchQuery(profileQueryOptions)).resolves.toEqual(
       profile,
     );
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/me');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/me');
     client.clear();
   });
 
@@ -74,7 +74,7 @@ describe('profile', () => {
     await expect(client.fetchQuery(navSummaryQueryOptions())).resolves.toEqual(
       data,
     );
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/me/nav-summary');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/me/nav-summary');
     client.clear();
   });
 
@@ -85,7 +85,7 @@ describe('profile', () => {
     await expect(client.fetchQuery(myTaskStatsQueryOptions)).resolves.toEqual(
       data,
     );
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/me/task-stats');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/me/task-stats');
     client.clear();
   });
 

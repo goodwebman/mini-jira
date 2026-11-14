@@ -50,7 +50,7 @@ describe('user search', () => {
       client.fetchQuery(userSearchQueryOptions({ q: 'Ан' })),
     ).resolves.toEqual(data);
     expect(transport).toHaveBeenCalledTimes(1);
-    expect(transport.mock.calls[0][0]).toBe(
+    expect(transport.mock.calls[0]?.[0]).toBe(
       '/api/v1/users/search?q=%D0%90%D0%BD',
     );
     unsubscribe();
@@ -64,7 +64,7 @@ describe('user search', () => {
     await expect(client.fetchQuery(userSearchQueryOptions())).resolves.toEqual({
       items: [],
     });
-    expect(transport.mock.calls[0][0]).toBe('/api/v1/users/search');
+    expect(transport.mock.calls[0]?.[0]).toBe('/api/v1/users/search');
     client.clear();
   });
 

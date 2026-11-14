@@ -547,7 +547,7 @@ describe('DigestStrategy', () => {
     });
     const params = parseAuthorization(headers?.Authorization);
 
-    expect(headers?.Authorization.startsWith('Digest ')).toBe(true);
+    expect(headers?.Authorization?.startsWith('Digest ')).toBe(true);
     expect(credentialsMode).toBe('omit');
     expect(params.get('username')).toBe(RFC.username);
     expect(params.get('uri')).toBe('/dir/index.html?x=1');
