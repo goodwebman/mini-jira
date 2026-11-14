@@ -7,7 +7,8 @@ export const TAG = {
   members: 'Участники',
   sprints: 'Спринты и KPI',
   tasks: 'Задачи',
-  links: 'Связи и комментарии',
+  links: 'Связи',
+  comments: 'Комментарии',
 } as const;
 
 const OVERVIEW = `
@@ -80,7 +81,7 @@ Access живёт 15 минут, отдаётся в теле ответа и х
 export const API_DOCUMENT = {
   openapi: '3.1.0',
   info: {
-    title: 'goodWebManTasks API',
+    title: 'mini-jira API',
     version: '1.0.0',
     description: OVERVIEW,
   },
@@ -108,7 +109,8 @@ export const API_DOCUMENT = {
       name: TAG.tasks,
       description: 'Задачи, статусы, запрет брать в работу, пауза',
     },
-    { name: TAG.links, description: 'Связи между задачами и комментарии' },
+    { name: TAG.links, description: 'Связи между задачами' },
+    { name: TAG.comments, description: 'Обсуждение задачи' },
     { name: TAG.service, description: 'Проверка работоспособности' },
   ],
 };

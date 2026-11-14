@@ -2,12 +2,10 @@ import {
   boardIdParamSchema,
   boardTasksResponseSchema,
   can,
-  createCommentBodySchema,
   createLinkBodySchema,
   createStatusError,
   createTaskBodySchema,
   taskCardSchema,
-  taskCommentSchema,
   taskDetailSchema,
   taskKeyParamSchema,
   taskLinkItemSchema,
@@ -357,36 +355,6 @@ export function tasksRoutes(deps: AppDeps) {
       );
       return c.body(null, 204);
     },
-  );
-
-  router.openapi(
-    createRoute({
-      method: 'post',
-      path: '/tasks/{key}/comments',
-      operationId: 'createTaskComment',
-      tags: linkTags,
-      summary: 'Добавить комментарий',
-      security: bearerAuth,
-      middleware: [taskAccess, requireAction('task.comment')],
-      request: {
-        params: taskKeyParamSchema,
-        body: jsonBody(createCommentBodySchema),
-      },
-      responses: {
-        201: jsonResponse(taskCommentSchema, 'Комментарий добавлен'),
-        ...errors({ ...actionErrors, 422: ['VALIDATION_ERROR'] }),
-      },
-    }),
-    async (c) =>
-      c.json(
-        await service.createComment(
-          deps,
-          c.get('task').id,
-          c.get('userId'),
-          c.req.valid('json'),
-        ),
-        201,
-      ),
   );
 
   return router;

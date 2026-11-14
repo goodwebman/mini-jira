@@ -1,6 +1,5 @@
 import {
   type BoardRole,
-  type CreateCommentBody,
   type CreateLinkBody,
   type CreateTaskBody,
   type ErrorCode,
@@ -8,7 +7,6 @@ import {
   type MoveTask,
   type MyTasksResponse,
   type TaskCard,
-  type TaskComment,
   type TaskDetail,
   type TaskLinkItem,
   type TaskLinkType,
@@ -25,6 +23,7 @@ import type { Db } from '../../db/client.js';
 import type { AppDeps, TaskAccess } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import { countWorkdays, dateInZone } from '../../lib/workdays.js';
+import * as commentsService from '../comments/service.js';
 import * as sprintsRepo from '../sprints/repo.js';
 import { toSprintBrief } from '../sprints/service.js';
 import * as repo from './repo.js';
@@ -393,41 +392,17 @@ export async function deleteLink(
   await repo.deleteLinkPair(deps.db, access.id, target.id);
 }
 
-export async function createComment(
-  deps: AppDeps,
-  taskId: string,
-  userId: string,
-  body: CreateCommentBody,
-): Promise<TaskComment> {
-  const now = deps.now();
-  const comment = await repo.insertComment(deps.db, {
-    taskId,
-    authorId: userId,
-    text: body.text,
-    createdAt: now,
-  });
-  const card = await repo.listTaskComments(deps.db, taskId);
-  const author = card.find((item) => item.id === comment.id)?.author;
-  if (!author) throw new AppError('TASK_NOT_FOUND');
-  return {
-    id: comment.id,
-    author,
-    text: comment.text,
-    createdAt: comment.createdAt.toISOString(),
-  };
-}
-
 export async function getTaskDetail(
   deps: AppDeps,
   access: TaskAccess,
   userId: string,
   role: BoardRole,
 ): Promise<TaskDetail> {
-  const [row, meta, links, comments] = await Promise.all([
+  const [row, meta, links, discussion] = await Promise.all([
     repo.findCard(deps.db, access.id),
     repo.findTaskMeta(deps.db, access.id),
     repo.listTaskLinks(deps.db, access.id, userId),
-    repo.listTaskComments(deps.db, access.id),
+    commentsService.listTaskComments(deps, access.id),
   ]);
   if (!row || !meta) throw new AppError('TASK_NOT_FOUND');
 
@@ -459,12 +434,7 @@ export async function getTaskDetail(
         canOpen: link.viewerRole !== null,
       },
     })),
-    comments: comments.map((comment) => ({
-      id: comment.id,
-      author: comment.author,
-      text: comment.text,
-      createdAt: comment.createdAt.toISOString(),
-    })),
+    comments: discussion,
     assigneeOptions,
     serverTime: deps.now().toISOString(),
   };

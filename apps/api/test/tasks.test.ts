@@ -362,21 +362,9 @@ describe('задачи', () => {
     });
   });
 
-  describe('деталь и комментарии', () => {
-    it('деталь соответствует контракту, комментарии от старых к новым', async () => {
+  describe('деталь', () => {
+    it('деталь соответствует контракту', async () => {
       const task = await createTask(t, team, { description: 'Описание' });
-      const first = await t.request(
-        'POST',
-        `/tasks/${task.key}/comments`,
-        team.worker.token,
-        { text: '  Первый ' },
-      );
-      expect(first.status).toBe(201);
-      expect((await json(first)).text).toBe('Первый');
-      t.advance(1000);
-      await t.request('POST', `/tasks/${task.key}/comments`, team.admin.token, {
-        text: 'Второй',
-      });
 
       const detail = taskDetailSchema.parse(
         await json(
@@ -385,21 +373,10 @@ describe('задачи', () => {
       );
       expect(detail.description).toBe('Описание');
       expect(detail.myRole).toBe('guest');
-      expect(detail.comments.map((c) => c.text)).toEqual(['Первый', 'Второй']);
+      expect(detail.comments).toEqual([]);
       expect(detail.serverTime).toBe(t.clock.current.toISOString());
       expect(detail.board.key).toBe(team.boardKey);
       expect(detail.sprint.state).toBe('active');
-    });
-
-    it('пустой комментарий даёт 422', async () => {
-      const task = await createTask(t, team);
-      const res = await t.request(
-        'POST',
-        `/tasks/${task.key}/comments`,
-        team.worker.token,
-        { text: '   ' },
-      );
-      expect(res.status).toBe(422);
     });
 
     it('assigneeOptions без гостей, но с нынешними ролями', async () => {

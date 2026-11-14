@@ -12,6 +12,7 @@ import { createRouter, errors, jsonResponse, noAuth } from './lib/router.js';
 import { requireAuth } from './modules/auth/middleware.js';
 import { authRoutes } from './modules/auth/routes.js';
 import { boardsRoutes } from './modules/boards/routes.js';
+import { commentsRoutes } from './modules/comments/routes.js';
 import { meRoutes } from './modules/me/routes.js';
 import { sprintsRoutes } from './modules/sprints/routes.js';
 import { tasksRoutes } from './modules/tasks/routes.js';
@@ -55,6 +56,7 @@ export function createApp(deps: AppDeps) {
   app.route('/', boardsRoutes(deps));
   app.route('/', sprintsRoutes(deps));
   app.route('/', tasksRoutes(deps));
+  app.route('/', commentsRoutes(deps));
 
   app.openapi(healthRoute, async (c) => {
     await deps.db.execute(sql`select 1`);
@@ -85,7 +87,7 @@ export function createApp(deps: AppDeps) {
     swaggerUI({
       url: '/api/v1/openapi.json',
       version: '5.34.1',
-      title: 'goodWebManTasks API',
+      title: 'mini-jira API',
       persistAuthorization: true,
       displayRequestDuration: true,
       filter: true,

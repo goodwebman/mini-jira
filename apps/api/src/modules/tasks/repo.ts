@@ -21,7 +21,6 @@ import {
   boards,
   sprintTasks,
   sprints,
-  taskComments,
   taskLinks,
   taskStatusIntervals,
   tasks,
@@ -145,20 +144,6 @@ export function listTaskLinks(db: Db, taskId: string, userId: string) {
     )
     .where(eq(taskLinks.taskId, taskId))
     .orderBy(asc(taskLinks.createdAt), asc(tasks.key));
-}
-
-export function listTaskComments(db: Db, taskId: string) {
-  return db
-    .select({
-      id: taskComments.id,
-      text: taskComments.text,
-      createdAt: taskComments.createdAt,
-      author: userBriefColumns,
-    })
-    .from(taskComments)
-    .innerJoin(users, eq(users.id, taskComments.authorId))
-    .where(eq(taskComments.taskId, taskId))
-    .orderBy(asc(taskComments.createdAt), asc(taskComments.id));
 }
 
 export function listAssigneeOptions(
@@ -410,15 +395,6 @@ export async function deleteLinkPair(db: Db, taskId: string, targetId: string) {
         and(eq(taskLinks.taskId, targetId), eq(taskLinks.targetTaskId, taskId)),
       ),
     );
-}
-
-export async function insertComment(
-  db: Db,
-  values: typeof taskComments.$inferInsert,
-) {
-  const [comment] = await db.insert(taskComments).values(values).returning();
-  if (!comment) throw new Error('comment was not created');
-  return comment;
 }
 
 export function searchTasks(
