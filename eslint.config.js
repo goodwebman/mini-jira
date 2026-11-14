@@ -23,6 +23,18 @@ import tseslint from 'typescript-eslint';
 const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 const layers = ['shared', 'entities', 'features', 'widgets', 'pages', 'app'];
 const sliceLayers = layers.slice(1, -1);
+/**
+ * Фичи сгруппированы по сущности: `features/task/edit-task`. Группа — только папка,
+ * слайс — действие внутри неё; соседние действия одной группы изолированы так же,
+ * как слайсы разных групп.
+ */
+const groupedLayers = new Set(['features']);
+const componentDeclaration = 'FunctionDeclaration[id.name=/^[A-Z]/]';
+const componentVariable =
+  'VariableDeclarator[id.name=/^[A-Z]/]:matches([init.type="ArrowFunctionExpression"], [init.type="FunctionExpression"], [init.type="CallExpression"]:has(> CallExpression:matches([callee.name=/^(memo|forwardRef)$/], [callee.object.name="React"][callee.property.name=/^(memo|forwardRef)$/]):has(:matches(ArrowFunctionExpression, FunctionExpression))))';
+const componentStatement = `:matches(${componentDeclaration}, VariableDeclaration:has(> ${componentVariable}))`;
+/** Объявление компонента на верхнем уровне файла: голое или под export. */
+const topLevelComponent = `:matches(${componentStatement}, ExportNamedDeclaration:has(> ${componentStatement}), ExportDefaultDeclaration:has(> ${componentStatement}), ExportDefaultDeclaration:has(> :matches(FunctionDeclaration, ArrowFunctionExpression, FunctionExpression)), ExportDefaultDeclaration:has(> CallExpression:matches([callee.name=/^(memo|forwardRef)$/], [callee.object.name="React"][callee.property.name=/^(memo|forwardRef)$/]):has(:matches(ArrowFunctionExpression, FunctionExpression))))`;
 const { browserslist: browserTargets } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 );
@@ -148,11 +160,19 @@ export default defineConfig([
       },
       'boundaries/include': ['apps/web/src/**'],
       'boundaries/elements': [
-        ...sliceLayers.map((layer) => ({
-          type: layer,
-          pattern: `apps/web/src/${layer}/*`,
-          capture: ['slice'],
-        })),
+        ...sliceLayers.map((layer) =>
+          groupedLayers.has(layer)
+            ? {
+                type: layer,
+                pattern: `apps/web/src/${layer}/*/*`,
+                capture: ['group', 'slice'],
+              }
+            : {
+                type: layer,
+                pattern: `apps/web/src/${layer}/*`,
+                capture: ['slice'],
+              },
+        ),
         ...['shared', 'app'].map((layer) => ({
           type: layer,
           pattern: `apps/web/src/${layer}`,
@@ -217,6 +237,24 @@ export default defineConfig([
               },
               message: 'FSD: import another slice through its public index.ts.',
             },
+            // Shared не режется на слайсы, но у каждого сегмента свой публичный API:
+            // `@/shared/ui`, `@/shared/api`, `@/shared/lib/<name>`, `@/shared/ui/icons`.
+            {
+              from: {
+                element: { type: layers.filter((layer) => layer !== 'shared') },
+              },
+              to: { element: { type: 'shared' } },
+              disallow: {
+                to: {
+                  element: {
+                    fileInternalPath:
+                      '!{*,lib/*,ui/icons}/index.{ts,tsx,js,jsx}',
+                  },
+                },
+              },
+              message:
+                'FSD: import shared through a segment public API (@/shared/ui, @/shared/lib/<name>).',
+            },
             {
               from: {
                 element: { type: 'app' },
@@ -259,6 +297,27 @@ export default defineConfig([
           'error',
         ]),
       ),
+    },
+  },
+  {
+    // Один компонент на файл: экран читается деревом файлов, а не прокруткой.
+    // `function XBase` + `export const X = memo(XBase)` — это один компонент.
+    files: ['apps/web/src/**/*.tsx'],
+    ignores: ['**/*.{test,spec}.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: `Program > ${topLevelComponent} ~ ${topLevelComponent}`,
+          message:
+            'Один компонент на файл: вынесите этот компонент в отдельный файл.',
+        },
+        {
+          selector: `:matches(Program, Program > ExportNamedDeclaration) > VariableDeclaration > ${componentVariable} ~ ${componentVariable}`,
+          message:
+            'Один компонент на файл: вынесите этот компонент в отдельный файл.',
+        },
+      ],
     },
   },
   {

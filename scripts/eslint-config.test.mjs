@@ -22,6 +22,12 @@ const root = await mkdtemp(path.join(os.tmpdir(), 'mini-jira-eslint-'));
 after(() => rm(root, { recursive: true, force: true }));
 const src = 'apps/web/src';
 const layers = ['shared', 'entities', 'features', 'widgets', 'pages', 'app'];
+/** Путь слайса внутри слоя: фичи лежат в группах по сущности (`features/group/alpha`). */
+const at = (layer, slice) =>
+  layer === 'features' ? `${layer}/group/${slice}` : `${layer}/${slice}`;
+/** Относительный путь от файла проверки до цели, глубина у групп другая. */
+const relative = (fromFile, target) =>
+  path.posix.relative(path.posix.dirname(fromFile), target);
 const fixture = async (file, code = 'export const value = 1;\n') => {
   const target = path.join(root, file);
   await mkdir(path.dirname(target), { recursive: true });
@@ -36,11 +42,15 @@ await fixture(
 );
 for (const layer of layers) {
   for (const slice of ['alpha', 'beta']) {
-    await fixture(`${src}/${layer}/${slice}/index.ts`);
-    await fixture(`${src}/${layer}/${slice}/internal.ts`);
+    await fixture(`${src}/${at(layer, slice)}/index.ts`);
+    await fixture(`${src}/${at(layer, slice)}/internal.ts`);
   }
 }
 await fixture(`${src}/entities/auth/testing.ts`);
+for (const segment of ['lib/alpha', 'ui/icons', 'ui/UIToast']) {
+  await fixture(`${src}/shared/${segment}/index.ts`);
+}
+await fixture(`${src}/shared/lib/alpha/internal.ts`);
 await fixture(`${src}/utils/value.ts`);
 await fixture(`${src}/index.css`, 'body {}');
 await fixture(`${src}/shared/styles/theme.css`, 'body {}');
@@ -92,10 +102,13 @@ async function ruleIds(file, code) {
 for (const [fromIndex, from] of layers.entries()) {
   for (const [toIndex, to] of layers.entries()) {
     if (from === to) continue;
-    for (const source of [`@/${to}/beta`, `../../${to}/beta`]) {
+    for (const source of [
+      `@/${at(to, 'beta')}`,
+      relative(`${at(from, 'alpha')}/check.ts`, at(to, 'beta')),
+    ]) {
       test(`${from} -> ${to} via ${source}`, async () => {
         const ids = await ruleIds(
-          `${from}/alpha/check.ts`,
+          `${at(from, 'alpha')}/check.ts`,
           `export { value } from '${source}';`,
         );
         assert.equal(
@@ -113,28 +126,155 @@ for (const [fromIndex, from] of layers.entries()) {
 for (const layer of ['entities', 'features', 'widgets', 'pages']) {
   test(`${layer}: sibling slices are isolated, even for type imports`, async () => {
     const ids = await ruleIds(
-      `${layer}/alpha/check.ts`,
-      `import type { value } from '@/${layer}/beta'; export type T = typeof value;`,
+      `${at(layer, 'alpha')}/check.ts`,
+      `import type { value } from '@/${at(layer, 'beta')}'; export type T = typeof value;`,
     );
     assert.ok(ids.includes('boundaries/dependencies'), JSON.stringify(ids));
   });
   test(`${layer}: deep imports are blocked`, async () => {
     const ids = await ruleIds(
       'app/check.ts',
-      `export { value } from '@/${layer}/alpha/internal';`,
+      `export { value } from '@/${at(layer, 'alpha')}/internal';`,
     );
     assert.ok(ids.includes('boundaries/dependencies'), JSON.stringify(ids));
   });
   test(`${layer}: slice internals can use relative imports`, async () => {
     assert.deepEqual(
       await ruleIds(
-        `${layer}/alpha/check.ts`,
+        `${at(layer, 'alpha')}/check.ts`,
         "export { value } from './internal';",
       ),
       [],
     );
   });
 }
+
+for (const [source, allowed] of [
+  ['@/shared/alpha', true],
+  ['@/shared/lib/alpha', true],
+  ['@/shared/ui/icons', true],
+  ['@/shared/alpha/internal', false],
+  ['@/shared/ui/UIToast', false],
+  ['@/shared/lib/alpha/internal', false],
+]) {
+  test(`shared segment public API: ${source} is ${allowed ? 'allowed' : 'blocked'}`, async () => {
+    const ids = await ruleIds(
+      `${at('features', 'alpha')}/check.ts`,
+      `export { value } from '${source}';`,
+    );
+    assert.equal(
+      ids.includes('boundaries/dependencies'),
+      !allowed,
+      JSON.stringify(ids),
+    );
+  });
+}
+
+for (const [title, code, blocked] of [
+  [
+    'anonymous default function',
+    'export const A = () => <i />; export default function () { return <b />; }',
+    true,
+  ],
+  [
+    'default forwardRef',
+    "import { forwardRef } from 'react'; const A = () => <i />; export default forwardRef(() => <b />);",
+    true,
+  ],
+  [
+    'memo alias does not hide a second component',
+    "import { memo } from 'react'; const ABase = () => <i />; export const A = memo(ABase); export const B = () => <b />;",
+    true,
+  ],
+  ['two arrows', 'export const A = () => <i />; const B = () => <b />;', true],
+  [
+    'two function expressions',
+    'const A = function () { return <i />; }; export const B = function () { return <b />; };',
+    true,
+  ],
+  [
+    'one declaration with two arrows',
+    'export const A = () => <i />, B = () => <b />;',
+    true,
+  ],
+  [
+    'inline memo and forwardRef',
+    "import { memo, forwardRef } from 'react'; export const A = memo(() => <i />); const B = forwardRef(function () { return <b />; });",
+    true,
+  ],
+  [
+    'default arrow',
+    'export const A = () => <i />; export default () => <b />;',
+    true,
+  ],
+  [
+    'default memo',
+    "import { memo } from 'react'; const A = () => <i />; export default memo(() => <b />);",
+    true,
+  ],
+  [
+    'React wrappers',
+    "import React from 'react'; const A = React.memo(() => <i />); export const B = React.forwardRef(() => <b />);",
+    true,
+  ],
+  [
+    'arrow base memo alias',
+    "import { memo } from 'react'; const ABase = () => <i />; export const A = memo(ABase);",
+    false,
+  ],
+  [
+    'nested helpers',
+    'export const A = () => { const B = () => <i />; return <B />; };',
+    false,
+  ],
+  [
+    'two components in one file are blocked',
+    'export function A() { return <i />; }\nfunction B() { return <b />; }',
+    true,
+  ],
+  [
+    'an exported and a default component are blocked',
+    'export function A() { return <i />; }\nexport default function B() { return <b />; }',
+    true,
+  ],
+  [
+    'a memo wrapper counts as one component',
+    "import { memo } from 'react';\nfunction ABase() { return <i />; }\nexport const A = memo(ABase);",
+    false,
+  ],
+  [
+    'helpers next to a component are fine',
+    'const label = (x) => x;\nfunction format(x) { return label(x); }\nexport function A() { return <i>{format(1)}</i>; }',
+    false,
+  ],
+]) {
+  test(`one component per file: ${title}`, async () => {
+    const ids = await ruleIds(`${at('pages', 'alpha')}/ui/Screen.tsx`, code);
+    assert.equal(
+      ids.includes('no-restricted-syntax'),
+      blocked,
+      JSON.stringify(ids),
+    );
+  });
+}
+
+test('one component per file: tests may declare local components', async () => {
+  const ids = await ruleIds(
+    `${at('pages', 'alpha')}/ui/Screen.test.tsx`,
+    'function A() { return <i />; }\nfunction B() { return <b />; }\nconst C = () => <i />; const D = () => <b />; export const value = [A, B, C, D];',
+  );
+  assert.ok(!ids.includes('no-restricted-syntax'), JSON.stringify(ids));
+});
+
+test('shared internals can import each other directly', async () => {
+  assert.deepEqual(
+    await ruleIds(
+      'shared/lib/alpha/check.ts',
+      "export { value } from '@/shared/ui/UIToast';",
+    ),
+    [],
+  );
+});
 
 // These cases exercise the installed plugins through the same config as application code.
 for (const [rule, invalid, valid] of [
@@ -465,8 +605,8 @@ test('shared and app may import within their own layer', async () => {
   for (const layer of ['shared', 'app']) {
     assert.deepEqual(
       await ruleIds(
-        `${layer}/alpha/check.ts`,
-        `export { value } from '@/${layer}/beta/internal';`,
+        `${at(layer, 'alpha')}/check.ts`,
+        `export { value } from '@/${at(layer, 'beta')}/internal';`,
       ),
       [],
     );
@@ -984,7 +1124,7 @@ for (const layer of ['entities', 'features', 'widgets', 'pages']) {
     assert.ok(
       (
         await ruleIds(
-          `${layer}/alpha/check.ts`,
+          `${at(layer, 'alpha')}/check.ts`,
           "export { value } from '../beta';",
         )
       ).includes('boundaries/dependencies'),
@@ -993,23 +1133,37 @@ for (const layer of ['entities', 'features', 'widgets', 'pages']) {
       (
         await ruleIds(
           'app/check.ts',
-          `export { value } from '../${layer}/alpha/internal';`,
+          `export { value } from '../${at(layer, 'alpha')}/internal';`,
         )
       ).includes('boundaries/dependencies'),
     );
     assert.deepEqual(
       await ruleIds(
-        `${layer}/alpha/check.ts`,
-        `export { value } from '@/${layer}/alpha/internal';`,
+        `${at(layer, 'alpha')}/check.ts`,
+        `export { value } from '@/${at(layer, 'alpha')}/internal';`,
       ),
       [],
     );
     assert.deepEqual(
       await ruleIds(
         'app/check.ts',
-        `export const load = () => import('@/${layer}/alpha');`,
+        `export const load = () => import('@/${at(layer, 'alpha')}');`,
       ),
       [],
     );
   });
 }
+
+test('features: slices of one group are isolated from each other', async () => {
+  await fixture(`${src}/features/group/gamma/index.ts`);
+  const ids = await ruleIds(
+    'features/group/alpha/check.ts',
+    "export { value } from '@/features/group/gamma';",
+  );
+  assert.ok(ids.includes('boundaries/dependencies'), JSON.stringify(ids));
+});
+
+test('features: a file directly in a group folder is unknown', async () => {
+  const ids = await ruleIds('features/group/loose.ts', 'export const x = 1;');
+  assert.ok(ids.includes('boundaries/no-unknown-files'), JSON.stringify(ids));
+});
