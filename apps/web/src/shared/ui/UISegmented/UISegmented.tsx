@@ -62,6 +62,7 @@ function UISegmentedInner<T extends string>(
 
     event.preventDefault();
     const target = enabled[next];
+    if (!target) return;
     onValueChange(target.value);
     const radios = event.currentTarget
       .closest('[role="radiogroup"]')

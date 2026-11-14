@@ -1,13 +1,17 @@
-import { type CSSProperties, type ReactNode, memo } from 'react';
+import { type ReactNode, memo } from 'react';
 
 import { cn } from '@/shared/lib/cn';
+
+import {
+  UIChartLegendMarker,
+  type UIChartLegendMarkerKind,
+} from './UIChartLegendMarker';
 
 export interface IUIChartLegendItem {
   readonly id: string;
   readonly label: ReactNode;
   readonly color: string;
-  /** Вид метки: `line`, `dashed`, `dotted` — для линий, остальные — для заливок. */
-  readonly marker?: 'dashed' | 'dot' | 'dotted' | 'line' | 'square';
+  readonly marker?: UIChartLegendMarkerKind;
   /** Значение справа. Показывается в режиме `list`. */
   readonly value?: ReactNode;
 }
@@ -17,40 +21,6 @@ export interface IUIChartLegendProps {
   /** `inline` — строка над графиком, `list` — столбик со значениями рядом с кольцом. */
   readonly variant?: 'inline' | 'list';
   readonly className?: string;
-}
-
-const LINE_STYLE: Record<'dashed' | 'dotted' | 'line', string> = {
-  line: 'solid',
-  dashed: 'dashed',
-  dotted: 'dotted',
-};
-
-function LegendMarker({
-  marker,
-  color,
-}: {
-  readonly marker: NonNullable<IUIChartLegendItem['marker']>;
-  readonly color: string;
-}) {
-  if (marker === 'dot' || marker === 'square') {
-    return (
-      <span
-        aria-hidden='true'
-        className={cn(
-          'size-[10px] flex-none',
-          marker === 'dot' ? 'rounded-full' : 'rounded-[3px]',
-        )}
-        style={{ backgroundColor: color }}
-      />
-    );
-  }
-
-  const style: CSSProperties = {
-    borderTop: `2px ${LINE_STYLE[marker]} ${color}`,
-  };
-  return (
-    <span aria-hidden='true' className='h-0 w-[16px] flex-none' style={style} />
-  );
 }
 
 /** Легенда графика: нужна при двух и более сериях. */
@@ -67,7 +37,10 @@ function UIChartLegendBase({
       >
         {items.map((item) => (
           <div key={item.id} className='flex items-center gap-2 text-small'>
-            <LegendMarker marker={item.marker ?? 'square'} color={item.color} />
+            <UIChartLegendMarker
+              marker={item.marker ?? 'square'}
+              color={item.color}
+            />
             <span className='min-w-0 flex-1 truncate'>{item.label}</span>
             {item.value != null && (
               <strong className='font-semibold tabular-nums'>
@@ -90,7 +63,10 @@ function UIChartLegendBase({
     >
       {items.map((item) => (
         <span key={item.id} className='flex items-center gap-[6px]'>
-          <LegendMarker marker={item.marker ?? 'square'} color={item.color} />
+          <UIChartLegendMarker
+            marker={item.marker ?? 'square'}
+            color={item.color}
+          />
           {item.label}
         </span>
       ))}

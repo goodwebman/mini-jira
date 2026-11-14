@@ -42,12 +42,19 @@ export function bindQueryClientToasts(
     toast(readApiError(error).message);
   };
   const unsubscribeQueries = client.getQueryCache().subscribe((event) => {
-    if (event.type === 'updated' && event.action.type === 'error')
-      notify(event.action.error);
+    if (event.type !== 'updated' || event.action.type !== 'error') return;
+    // Первую загрузку экрана показывает сам экран (граница ошибок или пустое
+    // состояние): тост продублировал бы её. Тост — для фоновых обновлений
+    // и запросов без интерфейса.
+    const { query } = event;
+    if (query.state.data === undefined && query.getObserversCount() > 0) return;
+    notify(event.action.error);
   });
   const unsubscribeMutations = client.getMutationCache().subscribe((event) => {
-    if (event.type === 'updated' && event.action.type === 'error')
-      notify(event.action.error);
+    if (event.type !== 'updated' || event.action.type !== 'error') return;
+    // Формы с `meta: { toast: false }` показывают ошибку под полями
+    if (event.mutation.meta?.toast === false) return;
+    notify(event.action.error);
   });
   return () => {
     unsubscribeQueries();

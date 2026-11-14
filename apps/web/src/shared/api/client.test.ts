@@ -85,7 +85,7 @@ describe('apiClient', () => {
         },
       ),
     ).resolves.toEqual({ id: 1 });
-    const [url, init] = transport.mock.calls[0];
+    const [url, init] = transport.mock.calls[0] ?? [];
     expect(url).toBe('/api/v1/tasks');
     expect(init).toMatchObject({
       method: 'POST',
@@ -104,7 +104,7 @@ describe('apiClient', () => {
     async (method) => {
       transport.mockResolvedValue(new Response(null, { status: 204 }));
       await expect(apiClient[method]('/tasks/1')).resolves.toBeUndefined();
-      expect(transport.mock.calls[0][1]?.method).toBe(method.toUpperCase());
+      expect(transport.mock.calls[0]?.[1]?.method).toBe(method.toUpperCase());
     },
   );
 
@@ -113,7 +113,7 @@ describe('apiClient', () => {
     const body = new FormData();
     body.append('file', new Blob(['content']), 'test.txt');
     await apiClient.post('/files', body);
-    const init = transport.mock.calls[0][1];
+    const init = transport.mock.calls[0]?.[1];
     expect(init?.body).toBe(body);
     expect(new Headers(init?.headers).has('Content-Type')).toBe(false);
   });
@@ -123,7 +123,7 @@ describe('apiClient', () => {
     await apiClient.get('/public', { skipAuth: true });
     expect(publicFetch).toHaveBeenCalledOnce();
     expect(transport).not.toHaveBeenCalled();
-    expect(publicFetch.mock.calls[0][1]).not.toHaveProperty('skipAuth');
+    expect(publicFetch.mock.calls[0]?.[1]).not.toHaveProperty('skipAuth');
   });
 
   it('сохраняет HTTP-статус и тело ошибки', async () => {

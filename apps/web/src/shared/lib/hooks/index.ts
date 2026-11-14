@@ -17,3 +17,4 @@ export { useOutsideClick } from './use-outside-click';
 export type { UseOutsideClickOptions } from './use-outside-click';
 export { useReducedMotion } from './use-reduced-motion';
 export { useScrollLock } from './use-scroll-lock';
+export { useDebouncedValue } from './use-debounced-value';

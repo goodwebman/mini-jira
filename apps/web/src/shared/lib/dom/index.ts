@@ -11,3 +11,4 @@ export type {
   PositionOptions,
   PositionResult,
 } from './position';
+export { copyText } from './clipboard';

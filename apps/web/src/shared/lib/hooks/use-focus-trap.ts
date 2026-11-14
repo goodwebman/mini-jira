@@ -91,10 +91,10 @@ export function useFocusTrap(
         (current === first || current === node || outside)
       ) {
         event.preventDefault();
-        last.focus();
+        last?.focus();
       } else if (!event.shiftKey && (current === last || outside)) {
         event.preventDefault();
-        first.focus();
+        first?.focus();
       }
     };
 

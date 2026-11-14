@@ -73,11 +73,12 @@ function UIAreaChartBase({
     const lower = running.slice();
     let path = '';
     for (let index = 0; index <= lastIndex; index += 1) {
-      running[index] += item.values[index] ?? 0;
-      path += `${index === 0 ? 'M' : 'L'}${String(pointX(plot, index, count))} ${String(plot.y(running[index]))}`;
+      const top = (running[index] ?? 0) + (item.values[index] ?? 0);
+      running[index] = top;
+      path += `${index === 0 ? 'M' : 'L'}${String(pointX(plot, index, count))} ${String(plot.y(top))}`;
     }
     for (let index = lastIndex; index >= 0; index -= 1) {
-      path += `L${String(pointX(plot, index, count))} ${String(plot.y(lower[index]))}`;
+      path += `L${String(pointX(plot, index, count))} ${String(plot.y(lower[index] ?? 0))}`;
     }
     return {
       key: item.name,

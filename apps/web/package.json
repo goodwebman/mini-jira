@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "sideEffects": [
+    "**/*.css",
+    "./src/main.tsx",
+    "./src/app/monitoring.ts",
+    "./src/app/init-auth.ts"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -24,7 +30,7 @@
     "clsx": "^2.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-error-boundary": "^6.1.6",
+    "react-router": "^8.5.1",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {

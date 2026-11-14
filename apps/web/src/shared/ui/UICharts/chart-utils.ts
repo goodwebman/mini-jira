@@ -26,7 +26,9 @@ export const CHART_PALETTE = [
 ] as const;
 
 export function seriesColor(index: number, color: string | undefined): string {
-  return color ?? CHART_PALETTE[index % CHART_PALETTE.length];
+  return (
+    color ?? CHART_PALETTE[index % CHART_PALETTE.length] ?? CHART_PALETTE[0]
+  );
 }
 
 const round = (value: number): number => Number(value.toFixed(1));

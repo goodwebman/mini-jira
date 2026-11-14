@@ -58,7 +58,7 @@ describe('THEME_TOKENS', () => {
   const tokensOf = (namespace: string): string[] => {
     const pattern = new RegExp(`^\\s*--${namespace}-([a-z][a-z0-9-]*):`, 'gm');
     return [...css.matchAll(pattern)]
-      .map((match) => match[1])
+      .map((match) => match[1] ?? '')
       .filter(
         (name) => !name.endsWith('--line-height') && !name.includes('--'),
       );

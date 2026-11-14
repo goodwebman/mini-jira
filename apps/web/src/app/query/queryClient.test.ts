@@ -6,6 +6,7 @@
  * - обновление токена сохраняет кэш, logout/kick/смена пользователя очищают;
  * - очистка сессии отменяет запрос и не допускает позднюю запись старых данных.
  */
+import { QueryObserver } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -241,6 +242,46 @@ describe('application query client', () => {
     resolveRequest(Response.json({ items: [], total: 99 }));
     await rejected;
     expect(client.getQueryCache().getAll()).toEqual([]);
+    unbind();
+    client.clear();
+  });
+
+  it('форма с meta.toast=false показывает ошибку сама: общего тоста нет', async () => {
+    const client = createQueryClient();
+    const toast = vi.fn();
+    const unbind = bindQueryClientToasts(client, toast);
+    const mutationFn = vi.fn().mockRejectedValue(new Error('поле'));
+    await expect(
+      client
+        .getMutationCache()
+        .build(client, { mutationFn, meta: { toast: false } })
+        .execute(undefined),
+    ).rejects.toThrow('поле');
+    expect(toast).not.toHaveBeenCalled();
+    unbind();
+    client.clear();
+  });
+
+  it('первую загрузку экрана показывает сам экран, фоновое обновление — тост', async () => {
+    const client = createQueryClient();
+    const toast = vi.fn();
+    const unbind = bindQueryClientToasts(client, toast);
+    const queryKey = ['screen'];
+    const observer = new QueryObserver(client, {
+      queryKey,
+      queryFn: () => Promise.reject(new Error('нет данных')),
+      retry: false,
+    });
+    const stop = observer.subscribe(() => {});
+    await vi.waitFor(() =>
+      expect(client.getQueryState(queryKey)?.status).toBe('error'),
+    );
+    expect(toast).not.toHaveBeenCalled();
+
+    client.setQueryData(queryKey, { ok: true });
+    await client.refetchQueries({ queryKey }).catch(() => {});
+    expect(toast).toHaveBeenCalledOnce();
+    stop();
     unbind();
     client.clear();
   });

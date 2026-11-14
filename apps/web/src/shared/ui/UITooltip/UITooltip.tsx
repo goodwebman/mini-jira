@@ -1,7 +1,5 @@
 import {
   type ReactElement,
-  type ReactNode,
-  type RefObject,
   cloneElement,
   forwardRef,
   isValidElement,
@@ -13,70 +11,14 @@ import {
 } from 'react';
 
 import { cn } from '@/shared/lib/cn';
-import { type Placement, Portal } from '@/shared/lib/dom';
 import {
   useControllableState,
   useEscape,
-  useFloatingPosition,
   useMergedRefs,
 } from '@/shared/lib/hooks';
 
-export interface IUITooltipProps {
-  readonly testId?: string;
-  /** Элемент, на котором показывается подсказка. */
-  readonly children?: ReactNode;
-  /** Класс обёртки вокруг элемента. */
-  readonly className?: string;
-  /** Текст подсказки. Пустой контент подсказку не показывает. */
-  readonly content?: ReactNode;
-  readonly placement?: Placement;
-  /** Отступ от элемента, px. */
-  readonly gutter?: number;
-  /** Задержка показа, мс. */
-  readonly delay?: number;
-  /** Управляемое состояние. */
-  readonly open?: boolean;
-  readonly onOpenChange?: (open: boolean) => void;
-}
-
-interface TooltipBubbleProps {
-  readonly id: string;
-  readonly content: ReactNode;
-  readonly anchorRef: RefObject<HTMLElement | null>;
-  readonly placement: Placement;
-  readonly gutter: number;
-}
-
-function TooltipBubble({
-  id,
-  content,
-  anchorRef,
-  placement,
-  gutter,
-}: TooltipBubbleProps) {
-  const bubbleRef = useRef<HTMLDivElement>(null);
-  useFloatingPosition({
-    anchorRef,
-    floatingRef: bubbleRef,
-    open: true,
-    placement,
-    gutter,
-  });
-
-  return (
-    <Portal>
-      <div
-        ref={bubbleRef}
-        id={id}
-        role='tooltip'
-        data-name='UITooltipContent'
-        className='invisible fixed left-0 top-0 z-60 max-w-[320px] rounded-control border border-border bg-surface px-3 py-2 text-body text-foreground shadow-popover'
-      >
-        {content}
-      </div>
-    </Portal>
-  );
-}
+import { TooltipBubble } from './TooltipBubble';
+import type { IUITooltipProps } from './types';
 
 /**
  * Всплывающая подсказка: по наведению и по фокусу, Escape закрывает.
@@ -175,3 +117,4 @@ const UITooltipBase = forwardRef<HTMLSpanElement, IUITooltipProps>(
 );
 UITooltipBase.displayName = 'UITooltip';
 export const UITooltip = memo(UITooltipBase);
+export type { IUITooltipProps } from './types';

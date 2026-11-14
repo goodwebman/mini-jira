@@ -3,6 +3,7 @@ import { type QueryClient, isCancelledError } from '@tanstack/react-query';
 
 import type { AuthEvent, AuthState } from '@/entities/auth';
 import { HttpError } from '@/shared/api';
+import { configureRenderErrorReporter } from '@/shared/lib/report';
 
 interface AuthSource<TUser> {
   getSnapshot(): AuthState<TUser>;
@@ -63,4 +64,14 @@ export function bindQueryMonitoring(
     offQueries();
     offMutations();
   };
+}
+
+/** Ошибки рендера внутри страниц: их ловят границы `AsyncBoundary`, не Sentry. */
+export function bindRenderErrorMonitoring(monitoring: Monitoring): () => void {
+  return configureRenderErrorReporter((error, componentStack) => {
+    monitoring.captureException(error, {
+      tags: { source: 'react' },
+      contexts: { react: { componentStack: componentStack ?? '' } },
+    });
+  });
 }

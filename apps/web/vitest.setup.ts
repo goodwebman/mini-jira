@@ -1,6 +1,13 @@
-import '@testing-library/jest-dom/vitest';
+/// <reference types="@testing-library/jest-dom/vitest" />
+import * as domMatchers from '@testing-library/jest-dom/matchers';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, expect } from 'vitest';
+
+// Матчеры регистрируются на `expect` этого же модуля. Готовый вход
+// `@testing-library/jest-dom/vitest` импортирует свой `vitest`: на Windows путь
+// с другим регистром диска (`c:` и `C:`) давал второй экземпляр, и матчеры
+// пропадали в части прогонов.
+expect.extend(domMatchers);
 
 afterEach(cleanup);
 

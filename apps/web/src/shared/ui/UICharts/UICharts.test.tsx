@@ -44,7 +44,7 @@ describe('chart-utils', () => {
 
   it('деления оси начинаются с нуля и доходят до верха', () => {
     expect(plot.ticks[0]).toBe(0);
-    expect(plot.y(plot.ticks[plot.ticks.length - 1])).toBe(margin.top);
+    expect(plot.y(plot.ticks.at(-1) ?? Number.NaN)).toBe(margin.top);
   });
 
   it('единственная точка встаёт по центру', () => {

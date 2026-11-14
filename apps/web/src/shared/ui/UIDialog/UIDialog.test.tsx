@@ -90,7 +90,7 @@ describe('UIDialog', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Закрыть' }));
     });
     closeBy(() => {
-      fireEvent.click(overlays()[0]);
+      fireEvent.click(overlays()[0]!);
     });
     closeBy(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Отмена' }));
@@ -99,7 +99,7 @@ describe('UIDialog', () => {
 
   it('persistent не закрывается по фону, но закрывается по Escape', () => {
     render(<Harness persistent />);
-    fireEvent.click(overlays()[0]);
+    fireEvent.click(overlays()[0]!);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     pressEscape();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

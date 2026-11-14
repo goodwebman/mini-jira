@@ -44,6 +44,7 @@ export * from './UIAlert';
 export * from './UIDialog';
 export * from './UIDrawer';
 export * from './UIPopover';
+export * from './UIRequestError';
 export * from './UIToast';
 export * from './UITooltip';
 
