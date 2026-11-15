@@ -2,11 +2,11 @@ import type { TaskDetail } from '@gwmt/contracts';
 
 import type { BoardPermissions } from '@/entities/board';
 import {
+  SP_SECONDS,
   TaskLockNotice,
   TaskTimerPanel,
   type TaskTimerView,
   getTaskSpentSec,
-  SP_SECONDS,
 } from '@/entities/task';
 import { TaskStatusField } from '@/features/task/change-status';
 import { TaskPropertyEditors } from '@/features/task/edit-task';
@@ -75,7 +75,9 @@ export function TaskPropertiesCard({
       {permissions.canEditTask ? (
         <TaskPropertyEditors
           task={task}
-          overEstimate={getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS}
+          overEstimate={
+            getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS
+          }
           renderRow={(row) => (
             <TaskPropertyRow htmlFor={row.id} label={row.label}>
               {row.control}
@@ -83,7 +85,12 @@ export function TaskPropertiesCard({
           )}
         />
       ) : (
-        <TaskReadOnlyProperties task={task} overEstimate={getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS} />
+        <TaskReadOnlyProperties
+          task={task}
+          overEstimate={
+            getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS
+          }
+        />
       )}
       <TaskPropertyRow label='Создана'>
         {formatNumericDate(task.createdAt, timeZone)}

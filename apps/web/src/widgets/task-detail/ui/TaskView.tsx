@@ -38,7 +38,9 @@ export function TaskView({
   return (
     <TaskLayout
       summary={<TaskSummaryCard task={task} now={now} />}
-      timeHistory={<TaskTimeHistoryCard task={task} now={now} timeZone={me.timezone} />}
+      timeHistory={
+        <TaskTimeHistoryCard task={task} now={now} timeZone={me.timezone} />
+      }
       properties={
         <TaskPropertiesCard
           task={task}

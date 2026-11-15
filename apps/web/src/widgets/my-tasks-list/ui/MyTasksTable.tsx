@@ -2,9 +2,11 @@ import type { TaskRow } from '@gwmt/contracts';
 import { Link } from 'react-router';
 
 import {
+  SP_SECONDS,
   TASK_PRIORITY_LABELS,
   TaskStatusBadge,
   TaskTimerBadge,
+  getTaskSpentSec,
   getTaskTimerView,
   taskRolesLabel,
 } from '@/entities/task';
@@ -123,7 +125,16 @@ export function MyTasksTable({
               </UIPriority>
             </UITable.Cell>
             <UITable.Cell className='hidden text-right tabular-nums md:table-cell'>
-              {formatNumber(row.sp)}
+              <span
+                className={
+                  getTaskSpentSec(row.status, row.timer, now) >
+                  row.sp * SP_SECONDS
+                    ? 'font-semibold text-destructive'
+                    : undefined
+                }
+              >
+                {formatNumber(row.sp)}
+              </span>
             </UITable.Cell>
             <UITable.Cell className='hidden text-muted-foreground lg:table-cell'>
               {formatShortDate(row.createdAt, timeZone)}

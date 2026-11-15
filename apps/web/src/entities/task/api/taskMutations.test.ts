@@ -114,6 +114,7 @@ describe('task mutations', () => {
       myRole: 'worker',
       links: [],
       comments: [],
+      timeHistory: [],
       assigneeOptions: [user],
       serverTime: '2026-11-11T00:00:00Z',
     };

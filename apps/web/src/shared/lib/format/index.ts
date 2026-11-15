@@ -1,5 +1,6 @@
 export {
   formatDateRange,
+  formatDateTime,
   formatDayMonth,
   formatDuration,
   formatLongDate,

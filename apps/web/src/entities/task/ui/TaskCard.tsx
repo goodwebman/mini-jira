@@ -7,8 +7,8 @@ import { formatSp } from '@/shared/lib/format';
 import { type IUITaskCardProps, UITaskCard } from '@/shared/ui';
 
 import { TASK_PRIORITY_LABELS } from '../model/task-meta';
+import { SP_SECONDS, getTaskSpentSec } from '../model/task-time';
 import type { TaskTimerView } from '../model/task-timer';
-import { getTaskSpentSec, SP_SECONDS } from '../model/task-time';
 import { TaskBlockerMark } from './TaskBlockerMark';
 import { TaskLinksCount } from './TaskLinksCount';
 import { TaskLockBadge } from './TaskLockBadge';
@@ -53,8 +53,22 @@ export function TaskCard({
     <UITaskCard
       taskKey={task.key}
       title={task.title}
-      className={cn(getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS && 'border-destructive/50 bg-destructive-tint/30', className)}
-      points={<span className={getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS ? 'font-semibold text-destructive' : undefined}>{formatSp(task.sp)}</span>}
+      className={cn(
+        getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS &&
+          'border-destructive/50 bg-destructive-tint/30',
+        className,
+      )}
+      points={
+        <span
+          className={
+            getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS
+              ? 'font-semibold text-destructive'
+              : undefined
+          }
+        >
+          {formatSp(task.sp)}
+        </span>
+      }
       priority={task.priority}
       priorityLabel={TASK_PRIORITY_LABELS[task.priority]}
       badges={

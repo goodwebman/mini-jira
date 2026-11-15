@@ -36,7 +36,11 @@ export function TaskSpField({
       inputMode='decimal'
       value={shown}
       error={error}
-      className={overEstimate ? 'border-destructive bg-destructive-tint text-destructive' : undefined}
+      className={
+        overEstimate
+          ? 'border-destructive bg-destructive-tint text-destructive'
+          : undefined
+      }
       title={overEstimate ? 'Затраченное время превысило оценку' : undefined}
       aria-invalid={error ? true : undefined}
       onChange={(event) => setDraft(event.target.value)}

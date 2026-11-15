@@ -2,9 +2,11 @@ import type { TaskRow } from '@gwmt/contracts';
 import { Link } from 'react-router';
 
 import {
+  SP_SECONDS,
   TASK_PRIORITY_LABELS,
   TaskStatusBadge,
   TaskTimerBadge,
+  getTaskSpentSec,
   getTaskTimerView,
   taskRolesLabel,
 } from '@/entities/task';
@@ -54,7 +56,16 @@ export function MyTasksCards({
               />
               <span className='font-medium'>{row.key}</span>
               <span>· {taskRolesLabel(row.roles)}</span>
-              <span className='ml-auto'>{formatNumber(row.sp)} SP</span>
+              <span
+                className={
+                  getTaskSpentSec(row.status, row.timer, now) >
+                  row.sp * SP_SECONDS
+                    ? 'ml-auto font-semibold text-destructive'
+                    : 'ml-auto'
+                }
+              >
+                {formatNumber(row.sp)} SP
+              </span>
             </span>
             <span className='font-medium'>{row.title}</span>
             <span className='flex items-center justify-between gap-2'>

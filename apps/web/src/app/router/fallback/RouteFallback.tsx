@@ -59,7 +59,18 @@ export function RouteFallback() {
   }
   return (
     <AppShellSkeleton>
-      <ShellPageSkeleton title={title} scroll={isBoard ? 'fixed' : 'auto'} actions={isBoard ? <UIPageHeader.ActionSkeleton icon={<UIIcons.Plus />} label='Создать задачу' /> : undefined}>
+      <ShellPageSkeleton
+        title={title}
+        scroll={isBoard ? 'fixed' : 'auto'}
+        actions={
+          isBoard ? (
+            <UIPageHeader.ActionSkeleton
+              icon={<UIIcons.Plus />}
+              label='Создать задачу'
+            />
+          ) : undefined
+        }
+      >
         {content}
       </ShellPageSkeleton>
     </AppShellSkeleton>

@@ -105,7 +105,12 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
 
         <AsyncBoundary
           resetKeys={[boardId]}
-          fallback={<KanbanSkeleton />}
+          fallback={
+            <KanbanSkeleton
+              role={board.myRole}
+              phoneColumn={workspace.phoneColumn}
+            />
+          }
           renderError={({ error, retry }) => (
             <UIRequestError error={error} retry={retry} />
           )}

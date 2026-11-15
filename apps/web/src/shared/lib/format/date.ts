@@ -36,6 +36,7 @@ interface DateParts {
   readonly day: number;
   readonly hour: number;
   readonly minute: number;
+  readonly second: number;
 }
 
 const pad = (value: number) => String(value).padStart(2, '0');
@@ -47,7 +48,7 @@ const monthShort = (month: number) => MONTHS_SHORT[month] ?? '';
  */
 function parseIsoDate(value: string): DateParts {
   const [year = 0, month = 1, day = 1] = value.split('-').map(Number);
-  return { year, month: month - 1, day, hour: 0, minute: 0 };
+  return { year, month: month - 1, day, hour: 0, minute: 0, second: 0 };
 }
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
@@ -64,6 +65,7 @@ function zonedParts(iso: string, timeZone?: string): DateParts {
       day: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
+      second: 'numeric',
       hourCycle: 'h23',
     });
     formatters.set(key, formatter);
@@ -79,6 +81,7 @@ function zonedParts(iso: string, timeZone?: string): DateParts {
     day: parts.day ?? 1,
     hour: parts.hour ?? 0,
     minute: parts.minute ?? 0,
+    second: parts.second ?? 0,
   };
 }
 
@@ -113,6 +116,11 @@ export function formatNumericDate(iso: string, timeZone?: string): string {
 export function formatShortDateTime(iso: string, timeZone?: string): string {
   const { day, month, hour, minute } = zonedParts(iso, timeZone);
   return `${String(day)} ${monthShort(month)}, ${pad(hour)}:${pad(minute)}`;
+}
+
+export function formatDateTime(iso: string, timeZone?: string): string {
+  const { day, month, year, hour, minute, second } = zonedParts(iso, timeZone);
+  return `${pad(day)}.${pad(month + 1)}.${String(year)}, ${pad(hour)}:${pad(minute)}:${pad(second)}`;
 }
 
 /** Момент → «8 ноября 2026». */

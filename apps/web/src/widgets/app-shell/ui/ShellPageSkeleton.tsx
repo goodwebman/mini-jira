@@ -20,8 +20,8 @@ export function ShellPageSkeleton({
 }) {
   return (
     <ShellPage
-      title={title ?? <UISkeleton className='h-[1.2em] w-48 max-w-full' />}
-      caption={<UISkeleton className='my-[2px] h-[1em] w-32' />}
+      title={title ?? <UISkeleton className='h-[1.3em] w-48 max-w-full' />}
+      caption={<UISkeleton className='h-[1.33em] w-32' />}
       scroll={scroll}
       actions={actions}
     >

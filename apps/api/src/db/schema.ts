@@ -271,14 +271,21 @@ export const taskPauses = pgTable(
   'task_pauses',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    intervalId: uuid('interval_id').notNull().references(() => taskStatusIntervals.id, { onDelete: 'cascade' }),
+    intervalId: uuid('interval_id')
+      .notNull()
+      .references(() => taskStatusIntervals.id, { onDelete: 'cascade' }),
     startedAt: timestamptz('started_at').notNull(),
     endedAt: timestamptz('ended_at'),
   },
   (t) => [
     index('task_pauses_interval_started_idx').on(t.intervalId, t.startedAt),
-    uniqueIndex('task_pauses_open_idx').on(t.intervalId).where(sql`${t.endedAt} is null`),
-    check('task_pauses_dates_check', sql`${t.endedAt} is null or ${t.endedAt} >= ${t.startedAt}`),
+    uniqueIndex('task_pauses_open_idx')
+      .on(t.intervalId)
+      .where(sql`${t.endedAt} is null`),
+    check(
+      'task_pauses_dates_check',
+      sql`${t.endedAt} is null or ${t.endedAt} >= ${t.startedAt}`,
+    ),
   ],
 );
 

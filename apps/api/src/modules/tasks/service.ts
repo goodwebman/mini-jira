@@ -13,6 +13,7 @@ import {
   type TaskRole,
   type TaskSearchResponse,
   type TaskStatus,
+  type TaskTimeInterval,
   type TaskTimer,
   type UpdateTaskBody,
   can,
@@ -424,6 +425,16 @@ export async function getTaskDetail(
     row.boardId,
     currentPeople,
   );
+  const pausesByInterval = new Map<string, TaskTimeInterval['pauses']>();
+  for (const pause of pauses) {
+    const entries = pausesByInterval.get(pause.intervalId) ?? [];
+    entries.push({
+      id: pause.id,
+      startedAt: pause.startedAt.toISOString(),
+      endedAt: pause.endedAt?.toISOString() ?? null,
+    });
+    pausesByInterval.set(pause.intervalId, entries);
+  }
 
   return {
     ...toTaskCard(row),
@@ -446,9 +457,7 @@ export async function getTaskDetail(
       ...interval,
       enteredAt: interval.enteredAt.toISOString(),
       leftAt: interval.leftAt?.toISOString() ?? null,
-      pauses: pauses.filter((pause) => pause.intervalId === interval.id).map((pause) => ({
-        id: pause.id, startedAt: pause.startedAt.toISOString(), endedAt: pause.endedAt?.toISOString() ?? null,
-      })),
+      pauses: pausesByInterval.get(interval.id) ?? [],
     })),
     assigneeOptions,
     serverTime: deps.now().toISOString(),

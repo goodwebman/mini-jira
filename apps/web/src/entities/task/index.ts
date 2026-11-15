@@ -63,7 +63,12 @@ export {
   toMoveTask,
 } from './model/task-moves';
 export { parseSp, SP_ERROR } from './model/task-sp';
-export { getTaskSpentSec, getTaskIntervalTime, isActiveTaskStatus, SP_SECONDS } from './model/task-time';
+export {
+  getTaskSpentSec,
+  getTaskIntervalTime,
+  isActiveTaskStatus,
+  SP_SECONDS,
+} from './model/task-time';
 export {
   getTaskTimerView,
   type TaskTimerTone,

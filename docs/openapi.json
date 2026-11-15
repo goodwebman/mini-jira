@@ -638,6 +638,11 @@
       "TaskTimer": {
         "type": "object",
         "properties": {
+          "spentSec": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Чистое время завершённых интервалов work, review, test, в секундах"
+          },
           "statusEnteredAt": {
             "type": "string",
             "format": "date-time",
@@ -670,6 +675,7 @@
           }
         },
         "required": [
+          "spentSec",
           "statusEnteredAt",
           "pausedAt",
           "pausedTotalSec",
@@ -1750,6 +1756,12 @@
               "designer"
             ]
           },
+          "timeHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskTimeInterval"
+            }
+          },
           "description": {
             "type": "string"
           },
@@ -1826,6 +1838,7 @@
           "isBlocked",
           "isTakeLocked",
           "people",
+          "timeHistory",
           "description",
           "board",
           "sprint",
@@ -1834,6 +1847,79 @@
           "comments",
           "assigneeOptions",
           "serverTime"
+        ]
+      },
+      "TaskTimeInterval": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "enteredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "leftAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "pausedSec": {
+            "type": "number",
+            "minimum": 0
+          },
+          "changedBy": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "pauses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "startedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "UTC-строка",
+                  "example": "2026-11-08T09:03:41.078Z"
+                },
+                "endedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time",
+                  "description": "UTC-строка",
+                  "example": "2026-11-08T09:03:41.078Z"
+                }
+              },
+              "required": [
+                "id",
+                "startedAt",
+                "endedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "enteredAt",
+          "leftAt",
+          "pausedSec",
+          "changedBy",
+          "pauses"
         ]
       },
       "TaskLinkItem": {

@@ -153,7 +153,12 @@ export type BoardDetail = z.infer<typeof boardDetailSchema>;
 
 export const taskTimerSchema = z
   .object({
-    spentSec: z.number().nonnegative().describe('Чистое время завершённых интервалов work, review, test, в секундах'),
+    spentSec: z
+      .number()
+      .nonnegative()
+      .describe(
+        'Чистое время завершённых интервалов work, review, test, в секундах',
+      ),
     statusEnteredAt: isoDateTimeSchema,
     pausedAt: isoDateTimeSchema
       .nullable()
@@ -238,19 +243,23 @@ export const taskCommentSchema = z
   .meta({ id: 'TaskComment' });
 export type TaskComment = z.infer<typeof taskCommentSchema>;
 
-export const taskTimeIntervalSchema = z.object({
-  id: z.string(),
-  status: taskStatusSchema,
-  enteredAt: isoDateTimeSchema,
-  leftAt: isoDateTimeSchema.nullable(),
-  pausedSec: z.number().nonnegative(),
-  changedBy: userBriefSchema,
-  pauses: z.array(z.object({
+export const taskTimeIntervalSchema = z
+  .object({
     id: z.string(),
-    startedAt: isoDateTimeSchema,
-    endedAt: isoDateTimeSchema.nullable(),
-  })),
-}).meta({ id: 'TaskTimeInterval' });
+    status: taskStatusSchema,
+    enteredAt: isoDateTimeSchema,
+    leftAt: isoDateTimeSchema.nullable(),
+    pausedSec: z.number().nonnegative(),
+    changedBy: userBriefSchema,
+    pauses: z.array(
+      z.object({
+        id: z.string(),
+        startedAt: isoDateTimeSchema,
+        endedAt: isoDateTimeSchema.nullable(),
+      }),
+    ),
+  })
+  .meta({ id: 'TaskTimeInterval' });
 export type TaskTimeInterval = z.infer<typeof taskTimeIntervalSchema>;
 
 export const taskDetailSchema = taskCardSchema

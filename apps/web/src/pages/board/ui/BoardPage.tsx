@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useBoardWorkspaceStore } from '@/features/board/workspace';
 import { AsyncBoundary } from '@/shared/lib/react';
 import { ROUTES } from '@/shared/routes';
-import { UIRequestError, UIPageHeader, buttonVariants } from '@/shared/ui';
+import { UIPageHeader, UIRequestError, buttonVariants } from '@/shared/ui';
 import { UIIcons } from '@/shared/ui/icons';
 import { ShellPageSkeleton } from '@/widgets/app-shell';
 import { BoardSkeleton } from '@/widgets/kanban-board';
@@ -16,7 +16,16 @@ export function BoardPage() {
   return (
     <AsyncBoundary
       fallback={
-        <ShellPageSkeleton label='Загрузка доски' scroll='fixed' actions={<UIPageHeader.ActionSkeleton icon={<UIIcons.Plus />} label='Создать задачу' />}>
+        <ShellPageSkeleton
+          label='Загрузка доски'
+          scroll='fixed'
+          actions={
+            <UIPageHeader.ActionSkeleton
+              icon={<UIIcons.Plus />}
+              label='Создать задачу'
+            />
+          }
+        >
           <BoardSkeleton />
         </ShellPageSkeleton>
       }

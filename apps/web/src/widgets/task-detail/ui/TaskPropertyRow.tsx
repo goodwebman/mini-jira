@@ -23,7 +23,9 @@ export function TaskPropertyRow({
       ) : (
         <span className={labelClass}>{label}</span>
       )}
-      <div className='min-w-0'>{children}</div>
+      <div className='flex min-h-control min-w-0 items-center [&>*]:max-w-full'>
+        {children}
+      </div>
     </>
   );
 }

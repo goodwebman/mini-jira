@@ -26,7 +26,13 @@ export function TaskReadOnlyProperties({
         {TASK_PRIORITY_LABELS[task.priority]}
       </TaskPropertyRow>
       <TaskPropertyRow label='Оценка, SP'>
-        <span className={overEstimate ? 'font-semibold text-destructive' : undefined}>{formatNumber(task.sp)}</span>
+        <span
+          className={
+            overEstimate ? 'font-semibold text-destructive' : undefined
+          }
+        >
+          {formatNumber(task.sp)}
+        </span>
       </TaskPropertyRow>
       {TASK_ROLE_OPTIONS.map(({ value, label }) => (
         <TaskPropertyRow key={value} label={label}>

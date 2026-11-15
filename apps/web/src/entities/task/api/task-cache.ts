@@ -92,7 +92,11 @@ export async function moveTaskInBoardCache(
                 isTakeLocked: status === 'todo' && item.isTakeLocked,
                 timer: {
                   ...item.timer,
-                  spentSec: getTaskSpentSec(item.status, item.timer, Date.parse(nowIso)),
+                  spentSec: getTaskSpentSec(
+                    item.status,
+                    item.timer,
+                    Date.parse(nowIso),
+                  ),
                   statusEnteredAt: nowIso,
                   pausedAt: null,
                   pausedTotalSec: 0,
