@@ -28,7 +28,7 @@ export function BoardListRow({
     <div className='flex items-center gap-1 rounded-card transition-colors duration-150 hover:bg-background'>
       <Slot
         render={render}
-        className='flex min-h-[calc(var(--size-avatar-lg)+20px)] min-w-0 flex-1 items-center gap-3 rounded-card px-2 py-1 text-foreground no-underline focus-ring'
+        className='flex min-h-[calc(var(--avatar-lg)+20px)] min-w-0 flex-1 items-center gap-3 rounded-card px-2 py-1 text-foreground no-underline focus-ring'
       >
         <BoardIconTile colorIndex={board.colorIndex} />
         <span className='flex min-w-0 flex-1 flex-col'>

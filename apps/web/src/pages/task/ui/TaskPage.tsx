@@ -5,6 +5,7 @@ import { AsyncBoundary } from '@/shared/lib/react';
 import { ROUTES } from '@/shared/routes';
 import { UIRequestError, buttonVariants } from '@/shared/ui';
 import { ShellPageSkeleton } from '@/widgets/app-shell';
+import { TaskSkeleton } from '@/widgets/task-detail';
 
 import { TaskScreen } from './TaskScreen';
 
@@ -14,7 +15,11 @@ export function TaskPage() {
   return (
     <AsyncBoundary
       resetKeys={[taskKey]}
-      fallback={<ShellPageSkeleton label='Загрузка задачи' />}
+      fallback={
+        <ShellPageSkeleton label='Загрузка задачи' title={taskKey}>
+          <TaskSkeleton />
+        </ShellPageSkeleton>
+      }
       renderError={({ error, retry }) => (
         <UIRequestError
           error={error}

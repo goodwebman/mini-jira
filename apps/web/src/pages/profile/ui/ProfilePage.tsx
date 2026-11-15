@@ -1,6 +1,7 @@
 import { AsyncBoundary } from '@/shared/lib/react';
-import { UIRequestError, UISkeleton } from '@/shared/ui';
+import { UIRequestError } from '@/shared/ui';
 import { ShellPage } from '@/widgets/app-shell';
+import { ProfileSkeleton } from '@/widgets/profile-overview';
 
 import { ProfileScreen } from './ProfileScreen';
 
@@ -8,7 +9,7 @@ export function ProfilePage() {
   return (
     <ShellPage title='Профиль' caption='Личные данные и безопасность'>
       <AsyncBoundary
-        fallback={<UISkeleton aria-label='Загрузка профиля' className='h-96' />}
+        fallback={<ProfileSkeleton />}
         renderError={({ error, retry }) => (
           <UIRequestError error={error} retry={retry} />
         )}

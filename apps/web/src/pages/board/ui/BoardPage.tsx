@@ -5,6 +5,7 @@ import { AsyncBoundary } from '@/shared/lib/react';
 import { ROUTES } from '@/shared/routes';
 import { UIRequestError, buttonVariants } from '@/shared/ui';
 import { ShellPageSkeleton } from '@/widgets/app-shell';
+import { BoardSkeleton } from '@/widgets/kanban-board';
 
 import { BoardScreen } from './BoardScreen';
 
@@ -13,7 +14,11 @@ export function BoardPage() {
   const { boardId } = useBoardWorkspaceStore();
   return (
     <AsyncBoundary
-      fallback={<ShellPageSkeleton label='Загрузка доски' />}
+      fallback={
+        <ShellPageSkeleton label='Загрузка доски' scroll='fixed'>
+          <BoardSkeleton />
+        </ShellPageSkeleton>
+      }
       renderError={({ error, retry }) => (
         <UIRequestError
           error={error}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import type { TaskStatus } from '@gwmt/contracts';
-import { useSuspenseQueries } from '@tanstack/react-query';
+import { usePrefetchQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router';
 
 import { useSessionUser } from '@/entities/auth';
@@ -18,32 +18,32 @@ import {
   TaskPriorityFilter,
   TaskSearchInput,
   boardTasksQueryOptions,
-  filterTasks,
 } from '@/entities/task';
 import {
   effectiveFilters,
   useBoardWorkspace,
 } from '@/features/board/workspace';
 import { CreateTaskDialog } from '@/features/task/create-task';
+import { AsyncBoundary } from '@/shared/lib/react';
 import { ROUTES } from '@/shared/routes';
-import { UIPageHeader } from '@/shared/ui';
+import { UIPageHeader, UIRequestError } from '@/shared/ui';
 import { UIIcons } from '@/shared/ui/icons';
 import { ShellPage, useAppShell } from '@/widgets/app-shell';
 import {
   AssigneeFilterChips,
   BoardLayout,
-  KanbanBoard,
-  PhoneColumnChips,
+  KanbanSkeleton,
 } from '@/widgets/kanban-board';
+
+import { BoardTasks } from './BoardTasks';
 
 export function BoardScreen({ boardId }: { readonly boardId: number }) {
   const user = useSessionUser();
   const workspace = useBoardWorkspace();
   const shell = useAppShell();
   const navigate = useNavigate();
-  const [{ data: board }, { data: tasks }] = useSuspenseQueries({
-    queries: [boardQueryOptions(boardId), boardTasksQueryOptions(boardId)],
-  });
+  usePrefetchQuery(boardTasksQueryOptions(boardId));
+  const { data: board } = useSuspenseQuery(boardQueryOptions(boardId));
   const [createStatus, setCreateStatus] = useState<null | TaskStatus>(null);
   useRememberCurrentBoard(board.id);
 
@@ -53,7 +53,6 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
     workspace.filters,
     people.map((member) => member.id),
   );
-  const visible = filterTasks(tasks.items, filters);
 
   return (
     <ShellPage
@@ -104,26 +103,19 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
           />
         </BoardLayout.People>
 
-        <BoardLayout.PhoneColumns>
-          <PhoneColumnChips
-            tasks={visible}
-            value={workspace.phoneColumn}
-            onSelect={workspace.selectPhoneColumn}
+        <AsyncBoundary
+          resetKeys={[boardId]}
+          fallback={<KanbanSkeleton />}
+          renderError={({ error, retry }) => (
+            <UIRequestError error={error} retry={retry} />
+          )}
+        >
+          <BoardTasks
+            board={board}
+            filters={filters}
+            onCreateTask={setCreateStatus}
           />
-        </BoardLayout.PhoneColumns>
-
-        <KanbanBoard
-          boardId={board.id}
-          tasks={visible}
-          actor={{ id: user.id, role: board.myRole }}
-          role={board.myRole}
-          canPause={permissions.canPauseTasks}
-          timeZone={user.timezone}
-          phoneColumn={workspace.phoneColumn}
-          focusedTaskKey={workspace.focusedTaskKey}
-          onOpenTask={workspace.focusTask}
-          onCreateTask={setCreateStatus}
-        />
+        </AsyncBoundary>
       </BoardLayout>
 
       <CreateTaskDialog

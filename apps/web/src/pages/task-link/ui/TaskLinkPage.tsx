@@ -4,6 +4,7 @@ import { AsyncBoundary } from '@/shared/lib/react';
 import { ROUTES } from '@/shared/routes';
 import { UIRequestError, buttonVariants } from '@/shared/ui';
 import { ShellPageSkeleton } from '@/widgets/app-shell';
+import { TaskSkeleton } from '@/widgets/task-detail';
 
 import { TaskRedirect } from './TaskRedirect';
 
@@ -17,7 +18,11 @@ export function TaskLinkPage() {
   return (
     <AsyncBoundary
       resetKeys={[taskKey]}
-      fallback={<ShellPageSkeleton label='Открываем задачу' />}
+      fallback={
+        <ShellPageSkeleton label='Открываем задачу' title={taskKey}>
+          <TaskSkeleton />
+        </ShellPageSkeleton>
+      }
       renderError={({ error, retry }) => (
         <UIRequestError
           error={error}

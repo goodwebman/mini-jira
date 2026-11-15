@@ -5,6 +5,7 @@ import { AsyncBoundary } from '@/shared/lib/react';
 import { ROUTES } from '@/shared/routes';
 import { UIRequestError, buttonVariants } from '@/shared/ui';
 import { ShellPageSkeleton } from '@/widgets/app-shell';
+import { MembersSkeleton } from '@/widgets/board-members-list';
 
 import { MembersScreen } from './MembersScreen';
 
@@ -12,7 +13,11 @@ export function BoardMembersPage() {
   const { boardId } = useBoardWorkspaceStore();
   return (
     <AsyncBoundary
-      fallback={<ShellPageSkeleton label='Загрузка участников' />}
+      fallback={
+        <ShellPageSkeleton label='Загрузка участников' title='Участники доски'>
+          <MembersSkeleton />
+        </ShellPageSkeleton>
+      }
       renderError={({ error, retry }) => (
         <UIRequestError
           error={error}

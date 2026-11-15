@@ -1,24 +1,34 @@
+import type { ReactNode } from 'react';
+
 import { UISkeleton } from '@/shared/ui';
+
+import { ShellPage } from './ShellPage';
 
 /** Заглушка на время загрузки страницы: шапка и пара блоков, без прыжков вёрстки. */
 export function ShellPageSkeleton({
   label = 'Загрузка',
+  title,
+  children,
+  scroll,
 }: {
   readonly label?: string;
+  readonly title?: ReactNode;
+  readonly children?: ReactNode;
+  readonly scroll?: 'auto' | 'fixed';
 }) {
   return (
-    <div
-      aria-busy='true'
-      aria-label={label}
-      className='flex min-h-0 flex-1 flex-col'
+    <ShellPage
+      title={title ?? <UISkeleton className='h-[1.2em] w-48 max-w-full' />}
+      caption={<UISkeleton className='my-[2px] h-[1em] w-32' />}
+      scroll={scroll}
     >
-      <div className='flex h-header flex-none items-center gap-3 border-b border-border bg-surface px-page'>
-        <UISkeleton className='h-6 w-48' />
+      <div
+        aria-busy='true'
+        aria-label={label}
+        className='flex min-h-0 flex-1 flex-col gap-section'
+      >
+        {children ?? <UISkeleton className='h-control w-full max-w-md' />}
       </div>
-      <div className='flex flex-1 flex-col gap-section p-page'>
-        <UISkeleton className='h-control w-full max-w-md' />
-        <UISkeleton className='min-h-40 flex-1' />
-      </div>
-    </div>
+    </ShellPage>
   );
 }

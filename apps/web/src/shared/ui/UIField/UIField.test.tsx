@@ -1,6 +1,7 @@
 import { createRef } from 'react';
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { UIInput } from '@/shared/ui/UIInput';
@@ -213,6 +214,80 @@ describe('UISelect', () => {
       </UISelect>,
     );
     expect(screen.getByRole('option', { name: 'Икс' })).toBeInTheDocument();
+  });
+
+  it('выбирает пункт скруглённого меню и сохраняет данные формы', async () => {
+    const onValueChange = vi.fn();
+    const onChange = vi.fn();
+    const { container } = render(
+      <form>
+        <UISelect
+          name='role'
+          aria-label='Роль'
+          options={options}
+          onValueChange={onValueChange}
+          onChange={onChange}
+        />
+      </form>,
+    );
+    const user = userEvent.setup();
+    const select = screen.getByRole('combobox');
+    await user.click(select);
+    const menu = screen.getByRole('listbox');
+    expect(menu).toHaveClass('rounded-block');
+    await user.click(within(menu).getByRole('option', { name: 'Второй' }));
+    expect(select).toHaveValue('b');
+    expect(select).toHaveFocus();
+    expect(onValueChange).toHaveBeenCalledExactlyOnceWith('b');
+    expect(onChange).toHaveBeenCalledOnce();
+    expect(new FormData(container.querySelector('form')!).get('role')).toBe(
+      'b',
+    );
+    expect(screen.queryByRole('listbox')).toBeNull();
+    await user.click(select);
+    await user.click(
+      within(screen.getByRole('listbox')).getByRole('option', {
+        name: 'Второй',
+      }),
+    );
+    expect(onChange).toHaveBeenCalledOnce();
+  });
+
+  it('клавиатура пропускает недоступные пункты, Escape отменяет выбор', async () => {
+    const onValueChange = vi.fn();
+    render(
+      <UISelect
+        aria-label='Роль'
+        options={[
+          options[0]!,
+          { value: 'disabled', label: 'Недоступно', disabled: true },
+          options[1]!,
+        ]}
+        onValueChange={onValueChange}
+      />,
+    );
+    const user = userEvent.setup();
+    await user.tab();
+    await user.keyboard('{Enter}{ArrowDown}{Enter}');
+    expect(screen.getByRole('combobox')).toHaveValue('b');
+    expect(onValueChange).toHaveBeenCalledExactlyOnceWith('b');
+    await user.keyboard('{Enter}{Home}{Escape}');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(screen.getByRole('combobox')).toHaveValue('b');
+    expect(onValueChange).toHaveBeenCalledOnce();
+  });
+
+  it('закрывает меню по внешнему клику и не открывает disabled', async () => {
+    const { rerender } = render(
+      <UISelect aria-label='Роль' options={options} />,
+    );
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('combobox'));
+    await user.click(document.body);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    rerender(<UISelect aria-label='Роль' options={options} disabled />);
+    await user.click(screen.getByRole('combobox'));
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 });
 

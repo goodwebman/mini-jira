@@ -20,7 +20,6 @@ import {
   UIEmptyState,
   UIPageHeader,
   UIRequestError,
-  UISkeleton,
 } from '@/shared/ui';
 import { UIIcons } from '@/shared/ui/icons';
 import { ShellPage } from '@/widgets/app-shell';
@@ -106,7 +105,17 @@ export function MyTasksPage() {
           />
         </MyTasksLayout.Filters>
 
-        {tasks.isPending && <UISkeleton className='h-80' />}
+        {tasks.isPending && (
+          <>
+            <MyTasksTable
+              loading
+              rows={[]}
+              now={now}
+              timeZone={user.timezone}
+            />
+            <MyTasksCards loading rows={[]} now={now} />
+          </>
+        )}
         {tasks.isError && (
           <UIRequestError
             error={tasks.error}

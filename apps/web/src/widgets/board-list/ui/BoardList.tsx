@@ -55,7 +55,10 @@ export function BoardList({ variant, onNavigate }: IBoardListProps) {
       >
         {boards.isPending &&
           ['a', 'b', 'c', 'd'].map((key) => (
-            <UISkeleton key={key} className='h-16' />
+            <UISkeleton
+              key={key}
+              className='h-[calc(var(--avatar-lg)+20px)] rounded-card'
+            />
           ))}
         {boards.isError && (
           <UIRequestError

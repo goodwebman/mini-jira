@@ -1,32 +1,47 @@
-import { useSuspenseQueries } from '@tanstack/react-query';
-
-import {
-  myTaskStatsQueryOptions,
-  profileQueryOptions,
-} from '@/entities/profile';
 import { LogoutButton } from '@/features/auth/logout';
+import { AsyncBoundary } from '@/shared/lib/react';
+import { UIRequestError } from '@/shared/ui';
 import {
-  PersonalDataCard,
+  PersonalDataSkeleton,
   ProfileLayout,
-  RecentTasksCard,
-  SecurityCard,
-  TaskStatsCard,
+  SecuritySkeleton,
+  StatsSkeleton,
 } from '@/widgets/profile-overview';
 
-export function ProfileScreen() {
-  const [{ data: me }, { data: stats }] = useSuspenseQueries({
-    queries: [profileQueryOptions, myTaskStatsQueryOptions],
-  });
+import { PersonalData } from './PersonalData';
+import { Security } from './Security';
+import { Stats } from './Stats';
 
+export function ProfileScreen() {
   return (
     <ProfileLayout>
       <ProfileLayout.Main>
-        <PersonalDataCard me={me} />
-        <SecurityCard hasPassword={me.hasPassword} />
+        <AsyncBoundary
+          fallback={<PersonalDataSkeleton />}
+          renderError={({ error, retry }) => (
+            <UIRequestError error={error} retry={retry} />
+          )}
+        >
+          <PersonalData />
+        </AsyncBoundary>
+        <AsyncBoundary
+          fallback={<SecuritySkeleton />}
+          renderError={({ error, retry }) => (
+            <UIRequestError error={error} retry={retry} />
+          )}
+        >
+          <Security />
+        </AsyncBoundary>
       </ProfileLayout.Main>
       <ProfileLayout.Aside>
-        <TaskStatsCard stats={stats} />
-        <RecentTasksCard tasks={stats.nextOpen} />
+        <AsyncBoundary
+          fallback={<StatsSkeleton />}
+          renderError={({ error, retry }) => (
+            <UIRequestError error={error} retry={retry} />
+          )}
+        >
+          <Stats />
+        </AsyncBoundary>
         <LogoutButton />
       </ProfileLayout.Aside>
     </ProfileLayout>
