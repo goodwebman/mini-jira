@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+set -eu
+
+printf '\n%s\n' 'Полная проверка рабочего дерева перед push (ESLint / TypeScript)...'
+npm run lint
+npm run typecheck

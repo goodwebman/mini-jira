@@ -1066,18 +1066,63 @@ test('package scripts and lint-staged keep ESLint gates connected', async () => 
   );
 });
 
-test('commit-msg hook retains staged and full-tree ESLint gates', async () => {
+test('commit checks staged files; push retains full-tree quality gates', async () => {
   const hook = await readFile(path.join(repoRoot, '.husky/commit-msg'), 'utf8');
   assert.match(
     hook,
     /if node node_modules\/lint-staged\/bin\/lint-staged\.js /,
   );
-  assert.match(
-    hook,
-    /if node node_modules\/eslint\/bin\/eslint\.js \. --max-warnings 0; then/,
-  );
-  assert.match(hook, /else\s+status=1/);
-  assert.match(hook, /exit "\$status"/);
+  assert.doesNotMatch(hook, /eslint\.js \.|npm run typecheck/);
+  assert.doesNotMatch(hook, /--continue-on-error/);
+  assert.match(hook, /exit 1/);
+  const push = await readFile(path.join(repoRoot, '.husky/pre-push'), 'utf8');
+  assert.match(push, /set -eu/);
+  assert.match(push, /npm run lint\s+npm run typecheck/);
+  assert.equal(lintStaged['**/*.{ts,tsx}'](), 'npm run typecheck');
+});
+
+test('commit hook stops on failure and runs staged checks only after a valid message', async () => {
+  const directory = path.join(root, 'hook-check');
+  const log = path.join(directory, 'calls.jsonl');
+  const shell =
+    process.platform === 'win32'
+      ? path.resolve(
+          spawnSync('git', ['--exec-path'], { encoding: 'utf8' }).stdout.trim(),
+          '../../../bin/sh.exe',
+        )
+      : 'sh';
+  for (const [module, name] of [
+    ['@commitlint/cli/cli.js', 'message'],
+    ['lint-staged/bin/lint-staged.js', 'staged'],
+  ]) {
+    const entry = JSON.stringify(`${name}\n`);
+    await fixture(
+      `hook-check/node_modules/${module}`,
+      `require('node:fs').appendFileSync(${JSON.stringify(log)}, ${entry}); process.exit(process.env.HOOK_FAIL === '${name}' ? 1 : 0);`,
+    );
+  }
+  for (const [failure, expected, status] of [
+    ['message', ['message'], 1],
+    ['staged', ['message', 'staged'], 1],
+    ['', ['message', 'staged'], 0],
+  ]) {
+    await writeFile(log, '');
+    const result = spawnSync(
+      shell,
+      [path.join(repoRoot, '.husky/commit-msg'), 'message.txt'],
+      {
+        cwd: directory,
+        encoding: 'utf8',
+        env: { ...process.env, HOOK_FAIL: failure },
+      },
+    );
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, status, result.stderr || result.stdout);
+    assert.deepEqual(
+      (await readFile(log, 'utf8')).trim().split('\n'),
+      expected,
+    );
+  }
 });
 
 test('async JSX handlers must explicitly handle or discard their Promise', async () => {

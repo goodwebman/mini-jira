@@ -1,5 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "types": ["node"] },
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/typecheck.tsbuildinfo",
+    "types": ["node"]
+  },
   "include": ["src", "test", "vitest.config.ts"]
 }
