@@ -13,9 +13,16 @@ import { TaskLayout } from './TaskLayout';
 import { TaskLinksCard } from './TaskLinksCard';
 import { TaskPropertiesCard } from './TaskPropertiesCard';
 import { TaskSummaryCard } from './TaskSummaryCard';
+import { TaskTimeHistoryCard } from './TaskTimeHistoryCard';
 
 /** Экран задачи: права роли решают, какие действия видны в каждой секции. */
-export function TaskView({ task }: { readonly task: TaskDetail }) {
+export function TaskView({
+  task,
+  commentTarget,
+}: {
+  readonly task: TaskDetail;
+  readonly commentTarget?: { hash: string; key: string };
+}) {
   const me = useSessionUser();
   const { focusTask } = useBoardWorkspaceStore();
   const now = useServerNow();
@@ -30,7 +37,8 @@ export function TaskView({ task }: { readonly task: TaskDetail }) {
 
   return (
     <TaskLayout
-      summary={<TaskSummaryCard task={task} />}
+      summary={<TaskSummaryCard task={task} now={now} />}
+      timeHistory={<TaskTimeHistoryCard task={task} now={now} timeZone={me.timezone} />}
       properties={
         <TaskPropertiesCard
           task={task}
@@ -38,12 +46,14 @@ export function TaskView({ task }: { readonly task: TaskDetail }) {
           permissions={permissions}
           currentUserId={me.id}
           timeZone={me.timezone}
+          now={now}
         />
       }
       links={<TaskLinksCard task={task} canLink={permissions.canLinkTasks} />}
       comments={
         <TaskCommentsCard
           task={task}
+          commentTarget={commentTarget}
           canComment={permissions.canComment}
           timeZone={me.timezone}
         />

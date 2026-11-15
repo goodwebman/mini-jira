@@ -12,8 +12,10 @@ import { TaskPropertyRow } from './TaskPropertyRow';
 /** Свойства задачи текстом: для тех, кому редактирование недоступно. */
 export function TaskReadOnlyProperties({
   task,
+  overEstimate,
 }: {
   readonly task: TaskDetail;
+  readonly overEstimate: boolean;
 }) {
   const assigned = new Map(
     taskPeople(task.people).map((person) => [person.role, person.user.name]),
@@ -24,7 +26,7 @@ export function TaskReadOnlyProperties({
         {TASK_PRIORITY_LABELS[task.priority]}
       </TaskPropertyRow>
       <TaskPropertyRow label='Оценка, SP'>
-        {formatNumber(task.sp)}
+        <span className={overEstimate ? 'font-semibold text-destructive' : undefined}>{formatNumber(task.sp)}</span>
       </TaskPropertyRow>
       {TASK_ROLE_OPTIONS.map(({ value, label }) => (
         <TaskPropertyRow key={value} label={label}>

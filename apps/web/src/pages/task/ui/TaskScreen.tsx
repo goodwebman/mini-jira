@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Navigate, useNavigate } from 'react-router';
+import { Navigate, useLocation, useNavigate } from 'react-router';
 
 import { BoardReadOnlyBanner, getBoardPermissions } from '@/entities/board';
 import { taskQueryOptions } from '@/entities/task';
@@ -15,11 +15,15 @@ export function TaskScreen({
   readonly boardId: number;
 }) {
   const navigate = useNavigate();
+  const { hash, key } = useLocation();
   const { data: task } = useSuspenseQuery(taskQueryOptions(taskKey));
   // Задачу открыли по чужому адресу доски: ведём на её настоящую доску
   if (task.board.id !== boardId)
     return (
-      <Navigate replace to={ROUTES.BOARD_TASK.build(task.board.id, task.key)} />
+      <Navigate
+        replace
+        to={`${ROUTES.BOARD_TASK.build(task.board.id, task.key)}${hash}`}
+      />
     );
   return (
     <ShellPage
@@ -30,7 +34,7 @@ export function TaskScreen({
         getBoardPermissions(task.myRole).isReadOnly && <BoardReadOnlyBanner />
       }
     >
-      <TaskView task={task} />
+      <TaskView task={task} commentTarget={{ hash, key }} />
     </ShellPage>
   );
 }

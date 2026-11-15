@@ -47,6 +47,44 @@ afterEach(() => teardownRouterTest(api));
 describe('постоянная ссылка', () => {
   beforeEach(signIn);
 
+  it('ссылка на комментарий сохраняет якорь после перехода в доску', async () => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    api.on(
+      'GET',
+      '/tasks/GWT-101',
+      makeTaskDetail({
+        key: 'GWT-101',
+        comments: [
+          {
+            id,
+            parentId: null,
+            author: users.anna,
+            text: 'Комментарий по ссылке',
+            createdAt: '2026-11-11T00:00:00Z',
+          },
+        ],
+      }),
+    );
+    const { router } = renderApp(`/tasks/GWT-101#comment-${id}`);
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/boards/9/tasks/GWT-101'),
+    );
+    expect(router.state.location.hash).toBe(`#comment-${id}`);
+    await waitFor(() =>
+      expect(document.getElementById(`comment-${id}`)).toHaveAttribute(
+        'data-highlighted',
+        'true',
+      ),
+    );
+    expect(scrollIntoView).toHaveBeenCalled();
+    Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+  });
+
   it('постоянная ссылка на задачу ведёт в скоуп её доски', async () => {
     api.on(
       'GET',

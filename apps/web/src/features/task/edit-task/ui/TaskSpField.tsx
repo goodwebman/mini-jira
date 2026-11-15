@@ -12,10 +12,12 @@ export function TaskSpField({
   id,
   value,
   onCommit,
+  overEstimate = false,
 }: {
   readonly id: string;
   readonly value: number;
   readonly onCommit: (sp: number) => void;
+  readonly overEstimate?: boolean;
 }) {
   const [draft, setDraft] = useState<null | string>(null);
   const shown = draft ?? formatNumber(value);
@@ -34,6 +36,8 @@ export function TaskSpField({
       inputMode='decimal'
       value={shown}
       error={error}
+      className={overEstimate ? 'border-destructive bg-destructive-tint text-destructive' : undefined}
+      title={overEstimate ? 'Затраченное время превысило оценку' : undefined}
       aria-invalid={error ? true : undefined}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}

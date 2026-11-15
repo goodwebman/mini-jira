@@ -30,9 +30,11 @@ const PEOPLE: readonly {
 export function TaskPropertyEditors({
   task,
   renderRow,
+  overEstimate = false,
 }: {
   readonly task: TaskDetail;
   readonly renderRow: (row: TaskPropertyRow) => ReactNode;
+  readonly overEstimate?: boolean;
 }) {
   const { update, pending } = useUpdateTask(task.key);
   const value = <K extends keyof UpdateTaskBody>(
@@ -57,6 +59,7 @@ export function TaskPropertyEditors({
       label: 'Оценка, SP',
       control: (
         <TaskSpField
+          overEstimate={overEstimate}
           id='task-sp'
           value={value('sp', task.sp) ?? task.sp}
           onCommit={(sp) => update({ sp })}

@@ -22,6 +22,7 @@ import {
   sprintTasks,
   sprints,
   taskLinks,
+  taskPauses,
   taskStatusIntervals,
   tasks,
   users,
@@ -33,6 +34,12 @@ const author = alias(users, 'task_author');
 const reviewer = alias(users, 'task_reviewer');
 const tester = alias(users, 'task_tester');
 const designer = alias(users, 'task_designer');
+
+const spentSec = sql<number>`coalesce((
+  select sum(greatest(0, floor(extract(epoch from (i.left_at - i.entered_at))) - i.paused_sec))::float8
+  from task_status_intervals i
+  where i.task_id = ${tasks.id} and i.left_at is not null and i.status in ('work', 'review', 'test')
+), 0)`;
 
 const cardColumns = {
   id: tasks.id,
@@ -47,6 +54,7 @@ const cardColumns = {
   statusEnteredAt: tasks.statusEnteredAt,
   pausedAt: tasks.pausedAt,
   pausedTotalSec: tasks.pausedTotalSec,
+  spentSec,
   completedInDays: tasks.completedInDays,
   takeLocked: tasks.takeLocked,
   linkCount: sql<number>`(select count(*)::int from task_links link where link.task_id = ${tasks.id})`,
@@ -242,6 +250,7 @@ export async function closeOpenInterval(
   leftAt: Date,
   extraPausedSec: number,
 ) {
+  await closeOpenPauses(db, taskId, leftAt);
   await db
     .update(taskStatusIntervals)
     .set({
@@ -254,6 +263,34 @@ export async function closeOpenInterval(
         isNull(taskStatusIntervals.leftAt),
       ),
     );
+}
+
+export function listTimeIntervals(db: Db, taskId: string) {
+  return db.select({
+    id: taskStatusIntervals.id, status: taskStatusIntervals.status,
+    enteredAt: taskStatusIntervals.enteredAt, leftAt: taskStatusIntervals.leftAt,
+    pausedSec: taskStatusIntervals.pausedSec, changedBy: userBriefColumns,
+  }).from(taskStatusIntervals)
+    .innerJoin(users, eq(users.id, taskStatusIntervals.changedBy))
+    .where(eq(taskStatusIntervals.taskId, taskId))
+    .orderBy(asc(taskStatusIntervals.enteredAt), asc(taskStatusIntervals.id));
+}
+
+export function listTimePauses(db: Db, taskId: string) {
+  return db.select({
+    id: taskPauses.id, intervalId: taskPauses.intervalId,
+    startedAt: taskPauses.startedAt, endedAt: taskPauses.endedAt,
+  }).from(taskPauses)
+    .innerJoin(taskStatusIntervals, eq(taskStatusIntervals.id, taskPauses.intervalId))
+    .where(eq(taskStatusIntervals.taskId, taskId))
+    .orderBy(asc(taskPauses.startedAt), asc(taskPauses.id));
+}
+
+export function closeOpenPauses(db: Db, taskId: string, now: Date) {
+  return db.update(taskPauses).set({ endedAt: now }).where(and(
+    isNull(taskPauses.endedAt),
+    inArray(taskPauses.intervalId, db.select({ id: taskStatusIntervals.id }).from(taskStatusIntervals).where(eq(taskStatusIntervals.taskId, taskId))),
+  ));
 }
 
 export async function addPauseToOpenInterval(
@@ -343,6 +380,12 @@ export async function startPause(db: Db, taskId: string, now: Date) {
       ),
     )
     .returning({ id: tasks.id });
+  if (updated.length > 0) {
+    const [interval] = await db.select({ id: taskStatusIntervals.id }).from(taskStatusIntervals)
+      .where(and(eq(taskStatusIntervals.taskId, taskId), isNull(taskStatusIntervals.leftAt)));
+    if (!interval) throw new Error('Open task interval not found');
+    await db.insert(taskPauses).values({ intervalId: interval.id, startedAt: now });
+  }
   return updated.length > 0;
 }
 
@@ -487,6 +530,7 @@ const myTasksFrom = (db: Db, userId: string) =>
       statusEnteredAt: tasks.statusEnteredAt,
       pausedAt: tasks.pausedAt,
       pausedTotalSec: tasks.pausedTotalSec,
+      spentSec,
       completedInDays: tasks.completedInDays,
       authorId: tasks.authorId,
       reviewerId: tasks.reviewerId,

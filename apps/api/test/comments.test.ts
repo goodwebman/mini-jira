@@ -1,6 +1,7 @@
 import { taskCommentSchema, taskDetailSchema } from '@gwmt/contracts';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { taskComments } from '../src/db/schema.js';
 import { type Team, createTask, createTeam, errorCode } from './fixtures.js';
 import { DEFAULT_NOW, type TestApp, createTestApp, json } from './helpers.js';
 
@@ -28,6 +29,118 @@ describe('комментарии', () => {
 
   const comment = (key: string, token: string, text: string) =>
     t.request('POST', `/tasks/${key}/comments`, token, { text });
+
+  it('БД запрещает родителя из другой задачи даже в обход API', async () => {
+    const task = await createTask(t, team);
+    const other = await createTask(t, team);
+    const root = taskCommentSchema.parse(
+      await json(await comment(task.key, team.worker.token, 'Начало')),
+    );
+    await expect(
+      t.db.insert(taskComments).values({
+        taskId: other.id,
+        authorId: team.worker.id,
+        parentId: root.id,
+        text: 'Неверная связь',
+      }),
+    ).rejects.toThrow();
+    await expect(
+      t.db.insert(taskComments).values({
+        taskId: task.id,
+        authorId: team.worker.id,
+        parentId: crypto.randomUUID(),
+        text: 'Нет родителя',
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('ответы на свои и чужие комментарии сохраняются на любой глубине', async () => {
+    const task = await createTask(t, team);
+    const root = taskCommentSchema.parse(
+      await json(await comment(task.key, team.worker.token, 'Начало')),
+    );
+    expect(root.parentId).toBeNull();
+    let parent = root;
+    const discussion = [root];
+    for (let depth = 0; depth < 12; depth += 1) {
+      const author = depth % 3 === 0 ? team.admin : team.worker;
+      const response = await t.request(
+        'POST',
+        `/tasks/${task.key}/comments`,
+        author.token,
+        {
+          text: `Ответ ${depth}`,
+          parentId: parent.id,
+        },
+      );
+      expect(response.status).toBe(201);
+      const reply = taskCommentSchema.parse(await json(response));
+      expect(reply.parentId).toBe(parent.id);
+      expect(reply.author.id).toBe(author.id);
+      discussion.push(reply);
+      parent = reply;
+      t.advance(1000);
+    }
+    const detail = taskDetailSchema.parse(
+      await json(
+        await t.request('GET', `/tasks/${task.key}`, team.guest.token),
+      ),
+    );
+    expect(detail.comments).toEqual(expect.arrayContaining(discussion));
+    expect(detail.comments).toHaveLength(discussion.length);
+  });
+
+  it('нельзя ответить на отсутствующий комментарий или комментарий другой задачи', async () => {
+    const task = await createTask(t, team);
+    const other = await createTask(t, team);
+    const foreign = taskCommentSchema.parse(
+      await json(await comment(other.key, team.worker.token, 'Другая задача')),
+    );
+    const outsider = await createTeam(t);
+    const privateTask = await createTask(t, outsider);
+    const privateComment = taskCommentSchema.parse(
+      await json(
+        await comment(privateTask.key, outsider.worker.token, 'Другая доска'),
+      ),
+    );
+    for (const parentId of [
+      crypto.randomUUID(),
+      foreign.id,
+      privateComment.id,
+      'invalid',
+      null,
+    ]) {
+      const response = await t.request(
+        'POST',
+        `/tasks/${task.key}/comments`,
+        team.worker.token,
+        { text: 'Ответ', parentId },
+      );
+      expect(response.status).toBe(422);
+      expect(await errorCode(response)).toBe('VALIDATION_ERROR');
+    }
+    const detail = taskDetailSchema.parse(
+      await json(
+        await t.request('GET', `/tasks/${task.key}`, team.worker.token),
+      ),
+    );
+    expect(detail.comments).toEqual([]);
+  });
+
+  it('гость не может ответить даже на существующий комментарий', async () => {
+    const task = await createTask(t, team);
+    const root = taskCommentSchema.parse(
+      await json(await comment(task.key, team.worker.token, 'Начало')),
+    );
+    const response = await t.request(
+      'POST',
+      `/tasks/${task.key}/comments`,
+      team.guest.token,
+      { text: 'Ответ', parentId: root.id },
+    );
+    expect(response.status).toBe(403);
+    expect(await errorCode(response)).toBe('ROLE_FORBIDDEN');
+  });
 
   it('ответ — готовый комментарий с автором и временем сервера', async () => {
     const task = await createTask(t, team);

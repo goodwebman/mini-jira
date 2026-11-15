@@ -42,10 +42,12 @@ type Timed = {
   statusEnteredAt: Date;
   pausedAt: Date | null;
   pausedTotalSec: number;
+  spentSec: number;
   completedInDays: null | number;
 };
 
 export const toTimer = (task: Timed): TaskTimer => ({
+  spentSec: task.spentSec,
   statusEnteredAt: task.statusEnteredAt.toISOString(),
   pausedAt: task.pausedAt?.toISOString() ?? null,
   pausedTotalSec: task.pausedTotalSec,
@@ -304,13 +306,15 @@ export async function pauseTask(
   deps: AppDeps,
   taskId: string,
 ): Promise<TaskCard> {
-  if (!(await repo.startPause(deps.db, taskId, deps.now()))) {
-    const task = await repo.findTask(deps.db, taskId);
-    if (!task) throw new AppError('TASK_NOT_FOUND');
+  return deps.withTx(async (tx) => {
+    const locked = await repo.lockTask(tx, taskId);
+    if (!locked) throw new AppError('TASK_NOT_FOUND');
+    const { task } = locked;
     if (!PAUSABLE.includes(task.status))
       throw new AppError('TASK_NOT_PAUSABLE');
-  }
-  return loadCard(deps.db, taskId);
+    if (!task.pausedAt) await repo.startPause(tx, taskId, deps.now());
+    return loadCard(tx, taskId);
+  });
 }
 
 export async function resumeTask(
@@ -324,6 +328,7 @@ export async function resumeTask(
     const { task } = locked;
 
     if (task.pausedAt) {
+      await repo.closeOpenPauses(tx, taskId, now);
       const seconds = Math.floor(
         (now.getTime() - task.pausedAt.getTime()) / 1000,
       );
@@ -398,11 +403,13 @@ export async function getTaskDetail(
   userId: string,
   role: BoardRole,
 ): Promise<TaskDetail> {
-  const [row, meta, links, discussion] = await Promise.all([
+  const [row, meta, links, discussion, intervals, pauses] = await Promise.all([
     repo.findCard(deps.db, access.id),
     repo.findTaskMeta(deps.db, access.id),
     repo.listTaskLinks(deps.db, access.id, userId),
     commentsService.listTaskComments(deps, access.id),
+    repo.listTimeIntervals(deps.db, access.id),
+    repo.listTimePauses(deps.db, access.id),
   ]);
   if (!row || !meta) throw new AppError('TASK_NOT_FOUND');
 
@@ -435,6 +442,14 @@ export async function getTaskDetail(
       },
     })),
     comments: discussion,
+    timeHistory: intervals.map((interval) => ({
+      ...interval,
+      enteredAt: interval.enteredAt.toISOString(),
+      leftAt: interval.leftAt?.toISOString() ?? null,
+      pauses: pauses.filter((pause) => pause.intervalId === interval.id).map((pause) => ({
+        id: pause.id, startedAt: pause.startedAt.toISOString(), endedAt: pause.endedAt?.toISOString() ?? null,
+      })),
+    })),
     assigneeOptions,
     serverTime: deps.now().toISOString(),
   };

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { pauseTask, putTaskCardInCache, resumeTask } from '@/entities/task';
+import { pauseTask, putTaskCardInCache, resumeTask, taskQueryKeys } from '@/entities/task';
 import { QUERY_TAGS, invalidateTags } from '@/shared/api';
 
 /**
@@ -13,9 +13,10 @@ export function useToggleTaskPause() {
   const mutation = useMutation({
     mutationFn: ({ key, paused }: { key: string; paused: boolean }) =>
       paused ? resumeTask(key) : pauseTask(key),
-    onSuccess: (card) => {
+    onSuccess: async (card) => {
       putTaskCardInCache(client, card);
-      return invalidateTags(client, [QUERY_TAGS.tasks], { refetch: false });
+      await invalidateTags(client, [QUERY_TAGS.tasks], { refetch: false });
+      await client.invalidateQueries({ queryKey: taskQueryKeys.detail(card.key), exact: true });
     },
   });
   return {

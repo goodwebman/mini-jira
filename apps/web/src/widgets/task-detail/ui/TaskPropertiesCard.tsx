@@ -5,6 +5,8 @@ import {
   TaskLockNotice,
   TaskTimerPanel,
   type TaskTimerView,
+  getTaskSpentSec,
+  SP_SECONDS,
 } from '@/entities/task';
 import { TaskStatusField } from '@/features/task/change-status';
 import { TaskPropertyEditors } from '@/features/task/edit-task';
@@ -22,6 +24,7 @@ export interface ITaskPropertiesCardProps {
   readonly permissions: BoardPermissions;
   readonly currentUserId: string;
   readonly timeZone: string;
+  readonly now: number;
 }
 
 /**
@@ -34,6 +37,7 @@ export function TaskPropertiesCard({
   permissions,
   currentUserId,
   timeZone,
+  now,
 }: ITaskPropertiesCardProps) {
   return (
     <UICard className='grid grid-cols-[104px_minmax(0,1fr)] items-center gap-3 xl:grid-cols-[128px_minmax(0,1fr)]'>
@@ -71,6 +75,7 @@ export function TaskPropertiesCard({
       {permissions.canEditTask ? (
         <TaskPropertyEditors
           task={task}
+          overEstimate={getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS}
           renderRow={(row) => (
             <TaskPropertyRow htmlFor={row.id} label={row.label}>
               {row.control}
@@ -78,7 +83,7 @@ export function TaskPropertiesCard({
           )}
         />
       ) : (
-        <TaskReadOnlyProperties task={task} />
+        <TaskReadOnlyProperties task={task} overEstimate={getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS} />
       )}
       <TaskPropertyRow label='Создана'>
         {formatNumericDate(task.createdAt, timeZone)}

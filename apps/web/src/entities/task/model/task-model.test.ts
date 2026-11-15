@@ -28,6 +28,7 @@ const timer = {
   statusEnteredAt: ENTERED,
   pausedAt: null,
   pausedTotalSec: 0,
+  spentSec: 0,
   canPause: true,
   completedInDays: null,
 };

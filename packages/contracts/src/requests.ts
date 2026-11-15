@@ -182,6 +182,7 @@ export type CreateLinkBody = z.infer<typeof createLinkBodySchema>;
 
 export const createCommentBodySchema = z
   .object({
+    parentId: z.uuid().optional(),
     text: requiredText('Введите комментарий', 10_000),
   })
   .meta({ id: 'CreateCommentBody' });

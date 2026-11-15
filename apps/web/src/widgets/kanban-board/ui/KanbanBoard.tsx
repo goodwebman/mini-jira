@@ -96,6 +96,7 @@ export function KanbanBoard({
                 <TaskCard
                   key={task.key}
                   task={task}
+                  now={now}
                   timer={timer}
                   createdLabel={formatShortDate(task.createdAt, timeZone)}
                   selected={task.key === focusedTaskKey}

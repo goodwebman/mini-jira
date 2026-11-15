@@ -10,18 +10,21 @@ export function TaskLayout({
   properties,
   links,
   comments,
+  timeHistory,
 }: {
   readonly summary: ReactNode;
   readonly properties: ReactNode;
   readonly links: ReactNode;
   readonly comments: ReactNode;
+  readonly timeHistory?: ReactNode;
 }) {
   return (
     <div className='grid grid-cols-1 items-start gap-section md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_440px]'>
       <div className='contents md:flex md:min-w-0 md:flex-col md:gap-section'>
         <div className='order-1 min-w-0'>{summary}</div>
-        <div className='order-3 min-w-0'>{links}</div>
-        <div className='order-4 min-w-0'>{comments}</div>
+        <div className='order-3 min-w-0'>{timeHistory}</div>
+        <div className='order-4 min-w-0'>{links}</div>
+        <div className='order-5 min-w-0'>{comments}</div>
       </div>
       <aside aria-label='Свойства задачи' className='order-2 min-w-0'>
         {properties}

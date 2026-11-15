@@ -10,10 +10,16 @@ export interface ICommentItemProps {
   readonly avatar: ReactNode;
   /** Пояс пользователя: в нём показывается время комментария. */
   readonly timeZone?: string;
+  readonly actions?: ReactNode;
 }
 
 /** Комментарий: автор, время и текст с сохранёнными переносами строк. */
-export function CommentItem({ comment, avatar, timeZone }: ICommentItemProps) {
+export function CommentItem({
+  comment,
+  avatar,
+  timeZone,
+  actions,
+}: ICommentItemProps) {
   return (
     <article className='flex gap-2'>
       {avatar}
@@ -25,6 +31,7 @@ export function CommentItem({ comment, avatar, timeZone }: ICommentItemProps) {
           </time>
         </div>
         <p className='m-0 whitespace-pre-line wrap-anywhere'>{comment.text}</p>
+        {actions && <div className='flex flex-wrap gap-1'>{actions}</div>}
       </div>
     </article>
   );

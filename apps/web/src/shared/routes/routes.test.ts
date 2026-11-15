@@ -11,6 +11,9 @@ describe('ROUTES', () => {
       '/boards/9/tasks/GWT-101',
     );
     expect(ROUTES.TASK.build('GWT-101')).toBe('/tasks/GWT-101');
+    expect(ROUTES.TASK_COMMENT.build('GWT-101', 'c1')).toBe(
+      '/tasks/GWT-101#comment-c1',
+    );
     expect(ROUTES.KPI.build()).toBe('/kpi');
     expect(ROUTES.KPI.build({ boardId: 9 })).toBe('/kpi?board=9');
     expect(ROUTES.KPI.build({ boardId: 9, sprint: 14 })).toBe(

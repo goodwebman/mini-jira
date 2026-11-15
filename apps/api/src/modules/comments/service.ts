@@ -1,11 +1,13 @@
 import type { CreateCommentBody, TaskComment } from '@gwmt/contracts';
 
 import type { AppDeps } from '../../lib/context.js';
+import { AppError } from '../../lib/errors.js';
 import * as repo from './repo.js';
 
 function toTaskComment(row: repo.CommentRow): TaskComment {
   return {
     id: row.id,
+    parentId: row.parentId,
     author: row.author,
     text: row.text,
     createdAt: row.createdAt.toISOString(),
@@ -30,8 +32,17 @@ export async function createComment(
   userId: string,
   body: CreateCommentBody,
 ): Promise<TaskComment> {
+  if (body.parentId) {
+    const parent = await repo.findComment(deps.db, body.parentId);
+    if (parent?.taskId !== taskId) {
+      throw new AppError('VALIDATION_ERROR', {
+        fields: { parentId: 'Комментарий не найден в этой задаче' },
+      });
+    }
+  }
   const id = await repo.insertComment(deps.db, {
     taskId,
+    parentId: body.parentId,
     authorId: userId,
     text: body.text,
     createdAt: deps.now(),

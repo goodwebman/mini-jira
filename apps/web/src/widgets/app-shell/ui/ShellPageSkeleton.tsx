@@ -10,17 +10,20 @@ export function ShellPageSkeleton({
   title,
   children,
   scroll,
+  actions,
 }: {
   readonly label?: string;
   readonly title?: ReactNode;
   readonly children?: ReactNode;
   readonly scroll?: 'auto' | 'fixed';
+  readonly actions?: ReactNode;
 }) {
   return (
     <ShellPage
       title={title ?? <UISkeleton className='h-[1.2em] w-48 max-w-full' />}
       caption={<UISkeleton className='my-[2px] h-[1em] w-32' />}
       scroll={scroll}
+      actions={actions}
     >
       <div
         aria-busy='true'

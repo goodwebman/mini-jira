@@ -147,6 +147,7 @@ export function makeTask(overrides: Partial<TaskCard> = {}): TaskCard {
     sp: 3,
     createdAt: CREATED_AT,
     timer: {
+      spentSec: 0,
       statusEnteredAt: CREATED_AT,
       pausedAt: null,
       pausedTotalSec: 0,
@@ -185,6 +186,7 @@ export function makeTaskDetail(
     myRole: 'admin',
     links: [],
     comments: [],
+    timeHistory: [],
     assigneeOptions: [users.anna, users.ivan, users.elena],
     serverTime: NOW,
     ...overrides,

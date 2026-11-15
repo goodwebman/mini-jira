@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router';
 
-import { UISkeleton } from '@/shared/ui';
+import { UIPageHeader, UISkeleton } from '@/shared/ui';
+import { UIIcons } from '@/shared/ui/icons';
 import { AppShellSkeleton, ShellPageSkeleton } from '@/widgets/app-shell';
 import { BoardListSkeleton } from '@/widgets/board-list';
 import { MembersSkeleton } from '@/widgets/board-members-list';
@@ -58,7 +59,7 @@ export function RouteFallback() {
   }
   return (
     <AppShellSkeleton>
-      <ShellPageSkeleton title={title} scroll={isBoard ? 'fixed' : 'auto'}>
+      <ShellPageSkeleton title={title} scroll={isBoard ? 'fixed' : 'auto'} actions={isBoard ? <UIPageHeader.ActionSkeleton icon={<UIIcons.Plus />} label='Создать задачу' /> : undefined}>
         {content}
       </ShellPageSkeleton>
     </AppShellSkeleton>

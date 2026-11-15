@@ -6,6 +6,7 @@ import {
   check,
   customType,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -266,6 +267,21 @@ export const taskStatusIntervals = pgTable(
   ],
 );
 
+export const taskPauses = pgTable(
+  'task_pauses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    intervalId: uuid('interval_id').notNull().references(() => taskStatusIntervals.id, { onDelete: 'cascade' }),
+    startedAt: timestamptz('started_at').notNull(),
+    endedAt: timestamptz('ended_at'),
+  },
+  (t) => [
+    index('task_pauses_interval_started_idx').on(t.intervalId, t.startedAt),
+    uniqueIndex('task_pauses_open_idx').on(t.intervalId).where(sql`${t.endedAt} is null`),
+    check('task_pauses_dates_check', sql`${t.endedAt} is null or ${t.endedAt} >= ${t.startedAt}`),
+  ],
+);
+
 export const taskLinks = pgTable(
   'task_links',
   {
@@ -289,6 +305,7 @@ export const taskComments = pgTable(
   'task_comments',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    parentId: uuid('parent_id'),
     taskId: uuid('task_id')
       .notNull()
       .references(() => tasks.id),
@@ -298,7 +315,15 @@ export const taskComments = pgTable(
     text: text('text').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
   },
-  (t) => [index('task_comments_task_created_idx').on(t.taskId, t.createdAt)],
+  (t) => [
+    index('task_comments_task_created_idx').on(t.taskId, t.createdAt),
+    unique('task_comments_task_id_id_unique').on(t.taskId, t.id),
+    foreignKey({
+      columns: [t.taskId, t.parentId],
+      foreignColumns: [t.taskId, t.id],
+      name: 'task_comments_parent_fk',
+    }),
+  ],
 );
 
 export type UserRow = typeof users.$inferSelect;

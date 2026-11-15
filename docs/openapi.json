@@ -1892,6 +1892,12 @@
           "id": {
             "type": "string"
           },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "author": {
             "$ref": "#/components/schemas/UserBrief"
           },
@@ -1907,6 +1913,7 @@
         },
         "required": [
           "id",
+          "parentId",
           "author",
           "text",
           "createdAt"
@@ -1982,6 +1989,10 @@
       "CreateCommentBody": {
         "type": "object",
         "properties": {
+          "parentId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "text": {
             "type": "string",
             "minLength": 1,

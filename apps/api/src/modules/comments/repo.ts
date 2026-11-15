@@ -6,6 +6,8 @@ import { userBriefColumns } from '../boards/repo.js';
 
 const commentColumns = {
   id: taskComments.id,
+  taskId: taskComments.taskId,
+  parentId: taskComments.parentId,
   text: taskComments.text,
   createdAt: taskComments.createdAt,
   author: userBriefColumns,

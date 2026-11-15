@@ -69,6 +69,7 @@ describe('putTaskCardInCache', () => {
     );
     const comment = {
       id: 'c1',
+      parentId: null,
       author: users.anna,
       text: 'Готово',
       createdAt: '2026-11-06T09:00:00.000Z',
@@ -99,6 +100,7 @@ describe('putTaskCardInCache', () => {
       .catch(() => {});
     const comment = {
       id: 'c1',
+      parentId: null,
       author: users.anna,
       text: 'Готово',
       createdAt: '2026-11-06T09:00:00.000Z',

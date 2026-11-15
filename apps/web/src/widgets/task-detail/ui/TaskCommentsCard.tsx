@@ -1,20 +1,26 @@
 import type { TaskDetail } from '@gwmt/contracts';
 
-import { CommentItem } from '@/entities/comment';
-import { UserAvatar } from '@/entities/user';
+import { buildCommentThread } from '@/entities/comment';
 import { AddCommentForm } from '@/features/comment/add-comment';
 import { UICard, UIEmptyState } from '@/shared/ui';
+
+import { TaskCommentRow } from './TaskCommentRow';
 
 /** Комментарии задачи: лента и форма нового — если роль позволяет. */
 export function TaskCommentsCard({
   task,
   canComment,
   timeZone,
+  commentTarget,
 }: {
   readonly task: Pick<TaskDetail, 'comments' | 'key'>;
   readonly canComment: boolean;
   readonly timeZone: string;
+  readonly commentTarget?: { hash: string; key: string };
 }) {
+  const commentsById = new Map(
+    task.comments.map((comment) => [comment.id, comment]),
+  );
   return (
     <UICard padding='lg' className='flex flex-col gap-3'>
       <UICard.Title as='h3' size='sm'>
@@ -23,12 +29,22 @@ export function TaskCommentsCard({
       {task.comments.length === 0 && !canComment && (
         <UIEmptyState title='Комментариев пока нет' />
       )}
-      {task.comments.map((comment) => (
-        <CommentItem
+      {buildCommentThread(task.comments).map(({ comment, depth }) => (
+        <TaskCommentRow
           key={comment.id}
           comment={comment}
           timeZone={timeZone}
-          avatar={<UserAvatar user={comment.author} size='md' />}
+          depth={depth}
+          taskKey={task.key}
+          canComment={canComment}
+          parent={
+            comment.parentId ? commentsById.get(comment.parentId) : undefined
+          }
+          targetKey={
+            commentTarget?.hash === `#comment-${comment.id}`
+              ? commentTarget.key
+              : undefined
+          }
         />
       ))}
       {canComment && <AddCommentForm taskKey={task.key} />}

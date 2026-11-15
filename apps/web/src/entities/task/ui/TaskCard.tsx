@@ -2,11 +2,13 @@ import type { ReactNode } from 'react';
 
 import type { TaskCard as TaskCardData } from '@gwmt/contracts';
 
+import { cn } from '@/shared/lib/cn';
 import { formatSp } from '@/shared/lib/format';
 import { type IUITaskCardProps, UITaskCard } from '@/shared/ui';
 
 import { TASK_PRIORITY_LABELS } from '../model/task-meta';
 import type { TaskTimerView } from '../model/task-timer';
+import { getTaskSpentSec, SP_SECONDS } from '../model/task-time';
 import { TaskBlockerMark } from './TaskBlockerMark';
 import { TaskLinksCount } from './TaskLinksCount';
 import { TaskLockBadge } from './TaskLockBadge';
@@ -30,6 +32,7 @@ export interface ITaskCardProps extends Omit<
   readonly timerAction?: ReactNode;
   /** Аватары людей задачи — их собирает слой выше из сущности пользователя. */
   readonly people?: ReactNode;
+  readonly now: number;
 }
 
 /**
@@ -42,13 +45,16 @@ export function TaskCard({
   createdLabel,
   timerAction,
   people,
+  now,
+  className,
   ...props
 }: ITaskCardProps) {
   return (
     <UITaskCard
       taskKey={task.key}
       title={task.title}
-      points={formatSp(task.sp)}
+      className={cn(getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS && 'border-destructive/50 bg-destructive-tint/30', className)}
+      points={<span className={getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS ? 'font-semibold text-destructive' : undefined}>{formatSp(task.sp)}</span>}
       priority={task.priority}
       priorityLabel={TASK_PRIORITY_LABELS[task.priority]}
       badges={

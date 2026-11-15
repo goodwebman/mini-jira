@@ -22,6 +22,7 @@ describe('createComment', () => {
     expect(transport).not.toHaveBeenCalled();
     const comment = {
       id: 'c1',
+      parentId: null,
       author: users.anna,
       text: 'Готово',
       createdAt: '2026-11-11T00:00:00Z',

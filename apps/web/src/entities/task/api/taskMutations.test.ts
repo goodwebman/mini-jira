@@ -51,6 +51,7 @@ const card = {
     statusEnteredAt: '2026-11-11T00:00:00Z',
     pausedAt: null,
     pausedTotalSec: 0,
+    spentSec: 0,
     canPause: false,
     completedInDays: null,
   },

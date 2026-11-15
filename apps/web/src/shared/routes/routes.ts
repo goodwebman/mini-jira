@@ -27,6 +27,10 @@ export const ROUTES = {
     path: '/tasks/:taskKey',
     build: (taskKey: string) => `/tasks/${encodeURIComponent(taskKey)}`,
   },
+  TASK_COMMENT: {
+    build: (taskKey: string, commentId: string) =>
+      `/tasks/${encodeURIComponent(taskKey)}#comment-${encodeURIComponent(commentId)}`,
+  },
   MY_TASKS: { path: '/my-tasks', build: () => '/my-tasks' },
   KPI: {
     path: '/kpi',
