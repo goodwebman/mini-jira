@@ -20,15 +20,17 @@ export function toMoveTask(
   return {
     status: task.status,
     isTakeLocked: task.isTakeLocked,
+    authorId: task.people.author.id,
     reviewerId: task.people.reviewer.id,
     testerId: task.people.tester?.id ?? null,
+    designerId: task.people.designer?.id ?? null,
   };
 }
 
 export const STATUS_MOVE_ERROR_TEXT: Record<StatusMoveError, string> = {
   ROLE_FORBIDDEN: 'Гость может только смотреть',
   STATUS_MOVE_FORBIDDEN:
-    'Вернуть задачу может её ревьювер, тестировщик или администратор',
+    'Перемещение недоступно: задача не назначена вам или переход запрещён',
   TASK_TAKE_LOCKED: 'Администратор запретил брать эту задачу в работу',
 };
 

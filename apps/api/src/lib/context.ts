@@ -22,6 +22,7 @@ export interface AppEnv extends HonoEnv {
     requestId: string;
     userId: string;
     sessionId: string;
+    accessTokenExpiresAt: number;
     boardId: number;
     boardRole: BoardRole;
     task: TaskAccess;

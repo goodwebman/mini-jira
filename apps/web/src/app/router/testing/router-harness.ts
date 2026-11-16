@@ -35,6 +35,21 @@ export function setupRouterTest(): ApiMock {
     })
     .on('GET', '/me/nav-summary', makeNavSummary())
     .on('GET', '/boards', { items: [], total: 0 })
+    .on(
+      'GET',
+      /^\/boards\/(9|11)\/tasks\/events$/,
+      () =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(
+                new TextEncoder().encode('data: {"type":"ready"}\n\n'),
+              );
+            },
+          }),
+          { headers: { 'Content-Type': 'text/event-stream' } },
+        ),
+    )
     .on('GET', '/boards/9', makeBoard())
     .on(
       'GET',

@@ -20,8 +20,10 @@ export interface MoveActor {
 export interface MoveTask {
   status: TaskStatus;
   isTakeLocked: boolean;
+  authorId: string;
   reviewerId: string;
   testerId: null | string;
+  designerId: null | string;
 }
 
 const WORKER_ACTIONS: ReadonlySet<BoardAction> = new Set<BoardAction>([
@@ -42,6 +44,12 @@ export function statusMoveError(
 ): null | StatusMoveError {
   if (actor.role === 'guest') return 'ROLE_FORBIDDEN';
   if (actor.role === 'admin' || to === task.status) return null;
+  if (
+    ![task.authorId, task.reviewerId, task.testerId, task.designerId].includes(
+      actor.id,
+    )
+  )
+    return 'STATUS_MOVE_FORBIDDEN';
   if (task.status === 'todo' && task.isTakeLocked) return 'TASK_TAKE_LOCKED';
   if (TASK_STATUSES.indexOf(to) > TASK_STATUSES.indexOf(task.status))
     return null;

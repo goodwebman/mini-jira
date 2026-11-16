@@ -1,9 +1,9 @@
 import type { BoardDetail, TaskStatus } from '@gwmt/contracts';
-import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useSessionUser } from '@/entities/auth';
 import { getBoardPermissions } from '@/entities/board';
-import { boardTasksQueryOptions, filterTasks } from '@/entities/task';
+import { filterTasks } from '@/entities/task';
+import { useLiveBoardTasks } from '@/features/board/sync-tasks';
 import {
   effectiveFilters,
   useBoardWorkspace,
@@ -25,7 +25,7 @@ export function BoardTasks({
 }) {
   const user = useSessionUser();
   const workspace = useBoardWorkspace();
-  const { data: tasks } = useSuspenseQuery(boardTasksQueryOptions(board.id));
+  const { data: tasks } = useLiveBoardTasks(board.id);
   const visible = filterTasks(tasks.items, filters);
   return (
     <>

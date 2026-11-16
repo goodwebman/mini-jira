@@ -194,8 +194,17 @@ describe('группировка и люди', () => {
 });
 
 describe('правила переходов', () => {
-  const worker = { id: users.dmitry.id, role: 'worker' as const };
+  const worker = { id: users.anna.id, role: 'worker' as const };
   const reviewer = { id: users.ivan.id, role: 'worker' as const };
+
+  it('для чужой задачи доступен только текущий статус', () => {
+    const outsider = { id: users.dmitry.id, role: 'worker' as const };
+    const task = makeTask({ status: 'todo' });
+    expect(taskAllowedStatuses(outsider, task)).toEqual(['todo']);
+    expect(taskMoveError(outsider, task, 'work')).toBe(
+      'Перемещение недоступно: задача не назначена вам или переход запрещён',
+    );
+  });
 
   it('гость не двигает ничего', () => {
     const task = makeTask({ status: 'todo' });
@@ -220,7 +229,7 @@ describe('правила переходов', () => {
   it('назад возвращает только ревьювер или тестировщик со своего этапа', () => {
     const review = makeTask({ status: 'review' });
     expect(taskMoveError(worker, review, 'work')).toBe(
-      'Вернуть задачу может её ревьювер, тестировщик или администратор',
+      'Перемещение недоступно: задача не назначена вам или переход запрещён',
     );
     expect(taskMoveError(reviewer, review, 'work')).toBeNull();
     expect(taskAllowedStatuses(reviewer, review)).toEqual([

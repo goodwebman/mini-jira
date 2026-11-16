@@ -17,6 +17,7 @@ import {
 } from '@gwmt/contracts';
 import { createRoute } from '@hono/zod-openapi';
 import { createMiddleware } from 'hono/factory';
+import { z } from 'zod';
 
 import { TAG } from '../../lib/api-docs.js';
 import type { AppDeps, AppEnv } from '../../lib/context.js';
@@ -37,7 +38,9 @@ import {
   requireBoardMember,
   requireTaskAccess,
 } from '../boards/access.js';
+import { createTaskEventSource } from './events.js';
 import * as service from './service.js';
+import { streamBoardTasks } from './stream.js';
 
 const tags = [TAG.tasks];
 const linkTags = [TAG.links];
@@ -65,10 +68,45 @@ const requireEditableFields = createMiddleware<AppEnv>(async (c, next) => {
 
 export function tasksRoutes(deps: AppDeps) {
   const router = createRouter();
+  const taskEvents = createTaskEventSource(deps);
   const boardMember = requireBoardMember(deps);
   const taskAccess = requireTaskAccess(deps);
   const card = jsonResponse(taskCardSchema, 'Карточка задачи');
   const actionErrors = { ...taskErrors, 403: ['ROLE_FORBIDDEN'] } as const;
+
+  router.openapi(
+    createRoute({
+      method: 'get',
+      path: '/boards/{boardId}/tasks/events',
+      operationId: 'subscribeBoardTasks',
+      tags,
+      summary: 'Изменения карточек доски через SSE',
+      description:
+        'Авторизация заголовком Bearer. JSON-события: ready (сверить снимок доски) и tasks.changed (items: TaskCard[], serverTime). Heartbeat каждые 15 секунд. Поток закрывается не позднее чем через 4 минуты или при истечении токена; клиент переподключается и сверяет снимок. События не сохраняются для воспроизведения.',
+      security: bearerAuth,
+      middleware: [boardMember],
+      request: { params: boardIdParamSchema },
+      responses: {
+        200: {
+          description: 'Поток изменений',
+          content: { 'text/event-stream': { schema: z.string() } },
+        },
+        ...errors(boardErrors),
+      },
+    }),
+    (c) =>
+      streamBoardTasks(
+        c,
+        taskEvents,
+        Math.max(
+          0,
+          Math.min(
+            240_000,
+            c.get('accessTokenExpiresAt') - deps.now().getTime(),
+          ),
+        ),
+      ),
+  );
 
   router.openapi(
     createRoute({

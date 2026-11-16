@@ -43,7 +43,27 @@ beforeEach(() => {
 });
 
 describe('useChangeTaskStatus', () => {
-  const worker = { id: users.dmitry.id, role: 'worker' as const };
+  const worker = { id: users.anna.id, role: 'worker' as const };
+
+  it('чужая задача не перемещается и запрос не отправляется', async () => {
+    const task = makeTask({ status: 'todo' });
+    client.setQueryData(taskQueryKeys.board(9), makeBoardTasks([task]));
+    const { result } = renderHook(
+      () => useChangeTaskStatus({ id: users.dmitry.id, role: 'worker' }),
+      { wrapper },
+    );
+    act(() => {
+      expect(result.current.changeStatus(task, 'work')).toBe(false);
+    });
+    expect(result.current.canMove(task, 'work')).toBe(false);
+    expect(api.calls).toHaveLength(0);
+    expect(boardItems()?.[0]?.status).toBe('todo');
+    expect(
+      await screen.findByText(
+        'Перемещение недоступно: задача не назначена вам или переход запрещён',
+      ),
+    ).toBeInTheDocument();
+  });
 
   it('запрещённый ход: без запроса, с понятным тостом', async () => {
     const locked = makeTask({ status: 'todo', isTakeLocked: true });
@@ -97,7 +117,7 @@ describe('useChangeTaskStatus', () => {
   it('отказ сервера возвращает карточку на место', async () => {
     const task = makeTask({
       status: 'review',
-      people: { ...makeTask().people, reviewer: users.dmitry },
+      people: { ...makeTask().people, reviewer: users.anna },
     });
     client.setQueryData(taskQueryKeys.board(9), makeBoardTasks([task]));
     api.on(
@@ -120,6 +140,19 @@ describe('useChangeTaskStatus', () => {
 });
 
 describe('useTaskDragAndDrop', () => {
+  it('карточка без разрешённых переходов не перетаскивается', () => {
+    const task = makeTask({ status: 'todo' });
+    const { result } = renderHook(() =>
+      useTaskDragAndDrop({
+        tasks: [task],
+        enabled: true,
+        canDrop: () => false,
+        onDrop: vi.fn(),
+      }),
+    );
+    expect(result.current.cardProps(task)).toEqual({ draggable: false });
+  });
+
   const dataTransfer = () => {
     const data = new Map<string, string>();
     return {
@@ -194,7 +227,7 @@ describe('useTaskDragAndDrop', () => {
 
   describe('серия переносов', () => {
     it('отказ по одной карточке не откатывает соседний ход', async () => {
-      const worker = { id: users.dmitry.id, role: 'worker' as const };
+      const worker = { id: users.anna.id, role: 'worker' as const };
       const a = makeTask({ status: 'todo' });
       const b = makeTask({ status: 'todo' });
       client.setQueryData(taskQueryKeys.board(9), makeBoardTasks([a, b]));

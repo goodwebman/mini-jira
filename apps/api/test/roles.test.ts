@@ -262,6 +262,42 @@ describe('роли', () => {
   });
 
   describe('рабочий двигает статус', () => {
+    it.each([
+      ['todo', 'work'],
+      ['work', 'review'],
+      ['review', 'test'],
+      ['test', 'done'],
+      ['done', 'work'],
+    ])(
+      'не двигает чужую задачу из %s в %s прямым запросом',
+      async (status, to) => {
+        const task = await createTask(t, team, {
+          status,
+          authorId: team.admin.id,
+        });
+        const res = await moveTask(t, team.worker.token, task.key, to);
+        expect(res.status).toBe(403);
+        expect(await errorCode(res)).toBe('STATUS_MOVE_FORBIDDEN');
+        const detail = await json(
+          await t.request('GET', `/tasks/${task.key}`, team.worker.token),
+        );
+        expect(detail.status).toBe(status);
+        expect((await moveTask(t, team.admin.token, task.key, to)).status).toBe(
+          200,
+        );
+      },
+    );
+
+    it('назначенный дизайнер может двигать свою задачу вперёд', async () => {
+      const task = await createTask(t, team, {
+        authorId: team.admin.id,
+        designerId: team.worker.id,
+      });
+      expect(
+        (await moveTask(t, team.worker.token, task.key, 'work')).status,
+      ).toBe(200);
+    });
+
     it('todo в work и перепрыгивание этапа проходят', async () => {
       const first = await createTask(t, team);
       expect(

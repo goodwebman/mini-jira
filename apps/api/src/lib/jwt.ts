@@ -39,7 +39,7 @@ export async function verifyAccessToken(
   token: string,
   secret: string,
   now: Date,
-): Promise<AccessClaims> {
+): Promise<AccessClaims & { expiresAt: number }> {
   try {
     const { payload } = await jwtVerify(token, secretKey(secret), {
       algorithms: [ALGORITHM],
@@ -48,10 +48,18 @@ export async function verifyAccessToken(
       currentDate: now,
       requiredClaims: ['sub', 'sid', 'iat', 'exp'],
     });
-    if (typeof payload.sub !== 'string' || typeof payload.sid !== 'string') {
+    if (
+      typeof payload.sub !== 'string' ||
+      typeof payload.sid !== 'string' ||
+      typeof payload.exp !== 'number'
+    ) {
       throw new AppError('ACCESS_TOKEN_INVALID');
     }
-    return { userId: payload.sub, sessionId: payload.sid };
+    return {
+      userId: payload.sub,
+      sessionId: payload.sid,
+      expiresAt: payload.exp * 1000,
+    };
   } catch (err) {
     if (err instanceof errors.JWTExpired)
       throw new AppError('ACCESS_TOKEN_EXPIRED');

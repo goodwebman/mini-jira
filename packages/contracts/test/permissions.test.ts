@@ -4,6 +4,7 @@ import {
   type BoardAction,
   type BoardRole,
   type MoveTask,
+  TASK_STATUSES,
   type TaskStatus,
   allowedStatuses,
   can,
@@ -14,15 +15,19 @@ import {
 const REVIEWER = 'reviewer-id';
 const TESTER = 'tester-id';
 const OTHER = 'other-id';
+const AUTHOR = 'author-id';
+const DESIGNER = 'designer-id';
 
 const task = (status: TaskStatus, isTakeLocked = false): MoveTask => ({
   status,
   isTakeLocked,
+  authorId: AUTHOR,
   reviewerId: REVIEWER,
   testerId: TESTER,
+  designerId: DESIGNER,
 });
 
-const worker = (id = OTHER) => ({ id, role: 'worker' as const });
+const worker = (id = AUTHOR) => ({ id, role: 'worker' as const });
 
 describe('can', () => {
   const table: [BoardAction, boolean, boolean][] = [
@@ -71,6 +76,26 @@ describe('statusMoveError', () => {
       'STATUS_MOVE_FORBIDDEN',
     );
   });
+
+  it.each([AUTHOR, REVIEWER, TESTER, DESIGNER])(
+    'назначенный участник %s двигает свою задачу вперёд',
+    (id) => {
+      expect(statusMoveError(worker(id), task('todo'), 'work')).toBeNull();
+    },
+  );
+
+  it.each(TASK_STATUSES)(
+    'посторонний рабочий не меняет статус %s',
+    (status) => {
+      for (const to of TASK_STATUSES) {
+        if (to === status) continue;
+        expect(statusMoveError(worker(OTHER), task(status), to)).toBe(
+          'STATUS_MOVE_FORBIDDEN',
+        );
+      }
+      expect(allowedStatuses(worker(OTHER), task(status))).toEqual([status]);
+    },
+  );
 
   it('ревьювер возвращает только из review в work', () => {
     expect(
@@ -129,11 +154,7 @@ describe('allowedStatuses', () => {
       'test',
       'done',
     ]);
-    expect(allowed('worker', OTHER, task('review'))).toEqual([
-      'review',
-      'test',
-      'done',
-    ]);
+    expect(allowed('worker', OTHER, task('review'))).toEqual(['review']);
   });
 
   it('администратор видит все статусы', () => {

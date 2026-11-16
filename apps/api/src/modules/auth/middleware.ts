@@ -30,6 +30,7 @@ export const requireAuth = (deps: AppDeps) =>
     );
     c.set('userId', claims.userId);
     c.set('sessionId', claims.sessionId);
+    c.set('accessTokenExpiresAt', claims.expiresAt);
     return next();
   });
 

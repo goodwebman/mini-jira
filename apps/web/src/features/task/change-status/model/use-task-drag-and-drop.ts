@@ -1,6 +1,6 @@
 import { type DragEvent, useState } from 'react';
 
-import type { TaskStatus } from '@gwmt/contracts';
+import { TASK_STATUSES, type TaskStatus } from '@gwmt/contracts';
 
 const DRAG_TYPE = 'text/plain';
 
@@ -40,7 +40,10 @@ export function useTaskDragAndDrop<T extends DraggableTask>({
     : undefined;
 
   const cardProps = (task: T) =>
-    enabled
+    enabled &&
+    TASK_STATUSES.some(
+      (status) => status !== task.status && canDrop(task, status),
+    )
       ? {
           draggable: true,
           onDragStart: (event: DragEvent<HTMLElement>) => {

@@ -12,6 +12,7 @@ export {
   taskSearchQueryOptions,
 } from './api/taskQueries';
 export { createTask, updateTask } from './api/updateTask';
+export { subscribeBoardTaskEvents } from './api/task-events';
 export {
   clearTaskTakeLock,
   pauseTask,

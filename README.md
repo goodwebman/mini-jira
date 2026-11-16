@@ -6,6 +6,7 @@ Sentry для frontend и API: [бесплатное подключение, sou
 [Как найти и понять ошибку в Sentry, связать frontend с API](docs/sentry-errors.md).
 Архитектура фронтенда, скоупы зависимостей и тесты: [docs/frontend-architecture.md](docs/frontend-architecture.md); почему без Redux/MobX/Zustand: [docs/adr/0001-state-management.md](docs/adr/0001-state-management.md).
 Правила импортов описаны в [docs/fsd.md](docs/fsd.md), сравнение с `pc` и приоритеты подготовки к production — в [docs/production-readiness.md](docs/production-readiness.md).
+Обновление карточек через SSE, Neon LISTEN/NOTIFY и восстановление соединения: [docs/realtime.md](docs/realtime.md).
 
 Мини-Jira: канбан-доски, задачи, спринты и KPI. Монорепозиторий на npm workspaces.
 

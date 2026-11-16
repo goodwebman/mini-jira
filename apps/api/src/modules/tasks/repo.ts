@@ -30,6 +30,13 @@ import {
 import { containsPattern } from '../../lib/search.js';
 import { userBriefColumns } from '../boards/repo.js';
 
+export const TASK_EVENTS_CHANNEL = 'gwmt_task_changes';
+
+/** PostgreSQL доставляет NOTIFY только после успешного коммита. */
+export async function notifyTaskUpdated(tx: Db, taskId: string): Promise<void> {
+  await tx.execute(sql`select pg_notify(${TASK_EVENTS_CHANNEL}, ${taskId})`);
+}
+
 const author = alias(users, 'task_author');
 const reviewer = alias(users, 'task_reviewer');
 const tester = alias(users, 'task_tester');
@@ -106,6 +113,22 @@ export async function findCard(
 ): Promise<null | TaskCardRow> {
   const [row] = await cardQuery(db).where(eq(tasks.id, taskId));
   return row ?? null;
+}
+
+/** Статус блокера влияет и на связанные карточки, в том числе с других досок. */
+export function findAffectedCards(db: Db, taskId: string) {
+  return cardQuery(db).where(
+    or(
+      eq(tasks.id, taskId),
+      inArray(
+        tasks.id,
+        db
+          .select({ id: taskLinks.taskId })
+          .from(taskLinks)
+          .where(eq(taskLinks.targetTaskId, taskId)),
+      ),
+    ),
+  );
 }
 
 export function listCardsBySprint(db: Db, sprintId: string) {

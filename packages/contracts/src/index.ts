@@ -1,6 +1,7 @@
 import './locale.js';
 
 export * from './dto.js';
+export * from './board-events.js';
 export * from './enums.js';
 export * from './errors.js';
 export * from './labels.js';

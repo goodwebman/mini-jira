@@ -196,6 +196,7 @@ export async function createTask(
     const created = await repo.findTask(tx, taskId);
     if (!created) throw new AppError('TASK_NOT_FOUND');
     await notifyTaskChange(tx, undefined, created, actorId, now);
+    await repo.notifyTaskUpdated(tx, taskId);
     return loadCard(tx, taskId);
   });
 }
@@ -208,13 +209,17 @@ function assertMoveAllowed(actor: MoveActor, task: MoveTask, to: TaskStatus) {
 const toMoveTask = (task: {
   status: TaskStatus;
   takeLocked: boolean;
+  authorId: string;
   reviewerId: string;
   testerId: null | string;
+  designerId: null | string;
 }): MoveTask => ({
   status: task.status,
   isTakeLocked: task.takeLocked,
+  authorId: task.authorId,
   reviewerId: task.reviewerId,
   testerId: task.testerId,
+  designerId: task.designerId,
 });
 
 export async function updateTask(
@@ -283,6 +288,7 @@ export async function updateTask(
     if (Object.keys(values).length > 0) {
       await repo.updateTask(tx, task.id, { ...values, updatedAt: now });
       await notifyTaskChange(tx, task, { ...task, ...values }, actor.id, now);
+      await repo.notifyTaskUpdated(tx, task.id);
     }
     return loadCard(tx, task.id);
   });
@@ -308,6 +314,7 @@ export async function setTakeLock(
         'Установлен запрет на взятие задачи',
         now,
       );
+      await repo.notifyTaskUpdated(tx, taskId);
     }
     return loadCard(tx, taskId);
   });
@@ -331,6 +338,7 @@ export async function clearTakeLock(
         'Снят запрет на взятие задачи',
         now,
       );
+      await repo.notifyTaskUpdated(tx, taskId);
     }
     return loadCard(tx, taskId);
   });
@@ -357,6 +365,7 @@ export async function pauseTask(
         'Задача поставлена на паузу',
         now,
       );
+      await repo.notifyTaskUpdated(tx, taskId);
     }
     return loadCard(tx, taskId);
   });
@@ -391,6 +400,7 @@ export async function resumeTask(
         'Работа над задачей возобновлена',
         now,
       );
+      await repo.notifyTaskUpdated(tx, taskId);
     }
     return loadCard(tx, taskId);
   });
@@ -429,6 +439,7 @@ export async function createLink(
       const task = await repo.findTask(tx, id);
       if (!task) throw new AppError('TASK_NOT_FOUND');
       await notifyTaskActivity(tx, task, userId, 'Добавлена связь задачи', now);
+      await repo.notifyTaskUpdated(tx, id);
     }
   });
 
@@ -466,6 +477,7 @@ export async function deleteLink(
         'Удалена связь задачи',
         deps.now(),
       );
+      await repo.notifyTaskUpdated(tx, id);
     }
   });
 }

@@ -35,6 +35,7 @@ const EXPECTED: [string, string][] = [
   ['patch', '/boards/{boardId}/members/{userId}'],
   ['delete', '/boards/{boardId}/members/{userId}'],
   ['get', '/boards/{boardId}/tasks'],
+  ['get', '/boards/{boardId}/tasks/events'],
   ['post', '/boards/{boardId}/tasks'],
   ['get', '/boards/{boardId}/sprints'],
   ['get', '/boards/{boardId}/sprints/{number}/kpi'],
@@ -169,7 +170,7 @@ describe('OpenAPI', () => {
     expect(documented.sort()).toEqual(
       EXPECTED.map(([m, p]) => `${m} ${p}`).sort(),
     );
-    expect(EXPECTED).toHaveLength(42);
+    expect(EXPECTED).toHaveLength(43);
   });
 
   it('ошибки Google описаны рядом с его callback', () => {
