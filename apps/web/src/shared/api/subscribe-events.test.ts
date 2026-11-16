@@ -56,14 +56,12 @@ describe('subscribeEvents', () => {
 
   it('обрывает зависший поток без heartbeat и переподключается', async () => {
     const cancel = vi.fn<() => void>();
-    const transport = vi
-      .fn<typeof fetch>()
-      .mockImplementation(
-        async () =>
-          new Response(new ReadableStream<Uint8Array>({ cancel }), {
-            headers: { 'Content-Type': 'text/event-stream' },
-          }),
-      );
+    const transport = vi.fn<typeof fetch>().mockImplementation(
+      async () =>
+        new Response(new ReadableStream<Uint8Array>({ cancel }), {
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
+    );
     configureHttp(transport);
     close = subscribeEvents('/events', vi.fn(), vi.fn());
     await vi.advanceTimersByTimeAsync(47_000);
