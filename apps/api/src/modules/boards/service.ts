@@ -11,6 +11,7 @@ import type {
 import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import * as authRepo from '../auth/repo.js';
+import { insertBoardInvitations } from '../notifications/repo.js';
 import * as sprintsRepo from '../sprints/repo.js';
 import { createFirstSprint, toSprintBrief } from '../sprints/service.js';
 import * as repo from './repo.js';
@@ -139,6 +140,7 @@ export async function createBoard(
       })),
     ]);
     await createFirstSprint(tx, board.id, creator.timezone, now);
+    await insertBoardInvitations(tx, memberIds, board, now);
     return board.id;
   });
 
@@ -154,14 +156,20 @@ export async function addMember(
   const target = await authRepo.findUserById(deps.db, body.userId);
   if (!target) throw new AppError('USER_NOT_FOUND');
 
-  const inserted = await repo.insertMember(deps.db, {
-    boardId,
-    userId: body.userId,
-    role: body.role ?? 'worker',
-    addedAt: deps.now(),
-    addedBy: actorId,
+  await deps.withTx(async (tx) => {
+    const now = deps.now();
+    const inserted = await repo.insertMember(tx, {
+      boardId,
+      userId: body.userId,
+      role: body.role ?? 'worker',
+      addedAt: now,
+      addedBy: actorId,
+    });
+    if (!inserted) throw new AppError('ALREADY_MEMBER');
+    const board = await repo.findBoard(tx, boardId);
+    if (!board) throw new AppError('BOARD_NOT_FOUND');
+    await insertBoardInvitations(tx, [body.userId], board, now);
   });
-  if (!inserted) throw new AppError('ALREADY_MEMBER');
 
   const member = await repo.findBoardMember(deps.db, boardId, body.userId);
   if (!member) throw new AppError('USER_NOT_FOUND');

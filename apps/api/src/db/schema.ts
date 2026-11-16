@@ -156,6 +156,30 @@ export const boardFavorites = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.boardId] })],
 );
 
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').$type<'board_member_added'>().notNull(),
+    boardId: integer('board_id')
+      .notNull()
+      .references(() => boards.id, { onDelete: 'cascade' }),
+    boardName: text('board_name').notNull(),
+    createdAt: timestamptz('created_at').notNull().defaultNow(),
+    readAt: timestamptz('read_at'),
+  },
+  (t) => [
+    index('notifications_user_created_idx').on(t.userId, t.createdAt, t.id),
+    index('notifications_user_unread_idx')
+      .on(t.userId)
+      .where(sql`${t.readAt} is null`),
+    check('notifications_type_check', sql`${t.type} = 'board_member_added'`),
+  ],
+);
+
 export const sprints = pgTable(
   'sprints',
   {

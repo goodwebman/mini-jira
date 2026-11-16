@@ -6,6 +6,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type TestApp, createTestApp, json } from './helpers.js';
 
 const EXPECTED: [string, string][] = [
+  ['get', '/notifications'],
+  ['put', '/notifications/read'],
+  ['put', '/notifications/{id}/read'],
+  ['delete', '/notifications/{id}'],
   ['get', '/health'],
   ['post', '/auth/register'],
   ['post', '/auth/login'],
@@ -47,6 +51,8 @@ const EXPECTED: [string, string][] = [
 ];
 
 const NAMED_SCHEMAS = [
+  'Notification',
+  'NotificationsResponse',
   'Me',
   'AuthResponse',
   'UserBrief',
@@ -162,7 +168,7 @@ describe('OpenAPI', () => {
     expect(documented.sort()).toEqual(
       EXPECTED.map(([m, p]) => `${m} ${p}`).sort(),
     );
-    expect(EXPECTED).toHaveLength(38);
+    expect(EXPECTED).toHaveLength(42);
   });
 
   it('ошибки Google описаны рядом с его callback', () => {

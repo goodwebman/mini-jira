@@ -4,12 +4,14 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router';
 
 import { useSessionUser } from '@/entities/auth';
 import { CreateBoardDialog } from '@/features/board/create-board';
+import { useNotificationSync } from '@/features/notification/inbox';
 import { BREAKPOINTS, useMediaQuery } from '@/shared/lib/hooks';
 import { ROUTES } from '@/shared/routes';
 import { UIDrawer, UIIconButton, buttonVariants } from '@/shared/ui';
 import { UIIcons } from '@/shared/ui/icons';
 
 import { type AppShellApi, AppShellInjector } from '../model/app-shell.di';
+import { ShellNotificationsContext } from '../model/shell-notifications-context';
 import { ShellBottomNav } from './ShellBottomNav';
 import { ShellSideNav } from './ShellSideNav';
 
@@ -28,6 +30,7 @@ export interface IAppShellLayoutProps {
  * Боковое меню, вкладки и нижнее меню переключаются CSS-брейкпоинтами кита.
  */
 export function AppShellLayout({ renderBoardsPanel }: IAppShellLayoutProps) {
+  useNotificationSync();
   const user = useSessionUser();
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,50 +52,52 @@ export function AppShellLayout({ renderBoardsPanel }: IAppShellLayoutProps) {
   );
 
   return (
-    <AppShellInjector value={api}>
-      <div className='flex h-dvh flex-col bg-background text-foreground'>
-        <div className='flex min-h-0 flex-1'>
-          <ShellSideNav />
-          <div className='relative flex min-h-0 min-w-0 flex-1 flex-col'>
-            <Outlet />
-            <UIDrawer
-              open={panelOpen}
-              onOpenChange={(open) => {
-                if (!open) close();
-              }}
-              title='Доски задач'
-              actions={
-                <>
-                  <Link
-                    to={ROUTES.BOARDS.build()}
-                    className={buttonVariants({ variant: 'secondary' })}
-                  >
-                    Показать все
-                  </Link>
-                  <UIIconButton
-                    label='Создать доску'
-                    variant='primary'
-                    onClick={() => {
-                      close();
-                      setCreating(true);
-                    }}
-                  >
-                    <UIIcons.Plus />
-                  </UIIconButton>
-                </>
-              }
-            >
-              {renderBoardsPanel({ close })}
-            </UIDrawer>
+    <ShellNotificationsContext value={true}>
+      <AppShellInjector value={api}>
+        <div className='flex h-dvh flex-col bg-background text-foreground'>
+          <div className='flex min-h-0 flex-1'>
+            <ShellSideNav />
+            <div className='relative flex min-h-0 min-w-0 flex-1 flex-col'>
+              <Outlet />
+              <UIDrawer
+                open={panelOpen}
+                onOpenChange={(open) => {
+                  if (!open) close();
+                }}
+                title='Доски задач'
+                actions={
+                  <>
+                    <Link
+                      to={ROUTES.BOARDS.build()}
+                      className={buttonVariants({ variant: 'secondary' })}
+                    >
+                      Показать все
+                    </Link>
+                    <UIIconButton
+                      label='Создать доску'
+                      variant='primary'
+                      onClick={() => {
+                        close();
+                        setCreating(true);
+                      }}
+                    >
+                      <UIIcons.Plus />
+                    </UIIconButton>
+                  </>
+                }
+              >
+                {renderBoardsPanel({ close })}
+              </UIDrawer>
+            </div>
           </div>
+          <ShellBottomNav />
         </div>
-        <ShellBottomNav />
-      </div>
-      <CreateBoardDialog
-        open={creating}
-        onOpenChange={setCreating}
-        currentUser={user}
-      />
-    </AppShellInjector>
+        <CreateBoardDialog
+          open={creating}
+          onOpenChange={setCreating}
+          currentUser={user}
+        />
+      </AppShellInjector>
+    </ShellNotificationsContext>
   );
 }

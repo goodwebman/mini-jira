@@ -13,6 +13,7 @@ import type { QueryClient } from '@tanstack/react-query';
 export const QUERY_TAGS = {
   boards: 'boards',
   members: 'members',
+  notifications: 'notifications',
   profile: 'profile',
   tasks: 'tasks',
 } as const;

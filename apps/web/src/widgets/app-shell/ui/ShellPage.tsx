@@ -1,8 +1,10 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useContext } from 'react';
 
+import { NotificationCenter } from '@/features/notification/inbox';
 import { cn } from '@/shared/lib/cn';
 import { UIPageHeader } from '@/shared/ui';
 
+import { ShellNotificationsContext } from '../model/shell-notifications-context';
 import { ShellTabBar } from './ShellTabBar';
 
 export interface IShellPageProps {
@@ -35,6 +37,7 @@ export function ShellPage({
   className,
   children,
 }: IShellPageProps) {
+  const notificationsEnabled = useContext(ShellNotificationsContext);
   return (
     <>
       <UIPageHeader
@@ -42,7 +45,12 @@ export function ShellPage({
         caption={caption}
         onBack={onBack}
         onTitleClick={onTitleClick}
-        actions={actions}
+        actions={
+          <>
+            {actions}
+            {notificationsEnabled && <NotificationCenter />}
+          </>
+        }
       />
       <ShellTabBar />
       <main

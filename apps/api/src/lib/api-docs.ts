@@ -1,4 +1,5 @@
 export const TAG = {
+  notifications: 'Notifications',
   service: 'Служебные',
   auth: 'Авторизация',
   me: 'Профиль',
@@ -92,6 +93,7 @@ export const API_DOCUMENT = {
     },
   ],
   tags: [
+    { name: TAG.notifications, description: 'Уведомления пользователя' },
     {
       name: TAG.auth,
       description:

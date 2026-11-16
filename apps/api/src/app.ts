@@ -14,6 +14,7 @@ import { authRoutes } from './modules/auth/routes.js';
 import { boardsRoutes } from './modules/boards/routes.js';
 import { commentsRoutes } from './modules/comments/routes.js';
 import { meRoutes } from './modules/me/routes.js';
+import { notificationsRoutes } from './modules/notifications/routes.js';
 import { sprintsRoutes } from './modules/sprints/routes.js';
 import { tasksRoutes } from './modules/tasks/routes.js';
 import { usersRoutes } from './modules/users/routes.js';
@@ -52,6 +53,7 @@ export function createApp(deps: AppDeps) {
 
   app.route('/', authRoutes(deps));
   app.route('/', meRoutes(deps));
+  app.route('/', notificationsRoutes(deps));
   app.route('/', usersRoutes(deps));
   app.route('/', boardsRoutes(deps));
   app.route('/', sprintsRoutes(deps));

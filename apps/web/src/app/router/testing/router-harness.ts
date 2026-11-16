@@ -26,6 +26,13 @@ export function setupRouterTest(): ApiMock {
   sessionStorage.clear();
   localStorage.clear();
   const api = createApiMock()
+    .on('GET', '/notifications', {
+      items: [],
+      total: 0,
+      unreadCount: 0,
+      page: 1,
+      pageSize: 20,
+    })
     .on('GET', '/me/nav-summary', makeNavSummary())
     .on('GET', '/boards', { items: [], total: 0 })
     .on('GET', '/boards/9', makeBoard())

@@ -36,6 +36,13 @@
       "when": 1794776591890,
       "tag": "0004_great_centennial",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794844618830,
+      "tag": "0005_watery_master_chief",
+      "breakpoints": true
     }
   ]
 }

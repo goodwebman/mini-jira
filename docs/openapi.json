@@ -13,6 +13,10 @@
   ],
   "tags": [
     {
+      "name": "Notifications",
+      "description": "Уведомления пользователя"
+    },
+    {
       "name": "Авторизация",
       "description": "Вход по паролю, через GitHub и Google, регистрация, ротация refresh"
     },
@@ -683,6 +687,85 @@
           "completedInDays"
         ],
         "description": "Подписи считает фронт. X = serverNow - statusEnteredAt - pausedTotalSec. На паузе X = serverNow - pausedAt. serverTime из ответа нужен, чтобы компенсировать разницу часов."
+      },
+      "NotificationsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unreadCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "pageSize": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "unreadCount",
+          "page",
+          "pageSize"
+        ]
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "board_member_added"
+            ]
+          },
+          "boardId": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "boardName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          },
+          "readAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "UTC-строка",
+            "example": "2026-11-08T09:03:41.078Z"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "boardId",
+          "boardName",
+          "createdAt",
+          "readAt"
+        ]
       },
       "UserSearchResponse": {
         "type": "object",
@@ -2938,6 +3021,255 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MyTasksResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "operationId": "listNotifications",
+        "summary": "Список уведомлений и число непрочитанных",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Уведомления",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "operationId": "markAllNotificationsRead",
+        "summary": "Прочитать все уведомления",
+        "responses": {
+          "204": {
+            "description": "Прочитаны"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "operationId": "markNotificationRead",
+        "summary": "Прочитать уведомление",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Прочитано"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}": {
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "operationId": "deleteNotification",
+        "summary": "Удалить уведомление",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Удалено"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
