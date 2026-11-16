@@ -462,14 +462,16 @@ export async function insertLinkPair(
 }
 
 export async function deleteLinkPair(db: Db, taskId: string, targetId: string) {
-  await db
+  const deleted = await db
     .delete(taskLinks)
     .where(
       or(
         and(eq(taskLinks.taskId, taskId), eq(taskLinks.targetTaskId, targetId)),
         and(eq(taskLinks.taskId, targetId), eq(taskLinks.targetTaskId, taskId)),
       ),
-    );
+    )
+    .returning({ taskId: taskLinks.taskId });
+  return deleted.length > 0;
 }
 
 export function searchTasks(

@@ -8,3 +8,7 @@ export {
   markAllNotificationsRead,
   markNotificationRead,
 } from './api/notificationActions';
+export {
+  notificationText,
+  notificationTarget,
+} from './model/notification-view';

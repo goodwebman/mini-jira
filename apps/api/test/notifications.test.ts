@@ -67,7 +67,13 @@ describe('notifications', () => {
       ).status,
     ).toBe(204);
     expect((await add()).status).toBe(201);
-    expect((await list(member.token)).total).toBe(2);
+    const received = await list(member.token);
+    expect(
+      received.items.filter((item) => item.type === 'board_member_added'),
+    ).toHaveLength(2);
+    expect(
+      received.items.filter((item) => item.type === 'board_member_removed'),
+    ).toHaveLength(1);
   });
 
   it('paginates in deterministic reverse order and counts unread across pages', async () => {

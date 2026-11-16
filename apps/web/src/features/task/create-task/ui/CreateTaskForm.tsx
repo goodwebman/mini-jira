@@ -86,6 +86,12 @@ export function CreateTaskForm({
     ...people,
     authorId: people.authorId || defaultAuthorId(memberIds, currentUserId),
   };
+  const canSubmit =
+    board.isSuccess &&
+    boardId !== null &&
+    [view.title, view.sp, view.authorId, view.reviewerId].every(
+      (value) => value.trim().length > 0,
+    );
 
   const set = <K extends TaskDraftField>(field: K, value: TaskDraft[K]) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -94,6 +100,7 @@ export function CreateTaskForm({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (!canSubmit || create.isPending) return;
     setFormError('');
     const result = validateTaskDraft(view, role);
     if (!result.ok) {
@@ -225,7 +232,11 @@ export function CreateTaskForm({
         </UIDialog.Body>
         <UIDialog.Footer>
           <UIDialog.Close>Отмена</UIDialog.Close>
-          <UIButton type='submit' loading={create.isPending}>
+          <UIButton
+            type='submit'
+            disabled={!canSubmit}
+            loading={create.isPending}
+          >
             Создать задачу
           </UIButton>
         </UIDialog.Footer>

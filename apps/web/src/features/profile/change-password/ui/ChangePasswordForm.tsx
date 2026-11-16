@@ -25,6 +25,11 @@ export function ChangePasswordForm({
   const [formError, setFormError] = useState('');
 
   const mutation = useChangePassword();
+  const canSubmit = [
+    draft.newPassword,
+    draft.repeat,
+    ...(hasPassword ? [draft.currentPassword] : []),
+  ].every((value) => value.trim().length > 0);
 
   const set = (field: PasswordField, value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -33,6 +38,7 @@ export function ChangePasswordForm({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (!canSubmit || mutation.isPending) return;
     setFormError('');
     const result = validatePasswordDraft(draft, hasPassword);
     if (!result.ok) {
@@ -93,6 +99,7 @@ export function ChangePasswordForm({
         <UIButton
           type='submit'
           variant='secondary'
+          disabled={!canSubmit}
           loading={mutation.isPending}
         >
           Сменить пароль

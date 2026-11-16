@@ -49,6 +49,9 @@ export function CreateBoardForm({
   );
 
   const mutation = useCreateBoard();
+  const canSubmit = [draft.name, draft.key].every(
+    (value) => value.trim().length > 0,
+  );
 
   const update = (next: BoardDraft, field: BoardDraftField) => {
     setDraft(next);
@@ -57,6 +60,7 @@ export function CreateBoardForm({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (!canSubmit || mutation.isPending) return;
     setFormError('');
     const result = validateBoardDraft(draft);
     if (!result.ok) {
@@ -148,7 +152,11 @@ export function CreateBoardForm({
         </UIDialog.Body>
         <UIDialog.Footer>
           <UIDialog.Close>Отмена</UIDialog.Close>
-          <UIButton type='submit' loading={mutation.isPending}>
+          <UIButton
+            type='submit'
+            disabled={!canSubmit}
+            loading={mutation.isPending}
+          >
             Создать доску
           </UIButton>
         </UIDialog.Footer>

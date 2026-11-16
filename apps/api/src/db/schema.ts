@@ -1,4 +1,8 @@
-import type { Timezone } from '@gwmt/contracts';
+import type {
+  CommentMention,
+  NotificationType,
+  Timezone,
+} from '@gwmt/contracts';
 import { sql } from 'drizzle-orm';
 import {
   bigint,
@@ -163,11 +167,14 @@ export const notifications = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    type: text('type').$type<'board_member_added'>().notNull(),
+    type: text('type').$type<NotificationType>().notNull(),
     boardId: integer('board_id')
       .notNull()
       .references(() => boards.id, { onDelete: 'cascade' }),
     boardName: text('board_name').notNull(),
+    message: text('message'),
+    taskKey: text('task_key'),
+    commentId: uuid('comment_id'),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
     readAt: timestamptz('read_at'),
   },
@@ -176,7 +183,10 @@ export const notifications = pgTable(
     index('notifications_user_unread_idx')
       .on(t.userId)
       .where(sql`${t.readAt} is null`),
-    check('notifications_type_check', sql`${t.type} = 'board_member_added'`),
+    check(
+      'notifications_type_check',
+      sql`${t.type} in ('board_member_added', 'board_role_changed', 'board_member_removed', 'task_assigned', 'task_unassigned', 'task_updated', 'task_status_changed', 'task_review_rejected', 'task_test_failed', 'task_activity', 'comment_added', 'comment_reply', 'comment_mention')`,
+    ),
   ],
 );
 
@@ -344,6 +354,10 @@ export const taskComments = pgTable(
       .notNull()
       .references(() => users.id),
     text: text('text').notNull(),
+    mentions: jsonb('mentions')
+      .$type<CommentMention[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
   },
   (t) => [

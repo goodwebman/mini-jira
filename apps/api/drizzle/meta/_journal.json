@@ -43,6 +43,13 @@
       "when": 1794844618830,
       "tag": "0005_watery_master_chief",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794846122214,
+      "tag": "0006_stale_the_leader",
+      "breakpoints": true
     }
   ]
 }

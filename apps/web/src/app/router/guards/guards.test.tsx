@@ -105,14 +105,26 @@ describe('вход и регистрация', () => {
     ).toBeInTheDocument();
   });
 
-  it('пустая форма входа не уходит на сервер', async () => {
+  it('кнопка входа недоступна без заполненных обязательных полей', async () => {
     renderApp('/login');
-    fireEvent.click(await screen.findByRole('button', { name: 'Войти' }));
-    expect(
-      await screen.findByText('Введите корректный email'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Введите пароль')).toBeInTheDocument();
+    const button = await screen.findByRole('button', { name: 'Войти' });
+    expect(button).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'user@example.com' },
+    });
+    expect(button).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Пароль'), {
+      target: { value: '   ' },
+    });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
     expect(auth.login).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Пароль'), {
+      target: { value: 'secret' },
+    });
+    expect(button).toBeEnabled();
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: '' } });
+    expect(button).toBeDisabled();
   });
 
   it('регистрация: повтор пароля и условия проверяются до запроса', async () => {
@@ -132,15 +144,17 @@ describe('вход и регистрация', () => {
     fireEvent.change(screen.getByLabelText('Повторите пароль'), {
       target: { value: 'password2' },
     });
+    expect(
+      screen.getByRole('button', { name: 'Создать аккаунт' }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Принимаю условия использования'));
     fireEvent.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
     expect(await screen.findByText('Пароли не совпадают')).toBeInTheDocument();
-    expect(screen.getByText('Нужно принять условия')).toBeInTheDocument();
     expect(auth.login).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Повторите пароль'), {
       target: { value: 'password1' },
     });
-    fireEvent.click(screen.getByLabelText('Принимаю условия использования'));
     fireEvent.click(screen.getByRole('button', { name: 'Создать аккаунт' }));
     await waitFor(() =>
       expect(auth.login).toHaveBeenCalledWith({

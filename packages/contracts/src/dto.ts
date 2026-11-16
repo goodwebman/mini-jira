@@ -10,6 +10,7 @@ import {
   taskStatusSchema,
   timezoneSchema,
 } from './enums.js';
+import { commentMentionSchema } from './mentions.js';
 
 export const isoDateTimeSchema = z.iso
   .datetime()
@@ -238,6 +239,7 @@ export const taskCommentSchema = z
     parentId: z.string().nullable(),
     author: userBriefSchema,
     text: z.string(),
+    mentions: z.array(commentMentionSchema).optional(),
     createdAt: isoDateTimeSchema,
   })
   .meta({ id: 'TaskComment' });

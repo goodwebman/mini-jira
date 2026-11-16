@@ -85,19 +85,12 @@ describe('CreateTaskDialog', () => {
       expect(within(dialog).getByLabelText('Автор')).toHaveValue(users.ivan.id),
     );
 
-    fireEvent.click(
-      within(dialog).getByRole('button', { name: 'Создать задачу' }),
-    );
-    expect(
-      await within(dialog).findByText('Введите название'),
-    ).toBeInTheDocument();
-    expect(
-      within(dialog)
-        .getAllByRole('alert')
-        .map((alert) => alert.textContent),
-    ).toEqual(
-      expect.arrayContaining(['Введите название', 'Выберите ревьювера']),
-    );
+    const button = within(dialog).getByRole('button', {
+      name: 'Создать задачу',
+    });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    fireEvent.submit(button.closest('form')!);
     expect(api.callsTo('POST', '/boards/9/tasks')).toHaveLength(0);
 
     fireEvent.change(within(dialog).getByLabelText('Название'), {
@@ -106,8 +99,17 @@ describe('CreateTaskDialog', () => {
     fireEvent.change(within(dialog).getByLabelText('Оценка, SP'), {
       target: { value: '3' },
     });
+    expect(button).toBeDisabled();
     fireEvent.change(within(dialog).getByLabelText('Ревьювер'), {
       target: { value: users.anna.id },
+    });
+    expect(button).toBeEnabled();
+    fireEvent.change(within(dialog).getByLabelText('Название'), {
+      target: { value: '   ' },
+    });
+    expect(button).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText('Название'), {
+      target: { value: 'Экран входа' },
     });
     fireEvent.click(
       within(dialog).getByRole('button', { name: 'Создать задачу' }),

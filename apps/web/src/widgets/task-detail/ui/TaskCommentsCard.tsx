@@ -13,7 +13,7 @@ export function TaskCommentsCard({
   timeZone,
   commentTarget,
 }: {
-  readonly task: Pick<TaskDetail, 'comments' | 'key'>;
+  readonly task: Pick<TaskDetail, 'boardId' | 'comments' | 'key'>;
   readonly canComment: boolean;
   readonly timeZone: string;
   readonly commentTarget?: { hash: string; key: string };
@@ -36,6 +36,7 @@ export function TaskCommentsCard({
           timeZone={timeZone}
           depth={depth}
           taskKey={task.key}
+          boardId={task.boardId}
           canComment={canComment}
           parent={
             comment.parentId ? commentsById.get(comment.parentId) : undefined
@@ -47,7 +48,9 @@ export function TaskCommentsCard({
           }
         />
       ))}
-      {canComment && <AddCommentForm taskKey={task.key} />}
+      {canComment && (
+        <AddCommentForm taskKey={task.key} boardId={task.boardId} />
+      )}
     </UICard>
   );
 }

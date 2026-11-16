@@ -9,6 +9,7 @@ const commentColumns = {
   taskId: taskComments.taskId,
   parentId: taskComments.parentId,
   text: taskComments.text,
+  mentions: taskComments.mentions,
   createdAt: taskComments.createdAt,
   author: userBriefColumns,
 };

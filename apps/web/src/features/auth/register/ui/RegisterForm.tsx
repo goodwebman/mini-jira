@@ -25,6 +25,11 @@ export function RegisterForm() {
   );
   const [formError, setFormError] = useState('');
   const busy = phase === 'signing-in' || phase === 'redirecting';
+  const canSubmit =
+    draft.acceptedTerms &&
+    [draft.name, draft.email, draft.password, draft.passwordRepeat].every(
+      (value) => value.trim().length > 0,
+    );
 
   const set = <K extends RegisterField>(field: K, value: RegisterDraft[K]) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -33,6 +38,7 @@ export function RegisterForm() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!canSubmit || busy) return;
     setFormError('');
     const result = validateRegister(draft);
     if (!result.ok) {
@@ -104,7 +110,7 @@ export function RegisterForm() {
             onCheckedChange={(checked) => set('acceptedTerms', checked)}
           />
         </UIField>
-        <UIButton type='submit' size='lg' loading={busy}>
+        <UIButton type='submit' size='lg' disabled={!canSubmit} loading={busy}>
           Создать аккаунт
         </UIButton>
       </fieldset>

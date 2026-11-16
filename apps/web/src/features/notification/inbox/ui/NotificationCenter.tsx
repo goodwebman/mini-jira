@@ -3,8 +3,11 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
-import { notificationsQueryOptions } from '@/entities/notification';
-import { ROUTES } from '@/shared/routes';
+import {
+  notificationTarget,
+  notificationText,
+  notificationsQueryOptions,
+} from '@/entities/notification';
 import {
   UIButton,
   UIDrawer,
@@ -69,31 +72,35 @@ export function NotificationCenter() {
                 className='flex flex-col gap-2 rounded-lg border p-3'
               >
                 <p>
-                  {notification.readAt === null && <strong>Новое. </strong>}Вас
-                  добавили на доску «{notification.boardName}»
+                  {notification.readAt === null && <strong>Новое. </strong>}
+                  {notificationText(notification)}
                 </p>
                 <time dateTime={notification.createdAt}>
                   {new Date(notification.createdAt).toLocaleString('ru-RU')}
                 </time>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <Link
-                    to={ROUTES.BOARD.build(notification.boardId)}
-                    onClick={(event) => {
-                      if (
-                        event.button !== 0 ||
-                        event.ctrlKey ||
-                        event.metaKey ||
-                        event.shiftKey ||
-                        event.altKey
-                      )
-                        return;
-                      if (notification.readAt === null)
-                        actions.mutate({ type: 'read', id: notification.id });
-                      setOpen(false);
-                    }}
-                  >
-                    Открыть доску
-                  </Link>
+                  {notificationTarget(notification) && (
+                    <Link
+                      to={notificationTarget(notification)!}
+                      onClick={(event) => {
+                        if (
+                          event.button !== 0 ||
+                          event.ctrlKey ||
+                          event.metaKey ||
+                          event.shiftKey ||
+                          event.altKey
+                        )
+                          return;
+                        if (notification.readAt === null)
+                          actions.mutate({ type: 'read', id: notification.id });
+                        setOpen(false);
+                      }}
+                    >
+                      {notification.taskKey
+                        ? 'Открыть задачу'
+                        : 'Открыть доску'}
+                    </Link>
+                  )}
                   {notification.readAt === null && (
                     <UIButton
                       variant='secondary'

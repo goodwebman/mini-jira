@@ -1,3 +1,4 @@
+import type { CreateCommentBody } from '@gwmt/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { createComment } from '@/entities/comment';
@@ -7,7 +8,8 @@ import { appendTaskComment } from '@/entities/task';
 export function useAddTaskComment(taskKey: string, parentId?: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (text: string) => createComment(taskKey, { text, parentId }),
+    mutationFn: (body: CreateCommentBody) =>
+      createComment(taskKey, { ...body, parentId }),
     // Ошибку форма показывает под полем
     meta: { toast: false },
     onSuccess: (comment) => appendTaskComment(client, taskKey, comment),

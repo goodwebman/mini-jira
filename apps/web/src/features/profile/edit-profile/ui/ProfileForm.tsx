@@ -40,6 +40,10 @@ export function ProfileForm({ me }: { readonly me: Me }) {
   const [formError, setFormError] = useState('');
 
   const mutation = useUpdateProfile();
+  const validation = validateProfileDraft(draft, me);
+  const canSubmit =
+    [draft.name, draft.email].every((value) => value.trim().length > 0) &&
+    (!validation.ok || Object.keys(validation.body).length > 0);
 
   const set = <K extends ProfileField>(field: K, value: ProfileDraft[K]) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -48,10 +52,10 @@ export function ProfileForm({ me }: { readonly me: Me }) {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (!canSubmit || mutation.isPending) return;
     setFormError('');
-    const result = validateProfileDraft(draft, me);
+    const result = validation;
     if (!result.ok) setErrors(result.errors);
-    else if (Object.keys(result.body).length === 0) toast('Изменений нет');
     else
       mutation.mutate(result.body, {
         onSuccess: () => toast('Профиль сохранён'),
@@ -86,7 +90,11 @@ export function ProfileForm({ me }: { readonly me: Me }) {
         </UIField>
       </div>
       <div>
-        <UIButton type='submit' loading={mutation.isPending}>
+        <UIButton
+          type='submit'
+          disabled={!canSubmit}
+          loading={mutation.isPending}
+        >
           Сохранить
         </UIButton>
       </div>

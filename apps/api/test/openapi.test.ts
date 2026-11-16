@@ -51,6 +51,7 @@ const EXPECTED: [string, string][] = [
 ];
 
 const NAMED_SCHEMAS = [
+  'CommentMention',
   'Notification',
   'NotificationsResponse',
   'Me',

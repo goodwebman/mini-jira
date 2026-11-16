@@ -14,6 +14,7 @@ export function TaskCommentRow({
   comment,
   depth,
   taskKey,
+  boardId,
   canComment,
   timeZone,
   targetKey,
@@ -22,6 +23,7 @@ export function TaskCommentRow({
   readonly comment: TaskComment;
   readonly depth: number;
   readonly taskKey: string;
+  readonly boardId: number;
   readonly canComment: boolean;
   readonly timeZone: string;
   readonly targetKey?: string;
@@ -65,6 +67,7 @@ export function TaskCommentRow({
       {canComment && replying && (
         <AddCommentForm
           taskKey={taskKey}
+          boardId={boardId}
           parentId={comment.id}
           onSuccess={() => setReplying(false)}
           onCancel={() => setReplying(false)}

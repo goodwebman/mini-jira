@@ -8,6 +8,7 @@ import {
   taskStatusSchema,
   timezoneSchema,
 } from './enums.js';
+import { commentMentionSchema } from './mentions.js';
 
 export const BOARD_KEY_PATTERN = /^[A-Z0-9]{1,6}$/;
 export const TASK_KEY_PATTERN = /^[A-Z0-9]{1,6}-\d+$/;
@@ -184,6 +185,25 @@ export const createCommentBodySchema = z
   .object({
     parentId: z.uuid().optional(),
     text: requiredText('Введите комментарий', 10_000),
+    mentions: z.array(commentMentionSchema).max(50).optional(),
+  })
+  .superRefine((body, ctx) => {
+    let previousEnd = 0;
+    for (const mention of body.mentions ?? []) {
+      if (
+        mention.start < previousEnd ||
+        mention.end <= mention.start ||
+        mention.end > body.text.length ||
+        body.text[mention.start] !== '@'
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['mentions'],
+          message: 'Некорректное упоминание пользователя',
+        });
+      }
+      previousEnd = mention.end;
+    }
   })
   .meta({ id: 'CreateCommentBody' });
 export type CreateCommentBody = z.infer<typeof createCommentBodySchema>;

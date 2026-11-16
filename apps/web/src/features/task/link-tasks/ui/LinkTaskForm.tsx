@@ -54,6 +54,7 @@ export function LinkTaskForm({
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (link.isPending) return;
     if (!targetKey) {
       setError('Выберите задачу');
       return;
@@ -122,7 +123,11 @@ export function LinkTaskForm({
         </UIDialog.Body>
         <UIDialog.Footer>
           <UIDialog.Close>Отмена</UIDialog.Close>
-          <UIButton type='submit' loading={link.isPending}>
+          <UIButton
+            type='submit'
+            disabled={targetKey === null}
+            loading={link.isPending}
+          >
             Связать
           </UIButton>
         </UIDialog.Footer>

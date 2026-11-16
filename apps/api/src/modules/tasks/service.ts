@@ -25,6 +25,10 @@ import type { AppDeps, TaskAccess } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import { countWorkdays, dateInZone } from '../../lib/workdays.js';
 import * as commentsService from '../comments/service.js';
+import {
+  notifyTaskActivity,
+  notifyTaskChange,
+} from '../notifications/service.js';
 import * as sprintsRepo from '../sprints/repo.js';
 import { toSprintBrief } from '../sprints/service.js';
 import * as repo from './repo.js';
@@ -189,6 +193,9 @@ export async function createTask(
       enteredAt: now,
       changedBy: actorId,
     });
+    const created = await repo.findTask(tx, taskId);
+    if (!created) throw new AppError('TASK_NOT_FOUND');
+    await notifyTaskChange(tx, undefined, created, actorId, now);
     return loadCard(tx, taskId);
   });
 }
@@ -275,6 +282,7 @@ export async function updateTask(
 
     if (Object.keys(values).length > 0) {
       await repo.updateTask(tx, task.id, { ...values, updatedAt: now });
+      await notifyTaskChange(tx, task, { ...task, ...values }, actor.id, now);
     }
     return loadCard(tx, task.id);
   });
@@ -283,29 +291,55 @@ export async function updateTask(
 export async function setTakeLock(
   deps: AppDeps,
   taskId: string,
+  actorId: string,
 ): Promise<TaskCard> {
-  const task = await repo.findTask(deps.db, taskId);
-  if (!task) throw new AppError('TASK_NOT_FOUND');
-  if (
-    !task.takeLocked &&
-    !(await repo.setTakeLockIfTodo(deps.db, taskId, deps.now()))
-  ) {
-    throw new AppError('TASK_NOT_LOCKABLE');
-  }
-  return loadCard(deps.db, taskId);
+  return deps.withTx(async (tx) => {
+    const locked = await repo.lockTask(tx, taskId);
+    if (!locked) throw new AppError('TASK_NOT_FOUND');
+    const { task } = locked;
+    if (!task.takeLocked) {
+      const now = deps.now();
+      if (!(await repo.setTakeLockIfTodo(tx, taskId, now)))
+        throw new AppError('TASK_NOT_LOCKABLE');
+      await notifyTaskActivity(
+        tx,
+        task,
+        actorId,
+        'Установлен запрет на взятие задачи',
+        now,
+      );
+    }
+    return loadCard(tx, taskId);
+  });
 }
 
 export async function clearTakeLock(
   deps: AppDeps,
   taskId: string,
+  actorId: string,
 ): Promise<TaskCard> {
-  await repo.clearTakeLock(deps.db, taskId, deps.now());
-  return loadCard(deps.db, taskId);
+  return deps.withTx(async (tx) => {
+    const locked = await repo.lockTask(tx, taskId);
+    if (!locked) throw new AppError('TASK_NOT_FOUND');
+    if (locked.task.takeLocked) {
+      const now = deps.now();
+      await repo.clearTakeLock(tx, taskId, now);
+      await notifyTaskActivity(
+        tx,
+        locked.task,
+        actorId,
+        'Снят запрет на взятие задачи',
+        now,
+      );
+    }
+    return loadCard(tx, taskId);
+  });
 }
 
 export async function pauseTask(
   deps: AppDeps,
   taskId: string,
+  actorId: string,
 ): Promise<TaskCard> {
   return deps.withTx(async (tx) => {
     const locked = await repo.lockTask(tx, taskId);
@@ -313,7 +347,17 @@ export async function pauseTask(
     const { task } = locked;
     if (!PAUSABLE.includes(task.status))
       throw new AppError('TASK_NOT_PAUSABLE');
-    if (!task.pausedAt) await repo.startPause(tx, taskId, deps.now());
+    if (!task.pausedAt) {
+      const now = deps.now();
+      await repo.startPause(tx, taskId, now);
+      await notifyTaskActivity(
+        tx,
+        task,
+        actorId,
+        'Задача поставлена на паузу',
+        now,
+      );
+    }
     return loadCard(tx, taskId);
   });
 }
@@ -321,6 +365,7 @@ export async function pauseTask(
 export async function resumeTask(
   deps: AppDeps,
   taskId: string,
+  actorId: string,
 ): Promise<TaskCard> {
   const now = deps.now();
   return deps.withTx(async (tx) => {
@@ -339,6 +384,13 @@ export async function resumeTask(
         updatedAt: now,
       });
       await repo.addPauseToOpenInterval(tx, taskId, seconds);
+      await notifyTaskActivity(
+        tx,
+        task,
+        actorId,
+        'Работа над задачей возобновлена',
+        now,
+      );
     }
     return loadCard(tx, taskId);
   });
@@ -357,21 +409,28 @@ export async function createLink(
   if (!can(target.role, 'task.link')) throw new AppError('ROLE_FORBIDDEN');
 
   const now = deps.now();
-  const created = await repo.insertLinkPair(deps.db, [
-    {
-      taskId: access.id,
-      targetTaskId: target.id,
-      type: body.type,
-      createdAt: now,
-    },
-    {
-      taskId: target.id,
-      targetTaskId: access.id,
-      type: INVERSE_LINK[body.type],
-      createdAt: now,
-    },
-  ]);
-  if (!created) throw new AppError('TASK_LINK_EXISTS');
+  await deps.withTx(async (tx) => {
+    const created = await repo.insertLinkPair(tx, [
+      {
+        taskId: access.id,
+        targetTaskId: target.id,
+        type: body.type,
+        createdAt: now,
+      },
+      {
+        taskId: target.id,
+        targetTaskId: access.id,
+        type: INVERSE_LINK[body.type],
+        createdAt: now,
+      },
+    ]);
+    if (!created) throw new AppError('TASK_LINK_EXISTS');
+    for (const id of [access.id, target.id]) {
+      const task = await repo.findTask(tx, id);
+      if (!task) throw new AppError('TASK_NOT_FOUND');
+      await notifyTaskActivity(tx, task, userId, 'Добавлена связь задачи', now);
+    }
+  });
 
   return {
     type: body.type,
@@ -395,7 +454,20 @@ export async function deleteLink(
   if (!target) return;
   if (!target.role || !can(target.role, 'task.link'))
     throw new AppError('ROLE_FORBIDDEN');
-  await repo.deleteLinkPair(deps.db, access.id, target.id);
+  await deps.withTx(async (tx) => {
+    if (!(await repo.deleteLinkPair(tx, access.id, target.id))) return;
+    for (const id of [access.id, target.id]) {
+      const task = await repo.findTask(tx, id);
+      if (!task) throw new AppError('TASK_NOT_FOUND');
+      await notifyTaskActivity(
+        tx,
+        task,
+        userId,
+        'Удалена связь задачи',
+        deps.now(),
+      );
+    }
+  });
 }
 
 export async function getTaskDetail(

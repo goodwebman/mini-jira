@@ -12,6 +12,7 @@ import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import * as authRepo from '../auth/repo.js';
 import { insertBoardInvitations } from '../notifications/repo.js';
+import { notifyBoardMemberChange } from '../notifications/service.js';
 import * as sprintsRepo from '../sprints/repo.js';
 import { createFirstSprint, toSprintBrief } from '../sprints/service.js';
 import * as repo from './repo.js';
@@ -184,9 +185,22 @@ export async function updateMember(
   body: UpdateMemberBody,
 ): Promise<BoardMember> {
   if (actorId === userId) throw new AppError('CANNOT_CHANGE_OWN_ROLE');
-  if (!(await repo.updateMemberRole(deps.db, boardId, userId, body.role))) {
-    throw new AppError('USER_NOT_FOUND');
-  }
+  await deps.withTx(async (tx) => {
+    const current = await repo.findMemberRole(tx, boardId, userId);
+    if (!current) throw new AppError('USER_NOT_FOUND');
+    if (current === body.role) return;
+    if (!(await repo.updateMemberRole(tx, boardId, userId, body.role)))
+      throw new AppError('USER_NOT_FOUND');
+    await notifyBoardMemberChange(
+      tx,
+      boardId,
+      userId,
+      actorId,
+      'board_role_changed',
+      deps.now(),
+      body.role,
+    );
+  });
   const member = await repo.findBoardMember(deps.db, boardId, userId);
   if (!member) throw new AppError('USER_NOT_FOUND');
   return toBoardMember(member);
@@ -199,6 +213,16 @@ export async function removeMember(
   userId: string,
 ): Promise<void> {
   if (actorId === userId) throw new AppError('CANNOT_REMOVE_SELF');
-  if (!(await repo.deleteMember(deps.db, boardId, userId)))
-    throw new AppError('USER_NOT_FOUND');
+  await deps.withTx(async (tx) => {
+    if (!(await repo.deleteMember(tx, boardId, userId)))
+      throw new AppError('USER_NOT_FOUND');
+    await notifyBoardMemberChange(
+      tx,
+      boardId,
+      userId,
+      actorId,
+      'board_member_removed',
+      deps.now(),
+    );
+  });
 }

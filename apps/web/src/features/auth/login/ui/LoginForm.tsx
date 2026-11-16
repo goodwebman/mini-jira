@@ -36,6 +36,9 @@ export function LoginForm({
   const [errors, setErrors] = useState<Partial<Record<LoginField, string>>>({});
   const [formError, setFormError] = useState(initialError);
   const busy = phase === 'signing-in' || phase === 'redirecting';
+  const canSubmit = [draft.email, draft.password].every(
+    (value) => value.trim().length > 0,
+  );
 
   const set = <K extends LoginField>(field: K, value: LoginDraft[K]) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -44,6 +47,7 @@ export function LoginForm({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!canSubmit || busy) return;
     setFormError('');
     const result = validateLogin(draft);
     if (!result.ok) {
@@ -111,7 +115,7 @@ export function LoginForm({
           checked={draft.remember}
           onCheckedChange={(checked) => set('remember', checked)}
         />
-        <UIButton type='submit' size='lg' loading={busy}>
+        <UIButton type='submit' size='lg' disabled={!canSubmit} loading={busy}>
           Войти
         </UIButton>
       </fieldset>

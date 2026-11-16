@@ -4,6 +4,8 @@ import type { TaskComment } from '@gwmt/contracts';
 
 import { formatShortDateTime } from '@/shared/lib/format';
 
+import { CommentText } from './CommentText';
+
 export interface ICommentItemProps {
   readonly comment: TaskComment;
   /** Аватар автора: его собирает слой выше из сущности пользователя. */
@@ -30,7 +32,7 @@ export function CommentItem({
             {formatShortDateTime(comment.createdAt, timeZone)}
           </time>
         </div>
-        <p className='m-0 whitespace-pre-line wrap-anywhere'>{comment.text}</p>
+        <CommentText comment={comment} />
         {actions && <div className='flex flex-wrap gap-1'>{actions}</div>}
       </div>
     </article>

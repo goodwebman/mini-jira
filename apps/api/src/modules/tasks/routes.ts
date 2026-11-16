@@ -236,7 +236,11 @@ export function tasksRoutes(deps: AppDeps) {
         ...errors({ ...actionErrors, 409: ['TASK_NOT_LOCKABLE'] }),
       },
     }),
-    async (c) => c.json(await service.setTakeLock(deps, c.get('task').id), 200),
+    async (c) =>
+      c.json(
+        await service.setTakeLock(deps, c.get('task').id, c.get('userId')),
+        200,
+      ),
   );
 
   router.openapi(
@@ -254,7 +258,10 @@ export function tasksRoutes(deps: AppDeps) {
       responses: { 200: card, ...errors(actionErrors) },
     }),
     async (c) =>
-      c.json(await service.clearTakeLock(deps, c.get('task').id), 200),
+      c.json(
+        await service.clearTakeLock(deps, c.get('task').id, c.get('userId')),
+        200,
+      ),
   );
 
   router.openapi(
@@ -274,7 +281,11 @@ export function tasksRoutes(deps: AppDeps) {
         ...errors({ ...actionErrors, 409: ['TASK_NOT_PAUSABLE'] }),
       },
     }),
-    async (c) => c.json(await service.pauseTask(deps, c.get('task').id), 200),
+    async (c) =>
+      c.json(
+        await service.pauseTask(deps, c.get('task').id, c.get('userId')),
+        200,
+      ),
   );
 
   router.openapi(
@@ -290,7 +301,11 @@ export function tasksRoutes(deps: AppDeps) {
       request: { params: taskKeyParamSchema },
       responses: { 200: card, ...errors(actionErrors) },
     }),
-    async (c) => c.json(await service.resumeTask(deps, c.get('task').id), 200),
+    async (c) =>
+      c.json(
+        await service.resumeTask(deps, c.get('task').id, c.get('userId')),
+        200,
+      ),
   );
 
   router.openapi(

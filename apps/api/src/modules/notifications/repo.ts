@@ -1,7 +1,8 @@
-import { and, count, eq, isNull, sql } from 'drizzle-orm';
+import type { NotificationType } from '@gwmt/contracts';
+import { and, count, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import type { Db } from '../../db/client.js';
-import { notifications } from '../../db/schema.js';
+import { boardMembers, boards, notifications, users } from '../../db/schema.js';
 
 export async function list(
   db: Db,
@@ -17,15 +18,19 @@ export async function list(
       items: sql<
         {
           id: string;
-          type: 'board_member_added';
+          type: NotificationType;
           boardId: number;
           boardName: string;
+          message: null | string;
+          taskKey: null | string;
+          commentId: null | string;
           createdAt: string;
           readAt: null | string;
         }[]
       >`coalesce((select json_agg(n) from (
       select id, type, board_id as "boardId", board_name as "boardName",
-        created_at as "createdAt", read_at as "readAt"
+        created_at as "createdAt", read_at as "readAt", message,
+        task_key as "taskKey", comment_id as "commentId"
       from notifications where user_id = ${userId}
       order by created_at desc, id desc limit ${pageSize} offset ${(page - 1) * pageSize}
     ) n), '[]'::json)`,
@@ -33,6 +38,41 @@ export async function list(
     .from(notifications)
     .where(eq(notifications.userId, userId));
   return result!;
+}
+
+export async function eventContext(db: Db, boardId: number, actorId: string) {
+  const [context] = await db
+    .select({ boardName: boards.name, actorName: users.name })
+    .from(boards)
+    .innerJoin(users, eq(users.id, actorId))
+    .where(eq(boards.id, boardId));
+  if (!context) throw new Error('Notification context not found');
+  return context;
+}
+
+export async function currentRecipients(
+  db: Db,
+  boardId: number,
+  userIds: string[],
+) {
+  if (userIds.length === 0) return new Set<string>();
+  const rows = await db
+    .select({ userId: boardMembers.userId })
+    .from(boardMembers)
+    .where(
+      and(
+        eq(boardMembers.boardId, boardId),
+        inArray(boardMembers.userId, userIds),
+      ),
+    );
+  return new Set(rows.map((row) => row.userId));
+}
+
+export async function insert(
+  db: Db,
+  values: (typeof notifications.$inferInsert)[],
+) {
+  if (values.length > 0) await db.insert(notifications).values(values);
 }
 
 export async function insertBoardInvitations(

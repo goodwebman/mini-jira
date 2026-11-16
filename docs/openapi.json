@@ -732,7 +732,19 @@
           "type": {
             "type": "string",
             "enum": [
-              "board_member_added"
+              "board_member_added",
+              "board_role_changed",
+              "board_member_removed",
+              "task_assigned",
+              "task_unassigned",
+              "task_updated",
+              "task_status_changed",
+              "task_review_rejected",
+              "task_test_failed",
+              "task_activity",
+              "comment_added",
+              "comment_reply",
+              "comment_mention"
             ]
           },
           "boardId": {
@@ -741,6 +753,25 @@
           },
           "boardName": {
             "type": "string"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taskKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "commentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           },
           "createdAt": {
             "type": "string",
@@ -2073,6 +2104,12 @@
           "text": {
             "type": "string"
           },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommentMention"
+            }
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -2086,6 +2123,30 @@
           "author",
           "text",
           "createdAt"
+        ]
+      },
+      "CommentMention": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "userId",
+          "start",
+          "end"
         ]
       },
       "UpdateTaskBody": {
@@ -2166,6 +2227,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 10000
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommentMention"
+            },
+            "maxItems": 50
           }
         },
         "required": [
