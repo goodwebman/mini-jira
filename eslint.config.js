@@ -47,6 +47,7 @@ export default defineConfig([
     '**/.vitest/**',
     '**/.vercel/**',
     '**/node_modules/**',
+    'apps/web/reports/**',
   ]),
   { linterOptions: { reportUnusedDisableDirectives: 'error' } },
   {

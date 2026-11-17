@@ -1,5 +1,7 @@
 # mini-jira
 
+Vite: [production/dev, env, анализ бандла и настройки CDN](docs/vite.md).
+
 ESLint и FSD: `npm run lint`; проверка правил на примерах: `npm run test:lint`. Подключение и покрытие проверок: [docs/eslint.md](docs/eslint.md).
 Полная локальная проверка: `npm run validate` (включая тесты фронтенда).
 Sentry для frontend и API: [бесплатное подключение, source maps и перенос в другой проект](docs/sentry.md).

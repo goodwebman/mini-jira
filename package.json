@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "workspaces": [
     "apps/*",
@@ -26,6 +26,9 @@
     "build:contracts": "npm run build -w @gwmt/contracts",
     "build:shared": "npm run build:contracts && npm run build -w @gwmt/monitoring",
     "build": "npm run build:shared && npm run build -w mini-jira",
+    "build:dev": "npm run build:shared && npm run build:dev -w mini-jira",
+    "build:analyze": "npm run build:shared && npm run build:analyze -w mini-jira",
+    "preview:web": "npm run preview -w mini-jira",
     "dev:contracts": "npm run dev -w @gwmt/contracts",
     "dev:api": "npm run build:shared && npm run dev -w @gwmt/api",
     "dev:web": "npm run dev -w mini-jira",

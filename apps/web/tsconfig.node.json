@@ -19,5 +19,11 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "sentry-build.ts", "test"]
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "build-env.ts",
+    "sentry-build.ts",
+    "test"
+  ]
 }

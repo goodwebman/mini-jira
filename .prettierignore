@@ -11,3 +11,4 @@ apps/web/src/shared/ui/icons/generated
 apps/web/src/shared/ui/icons/registry.ts
 apps/api/drizzle/meta
 docs/openapi.json
+apps/web/reports

@@ -13,4 +13,10 @@ npm run test -w mini-jira   # тесты
 npm run typecheck -w mini-jira
 ```
 
-Сборка с `SENTRY_AUTH_TOKEN` в `.env` загружает source maps в Sentry. Для локальной проверки сборки без загрузки: `SENTRY_AUTH_TOKEN= npm run build -w mini-jira`.
+Настройка сборки, значения параметров, альтернативы, development/production env,
+анализ бандла и правила CDN: [docs/vite.md](../../docs/vite.md).
+
+Production-сборка с `SENTRY_AUTH_TOKEN` загружает source maps в Sentry.
+Для локальной проверки задайте `BUILD_SENTRY_UPLOAD=false` в `.env.production.local`.
+`npm run build:analyze` из корня собирает production без upload и создаёт
+`apps/web/reports/bundle.html`; этот отчёт не входит в `dist`.

@@ -14,6 +14,10 @@ dist-ssr
 .env
 .env.*
 !.env.example
+!.env.development.example
+!.env.production.example
+# Локальные отчёты содержат структуру модулей, не являются deploy-артефактами.
+apps/web/reports/
 .vercel
 
 # Editor directories and files
