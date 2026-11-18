@@ -49,6 +49,7 @@ export function isBoardRole(value: unknown): value is BoardRole {
 export interface BoardPermissions {
   readonly canCreateTask: boolean;
   readonly canEditTask: boolean;
+  readonly canDeleteTask: boolean;
   readonly canLinkTasks: boolean;
   readonly canComment: boolean;
   readonly canPauseTasks: boolean;
@@ -66,6 +67,7 @@ export function getBoardPermissions(role: BoardRole): BoardPermissions {
   return {
     canCreateTask: can(role, 'task.create'),
     canEditTask: can(role, 'task.edit'),
+    canDeleteTask: can(role, 'task.delete'),
     canLinkTasks: can(role, 'task.link'),
     canComment: can(role, 'task.comment'),
     canPauseTasks: can(role, 'task.pause'),

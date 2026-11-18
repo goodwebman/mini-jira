@@ -4,6 +4,7 @@ export type BoardAction =
   | 'members.manage'
   | 'task.comment'
   | 'task.create'
+  | 'task.delete'
   | 'task.edit'
   | 'task.link'
   | 'task.lock'

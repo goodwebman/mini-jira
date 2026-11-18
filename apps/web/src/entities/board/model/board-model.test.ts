@@ -17,6 +17,7 @@ describe('getBoardPermissions', () => {
     expect(getBoardPermissions('admin')).toEqual({
       canCreateTask: true,
       canEditTask: true,
+      canDeleteTask: true,
       canLinkTasks: true,
       canComment: true,
       canPauseTasks: true,
@@ -30,6 +31,7 @@ describe('getBoardPermissions', () => {
     expect(getBoardPermissions('worker')).toEqual({
       canCreateTask: true,
       canEditTask: false,
+      canDeleteTask: false,
       canLinkTasks: true,
       canComment: true,
       canPauseTasks: true,

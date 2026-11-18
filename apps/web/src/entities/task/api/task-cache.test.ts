@@ -22,12 +22,42 @@ import {
   appendTaskComment,
   moveTaskInBoardCache,
   putTaskCardInCache,
+  removeTaskFromCache,
   restoreTaskMove,
 } from './task-cache';
 import { taskQueryKeys } from './taskQueries';
 
 const board = (client: ReturnType<typeof createTestQueryClient>) =>
   client.getQueryData<BoardTasksResponse>(taskQueryKeys.board(9))?.items;
+
+describe('removeTaskFromCache', () => {
+  it('удаляет задачу из доски и детали; отменённый ответ не возвращает её', async () => {
+    const client = createTestQueryClient();
+    const task = makeTask();
+    const neighbor = makeTask();
+    const data = makeBoardTasks([task, neighbor]);
+    const queryKey = taskQueryKeys.board(9);
+    client.setQueryData(queryKey, data);
+    client.setQueryData(taskQueryKeys.detail(task.key), makeTaskDetail(task));
+    let release = () => {};
+    const request = client
+      .fetchQuery({
+        queryKey,
+        staleTime: 0,
+        queryFn: () =>
+          new Promise<typeof data>((resolve) => {
+            release = () => resolve(data);
+          }),
+      })
+      .catch(() => {});
+    await removeTaskFromCache(client, 9, task.key);
+    release();
+    await request;
+    expect(board(client)).toEqual([neighbor]);
+    expect(client.getQueryData(taskQueryKeys.detail(task.key))).toBeUndefined();
+    client.clear();
+  });
+});
 
 describe('putTaskCardInCache', () => {
   it('карточка из ответа попадает в доску и деталь, не затирая описание', () => {

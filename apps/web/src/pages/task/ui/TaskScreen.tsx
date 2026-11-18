@@ -34,7 +34,13 @@ export function TaskScreen({
         getBoardPermissions(task.myRole).isReadOnly && <BoardReadOnlyBanner />
       }
     >
-      <TaskView task={task} commentTarget={{ hash, key }} />
+      <TaskView
+        task={task}
+        commentTarget={{ hash, key }}
+        onDeleted={() =>
+          void navigate(ROUTES.BOARD.build(task.board.id), { replace: true })
+        }
+      />
     </ShellPage>
   );
 }

@@ -24,3 +24,8 @@ export async function updateTask(key: string, body: UpdateTaskBody) {
     )
     .then(taskCardSchema.parse);
 }
+
+/** DELETE `/tasks/{key}`. */
+export function deleteTask(key: string): Promise<void> {
+  return apiClient.delete<void>(`/tasks/${encodeURIComponent(key)}`);
+}

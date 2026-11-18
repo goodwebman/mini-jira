@@ -19,8 +19,10 @@ import type { Db } from '../../db/client.js';
 import {
   boardMembers,
   boards,
+  notifications,
   sprintTasks,
   sprints,
+  taskComments,
   taskLinks,
   taskPauses,
   taskStatusIntervals,
@@ -35,6 +37,12 @@ export const TASK_EVENTS_CHANNEL = 'gwmt_task_changes';
 /** PostgreSQL доставляет NOTIFY только после успешного коммита. */
 export async function notifyTaskUpdated(tx: Db, taskId: string): Promise<void> {
   await tx.execute(sql`select pg_notify(${TASK_EVENTS_CHANNEL}, ${taskId})`);
+}
+
+/** После удаления карточки подписчикам нужен новый снимок доски. */
+export async function notifyBoardTasksChanged(tx: Db, boardId: number) {
+  const payload = `board:${boardId}`;
+  await tx.execute(sql`select pg_notify(${TASK_EVENTS_CHANNEL}, ${payload})`);
 }
 
 const author = alias(users, 'task_author');
@@ -394,6 +402,28 @@ export async function updateTask(
   values: Partial<typeof tasks.$inferInsert>,
 ) {
   await db.update(tasks).set(values).where(eq(tasks.id, taskId));
+}
+
+/** Вызывается в транзакции после блокировки задачи. */
+export async function deleteTask(db: Db, taskId: string, taskKey: string) {
+  const links = await db
+    .delete(taskLinks)
+    .where(or(eq(taskLinks.taskId, taskId), eq(taskLinks.targetTaskId, taskId)))
+    .returning({
+      taskId: taskLinks.taskId,
+      targetTaskId: taskLinks.targetTaskId,
+    });
+  await db.delete(notifications).where(eq(notifications.taskKey, taskKey));
+  await db.delete(taskComments).where(eq(taskComments.taskId, taskId));
+  await db.delete(sprintTasks).where(eq(sprintTasks.taskId, taskId));
+  // Паузы удаляются каскадом вместе с интервалами.
+  await db
+    .delete(taskStatusIntervals)
+    .where(eq(taskStatusIntervals.taskId, taskId));
+  await db.delete(tasks).where(eq(tasks.id, taskId));
+  return [
+    ...new Set(links.flatMap((link) => [link.taskId, link.targetTaskId])),
+  ].filter((id) => id !== taskId);
 }
 
 /** false значит, что задача не в todo. */

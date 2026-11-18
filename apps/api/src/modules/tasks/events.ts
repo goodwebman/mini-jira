@@ -35,12 +35,21 @@ export function createTaskEventSource(deps: AppDeps): TaskEventSource {
 
   const deliver = async (taskId: string) => {
     if (listeners.size === 0) return;
-    const cards = (await findAffectedCards(deps.db, taskId)).map(toTaskCard);
-    const boardIds = [...new Set(cards.map((card) => card.boardId))];
+    const refreshBoardId = taskId.startsWith('board:')
+      ? Number(taskId.slice('board:'.length))
+      : undefined;
+    const cards =
+      refreshBoardId === undefined
+        ? (await findAffectedCards(deps.db, taskId)).map(toTaskCard)
+        : [];
+    const boardIds =
+      refreshBoardId === undefined
+        ? [...new Set(cards.map((card) => card.boardId))]
+        : [refreshBoardId];
     const members = await listMembersOfBoards(deps.db, boardIds);
     for (const listener of listeners) {
       const items = cards.filter((card) => card.boardId === listener.boardId);
-      if (items.length === 0) continue;
+      if (items.length === 0 && listener.boardId !== refreshBoardId) continue;
       // Доступ проверяется заново перед отправкой данных, а не только при подключении.
       if (
         !members.some(
@@ -52,11 +61,15 @@ export function createTaskEventSource(deps: AppDeps): TaskEventSource {
         listener.close();
         continue;
       }
-      listener.send({
-        type: 'tasks.changed',
-        items,
-        serverTime: deps.now().toISOString(),
-      });
+      listener.send(
+        refreshBoardId === undefined
+          ? {
+              type: 'tasks.changed',
+              items,
+              serverTime: deps.now().toISOString(),
+            }
+          : { type: 'ready' },
+      );
     }
   };
 

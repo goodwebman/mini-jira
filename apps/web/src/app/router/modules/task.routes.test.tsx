@@ -4,7 +4,7 @@
  * Тесткейсы: постоянная ссылка ведёт в скоуп доски задачи; страница по ролям — администратор правит
  * и ставит запрет, ревьювер возвращает в работу, рабочий видит запрет, гость только смотрит.
  */
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import {
   afterEach,
   beforeAll,
@@ -18,6 +18,7 @@ import {
 import {
   type ApiMock,
   makeBoard,
+  makeBoardTasks,
   makeTaskDetail,
   users,
 } from '@/shared/lib/testing';
@@ -123,6 +124,69 @@ describe('страница задачи по ролям', () => {
     expect(screen.getByLabelText('Статус')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Связать/ })).toBeInTheDocument();
     expect(screen.getByLabelText('Новый комментарий')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Редактировать задачу' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Удалить задачу' }),
+    ).toBeInTheDocument();
+  });
+
+  it('после удаления возвращается на доску без удалённой задачи', async () => {
+    api
+      .on('GET', '/tasks/GWT-101', makeTaskDetail({ key: 'GWT-101' }))
+      .on('DELETE', '/tasks/GWT-101', undefined, { status: 204 })
+      .on('GET', '/boards/9/tasks', makeBoardTasks([]));
+    const { router, client } = renderApp('/boards/9/tasks/GWT-101');
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Удалить задачу' }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Удалить',
+      }),
+    );
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/boards/9'),
+    );
+    expect(client.getQueryData(['task', 'detail', 'GWT-101'])).toBeUndefined();
+    expect(api.callsTo('DELETE', '/tasks/GWT-101')).toHaveLength(1);
+  });
+
+  it('сохраняет название и описание через форму и показывает обновлённую задачу', async () => {
+    const task = makeTaskDetail({ key: 'GWT-101' });
+    const updated = {
+      ...task,
+      title: 'Новое название',
+      description: 'Новое описание',
+    };
+    api.on('GET', '/tasks/GWT-101', task).on('PATCH', '/tasks/GWT-101', () => {
+      api.on('GET', '/tasks/GWT-101', updated);
+      return updated;
+    });
+    renderApp('/boards/9/tasks/GWT-101');
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Редактировать задачу' }),
+    );
+    const dialog = within(screen.getByRole('dialog'));
+    fireEvent.change(dialog.getByLabelText('Название'), {
+      target: { value: updated.title },
+    });
+    fireEvent.change(dialog.getByLabelText(/^Описание/), {
+      target: { value: updated.description },
+    });
+    fireEvent.click(dialog.getByRole('button', { name: 'Сохранить' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(
+      await screen.findByRole('heading', { name: updated.title }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(updated.description)).toBeInTheDocument();
+    expect(api.callsTo('PATCH', '/tasks/GWT-101')[0]?.body).toEqual({
+      title: updated.title,
+      description: updated.description,
+    });
   });
 
   it('рабочий-ревьювер может вернуть задачу в работу, но не править свойства', async () => {
@@ -144,6 +208,10 @@ describe('страница задачи по ролям', () => {
         .map((option) => option.textContent),
     ).toEqual(['В работе', 'Ревью', 'Тестирование', 'Готово']);
     expect(screen.queryByLabelText('Приоритет')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Редактировать задачу' }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Удалить задачу' })).toBeNull();
     expect(
       within(
         screen.getByRole('complementary', { name: 'Свойства задачи' }),
@@ -172,6 +240,10 @@ describe('страница задачи по ролям', () => {
       screen.getByText('Вы гость на этой доске: можно только смотреть'),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText('Статус')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Редактировать задачу' }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Удалить задачу' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Связать/ })).toBeNull();
     expect(screen.queryByLabelText('Новый комментарий')).toBeNull();
     expect(

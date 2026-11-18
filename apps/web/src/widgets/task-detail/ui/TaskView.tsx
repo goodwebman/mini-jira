@@ -19,9 +19,11 @@ import { TaskTimeHistoryCard } from './TaskTimeHistoryCard';
 export function TaskView({
   task,
   commentTarget,
+  onDeleted,
 }: {
   readonly task: TaskDetail;
   readonly commentTarget?: { hash: string; key: string };
+  readonly onDeleted: () => void;
 }) {
   const me = useSessionUser();
   const { focusTask } = useBoardWorkspaceStore();
@@ -37,7 +39,15 @@ export function TaskView({
 
   return (
     <TaskLayout
-      summary={<TaskSummaryCard task={task} now={now} />}
+      summary={
+        <TaskSummaryCard
+          task={task}
+          now={now}
+          canEdit={permissions.canEditTask}
+          canDelete={permissions.canDeleteTask}
+          onDeleted={onDeleted}
+        />
+      }
       timeHistory={
         <TaskTimeHistoryCard task={task} now={now} timeZone={me.timezone} />
       }

@@ -7,6 +7,8 @@ import {
   getTaskSpentSec,
 } from '@/entities/task';
 import { CopyTaskLinkButton } from '@/features/task/copy-link';
+import { DeleteTaskButton } from '@/features/task/delete-task';
+import { EditTaskButton } from '@/features/task/edit-task';
 import { formatSp } from '@/shared/lib/format';
 import { UICard } from '@/shared/ui';
 
@@ -14,9 +16,15 @@ import { UICard } from '@/shared/ui';
 export function TaskSummaryCard({
   task,
   now,
+  canEdit,
+  canDelete,
+  onDeleted,
 }: {
   readonly task: TaskDetail;
   readonly now: number;
+  readonly canEdit: boolean;
+  readonly canDelete: boolean;
+  readonly onDeleted: () => void;
 }) {
   const overEstimate =
     getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS;
@@ -47,6 +55,18 @@ export function TaskSummaryCard({
       <p className='m-0 whitespace-pre-line wrap-anywhere'>
         {task.description || 'Описание не заполнено.'}
       </p>
+      {(canEdit || canDelete) && (
+        <div className='flex flex-wrap gap-2'>
+          {canEdit && <EditTaskButton task={task} />}
+          {canDelete && (
+            <DeleteTaskButton
+              boardId={task.boardId}
+              taskKey={task.key}
+              onDeleted={onDeleted}
+            />
+          )}
+        </div>
+      )}
     </UICard>
   );
 }

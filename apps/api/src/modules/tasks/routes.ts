@@ -44,6 +44,7 @@ import { streamBoardTasks } from './stream.js';
 
 const tags = [TAG.tasks];
 const linkTags = [TAG.links];
+const taskPath = '/tasks/{key}';
 
 const requireCreateStatus = createMiddleware<AppEnv>(async (c, next) => {
   const status = taskStatusSchema.safeParse((await peekJsonObject(c))?.status);
@@ -196,7 +197,7 @@ export function tasksRoutes(deps: AppDeps) {
   router.openapi(
     createRoute({
       method: 'get',
-      path: '/tasks/{key}',
+      path: taskPath,
       operationId: 'getTask',
       tags,
       summary: 'Деталь задачи',
@@ -223,7 +224,7 @@ export function tasksRoutes(deps: AppDeps) {
   router.openapi(
     createRoute({
       method: 'patch',
-      path: '/tasks/{key}',
+      path: taskPath,
       operationId: 'updateTask',
       tags,
       summary: 'Изменить задачу или её статус',
@@ -255,6 +256,29 @@ export function tasksRoutes(deps: AppDeps) {
         ),
         200,
       ),
+  );
+
+  router.openapi(
+    createRoute({
+      method: 'delete',
+      path: taskPath,
+      operationId: 'deleteTask',
+      tags,
+      summary: 'Удалить задачу',
+      description:
+        'Только администратор доски. Удаляет задачу, комментарии, историю времени, связи и уведомления о задаче. Номер задачи не используется повторно.',
+      security: bearerAuth,
+      middleware: [taskAccess, requireAction('task.delete')],
+      request: { params: taskKeyParamSchema },
+      responses: {
+        204: { description: 'Задача удалена' },
+        ...errors(actionErrors),
+      },
+    }),
+    async (c) => {
+      await service.deleteTask(deps, c.get('task'));
+      return c.body(null, 204);
+    },
   );
 
   router.openapi(

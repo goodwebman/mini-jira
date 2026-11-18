@@ -12,6 +12,7 @@ import {
   clearTaskTakeLock,
   createTask,
   createTaskLink,
+  deleteTask,
   deleteTaskLink,
   pauseTask,
   resumeTask,
@@ -66,6 +67,14 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('task mutations', () => {
+  it('удаляет задачу без тела ответа и кодирует ключ в URL', async () => {
+    transport.mockResolvedValue(new Response(null, { status: 204 }));
+    await expect(deleteTask('GWT-1/2')).resolves.toBeUndefined();
+    expect(transport.mock.calls[0]).toEqual([
+      '/api/v1/tasks/GWT-1%2F2',
+      expect.objectContaining({ method: 'DELETE', body: undefined }),
+    ]);
+  });
   it('создаёт задачу с необязательными людьми null', async () => {
     transport.mockResolvedValue(Response.json(card, { status: 201 }));
     await expect(

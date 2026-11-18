@@ -4792,6 +4792,78 @@
             }
           }
         }
+      },
+      "delete": {
+        "operationId": "deleteTask",
+        "tags": [
+          "Задачи"
+        ],
+        "summary": "Удалить задачу",
+        "description": "Только администратор доски. Удаляет задачу, комментарии, историю времени, связи и уведомления о задаче. Номер задачи не используется повторно.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Задача удалена"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/tasks/{key}/take-lock": {

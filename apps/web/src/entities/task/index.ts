@@ -11,7 +11,7 @@ export {
   taskSearchPath,
   taskSearchQueryOptions,
 } from './api/taskQueries';
-export { createTask, updateTask } from './api/updateTask';
+export { createTask, deleteTask, updateTask } from './api/updateTask';
 export { subscribeBoardTaskEvents } from './api/task-events';
 export {
   clearTaskTakeLock,
@@ -24,6 +24,7 @@ export {
   appendTaskComment,
   moveTaskInBoardCache,
   putTaskCardInCache,
+  removeTaskFromCache,
   restoreTaskMove,
   type TaskMoveSnapshot,
 } from './api/task-cache';

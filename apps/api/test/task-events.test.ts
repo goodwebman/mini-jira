@@ -129,6 +129,34 @@ describe('board task SSE', () => {
     expect(signals).toEqual([]);
   });
 
+  it('после удаления обновляет снимок доски и карточку с удалённым блокером', async () => {
+    const blocker = await createTask(t, team, { status: 'work' });
+    const blocked = await createTask(t, team);
+    expect(
+      (
+        await t.request(
+          'POST',
+          `/tasks/${blocker.key}/links`,
+          team.admin.token,
+          {
+            type: 'blocks',
+            targetKey: blocked.key,
+          },
+        )
+      ).status,
+    ).toBe(201);
+    const reader = await subscribe();
+    expect(
+      (await t.request('DELETE', `/tasks/${blocker.key}`, team.admin.token))
+        .status,
+    ).toBe(204);
+    expect(await read(reader)).toEqual({ type: 'ready' });
+    expect(await read(reader)).toMatchObject({
+      type: 'tasks.changed',
+      items: [{ key: blocked.key, linkCount: 0, isBlocked: false }],
+    });
+  });
+
   it('доставляет события подписчикам разных экземпляров API', async () => {
     const task = await createTask(t, team);
     const a = await subscribe();

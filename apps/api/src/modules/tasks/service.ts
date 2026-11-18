@@ -294,6 +294,19 @@ export async function updateTask(
   });
 }
 
+export async function deleteTask(
+  deps: AppDeps,
+  access: TaskAccess,
+): Promise<void> {
+  await deps.withTx(async (tx) => {
+    const locked = await repo.lockTask(tx, access.id);
+    if (!locked) throw new AppError('TASK_NOT_FOUND');
+    const relatedIds = await repo.deleteTask(tx, access.id, access.key);
+    await repo.notifyBoardTasksChanged(tx, locked.task.boardId);
+    for (const id of relatedIds) await repo.notifyTaskUpdated(tx, id);
+  });
+}
+
 export async function setTakeLock(
   deps: AppDeps,
   taskId: string,

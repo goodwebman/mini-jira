@@ -38,6 +38,21 @@ export function putTaskCardInCache(client: QueryClient, card: TaskCard): void {
   );
 }
 
+/** Удалённую задачу нельзя восстановить из старого запроса или открыть из кэша. */
+export async function removeTaskFromCache(
+  client: QueryClient,
+  boardId: number,
+  key: string,
+): Promise<void> {
+  await client.cancelQueries({ queryKey: taskQueryKeys.all });
+  client.setQueryData<BoardTasksResponse>(
+    taskQueryKeys.board(boardId),
+    (data) =>
+      data && { ...data, items: data.items.filter((item) => item.key !== key) },
+  );
+  client.removeQueries({ queryKey: taskQueryKeys.detail(key), exact: true });
+}
+
 /** Ответ сервера на комментарий дописывается в деталь задачи без перезапроса. */
 export async function appendTaskComment(
   client: QueryClient,

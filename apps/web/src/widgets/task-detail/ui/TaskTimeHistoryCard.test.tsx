@@ -71,12 +71,17 @@ describe('Время задачи', () => {
   it('ровно на оценке не подсвечивает SP; превышение учитывает все завершённые интервалы', () => {
     const task = makeTaskDetail({ status: 'done', sp: 1 });
     task.timer.spentSec = 3600;
-    const { rerender } = render(<TaskSummaryCard task={task} now={0} />, {
-      wrapper: UIToastProvider,
-    });
+    const actions = { canEdit: false, canDelete: false, onDeleted: () => {} };
+    const { rerender } = render(
+      <TaskSummaryCard task={task} now={0} {...actions} />,
+      {
+        wrapper: UIToastProvider,
+      },
+    );
     expect(screen.getByText('1 SP')).not.toHaveClass('text-destructive');
     rerender(
       <TaskSummaryCard
+        {...actions}
         task={{ ...task, timer: { ...task.timer, spentSec: 3601 } }}
         now={0}
       />,

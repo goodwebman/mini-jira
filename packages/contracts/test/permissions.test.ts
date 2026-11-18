@@ -33,6 +33,7 @@ describe('can', () => {
   const table: [BoardAction, boolean, boolean][] = [
     ['members.manage', true, false],
     ['task.create', true, true],
+    ['task.delete', true, false],
     ['task.edit', true, false],
     ['task.lock', true, false],
     ['task.pause', true, true],
