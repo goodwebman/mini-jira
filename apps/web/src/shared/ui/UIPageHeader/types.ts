@@ -12,6 +12,8 @@ export interface IUIPageHeaderProps extends Omit<
   readonly caption?: ReactNode;
   /** Если передан, слева появляется кнопка «Назад». */
   readonly onBack?: () => void;
+  /** Показывает отключённую кнопку «Назад», пока данные страницы загружаются. */
+  readonly backDisabled?: boolean;
   readonly backLabel?: string;
   /** Если передан, заголовок становится кнопкой-переключателем с шевроном. */
   readonly onTitleClick?: () => void;

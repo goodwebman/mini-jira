@@ -1,13 +1,14 @@
 import { type FormEvent, useState } from 'react';
 
 import { type CommentMention, createCommentBodySchema } from '@gwmt/contracts';
+import { useQuery } from '@tanstack/react-query';
 
-import { prepareCommentText } from '@/entities/comment';
+import { boardQueryOptions } from '@/entities/board';
+import { MentionTextarea, prepareCommentText } from '@/entities/comment';
 import { readApiError } from '@/shared/api';
 import { UIButton, UIField } from '@/shared/ui';
 
 import { useAddTaskComment } from '../model/use-add-comment';
-import { MentionTextarea } from './MentionTextarea';
 
 /** Новый комментарий: валидация по контракту, ошибка — под полем. */
 export function AddCommentForm({
@@ -27,6 +28,10 @@ export function AddCommentForm({
   const [mentions, setMentions] = useState<CommentMention[]>([]);
   const [error, setError] = useState('');
   const mutation = useAddTaskComment(taskKey, parentId);
+  const board = useQuery({
+    ...boardQueryOptions(boardId),
+    enabled: text.includes('@') && !mutation.isPending,
+  });
   const canSubmit = text.trim().length > 0;
 
   const submit = (event: FormEvent) => {
@@ -56,7 +61,9 @@ export function AddCommentForm({
         error={error || undefined}
       >
         <MentionTextarea
-          boardId={boardId}
+          members={board.data?.members ?? []}
+          loading={board.isPending}
+          failed={board.isError}
           disabled={mutation.isPending}
           value={text}
           mentions={mentions}

@@ -11,17 +11,20 @@ export function ShellPageSkeleton({
   children,
   scroll,
   actions,
+  backDisabled,
 }: {
   readonly label?: string;
   readonly title?: ReactNode;
   readonly children?: ReactNode;
   readonly scroll?: 'auto' | 'fixed';
   readonly actions?: ReactNode;
+  readonly backDisabled?: boolean;
 }) {
   return (
     <ShellPage
       title={title ?? <UISkeleton className='h-[1.3em] w-48 max-w-full' />}
       caption={<UISkeleton className='h-[1.33em] w-32' />}
+      backDisabled={backDisabled}
       scroll={scroll}
       actions={actions}
     >

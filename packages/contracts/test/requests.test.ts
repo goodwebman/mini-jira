@@ -4,10 +4,12 @@ import type { z } from 'zod';
 import {
   boardIdParamSchema,
   createBoardBodySchema,
+  createCommentBodySchema,
   createTaskBodySchema,
   loginBodySchema,
   registerBodySchema,
   taskKeyParamSchema,
+  updateCommentBodySchema,
   updateMeBodySchema,
   userSearchQuerySchema,
 } from '../src/index.js';
@@ -19,6 +21,31 @@ const fieldMessage = (schema: z.ZodType, value: unknown, field: string) => {
 };
 
 const UUID = '3f2b7a52-9f0e-4f0a-8f6a-1c2d3e4f5a6b';
+
+describe('текст комментария', () => {
+  it.each([createCommentBodySchema, updateCommentBodySchema])(
+    'проверяет текст и границы упоминаний',
+    (schema) => {
+      expect(schema.parse({ text: '  Текст  ' })).toEqual({ text: 'Текст' });
+      expect(schema.safeParse({ text: ' ' }).success).toBe(false);
+      expect(schema.safeParse({ text: 'a'.repeat(10_001) }).success).toBe(
+        false,
+      );
+      expect(
+        schema.safeParse({
+          text: 'Текст',
+          mentions: [{ userId: UUID, start: 0, end: 99 }],
+        }).success,
+      ).toBe(false);
+      expect(
+        schema.safeParse({
+          text: '@Анна',
+          mentions: [{ userId: UUID, start: 0, end: 5 }],
+        }).success,
+      ).toBe(true);
+    },
+  );
+});
 
 describe('тексты ошибок из контракта', () => {
   it('регистрация', () => {

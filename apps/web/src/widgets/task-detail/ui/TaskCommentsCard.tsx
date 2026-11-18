@@ -1,4 +1,4 @@
-import type { TaskDetail } from '@gwmt/contracts';
+import { type TaskDetail, getCommentPermissions } from '@gwmt/contracts';
 
 import { buildCommentThread } from '@/entities/comment';
 import { AddCommentForm } from '@/features/comment/add-comment';
@@ -12,11 +12,13 @@ export function TaskCommentsCard({
   canComment,
   timeZone,
   commentTarget,
+  currentUserId,
 }: {
-  readonly task: Pick<TaskDetail, 'boardId' | 'comments' | 'key'>;
+  readonly task: Pick<TaskDetail, 'boardId' | 'comments' | 'key' | 'myRole'>;
   readonly canComment: boolean;
   readonly timeZone: string;
   readonly commentTarget?: { hash: string; key: string };
+  readonly currentUserId: string;
 }) {
   const commentsById = new Map(
     task.comments.map((comment) => [comment.id, comment]),
@@ -38,6 +40,11 @@ export function TaskCommentsCard({
           taskKey={task.key}
           boardId={task.boardId}
           canComment={canComment}
+          permissions={getCommentPermissions(
+            task.myRole,
+            currentUserId,
+            comment.author.id,
+          )}
           parent={
             comment.parentId ? commentsById.get(comment.parentId) : undefined
           }

@@ -204,6 +204,7 @@
           "TASK_TAKE_LOCKED",
           "BOARD_NOT_FOUND",
           "TASK_NOT_FOUND",
+          "COMMENT_NOT_FOUND",
           "SPRINT_NOT_FOUND",
           "USER_NOT_FOUND",
           "EMAIL_TAKEN",
@@ -2219,10 +2220,30 @@
       "CreateCommentBody": {
         "type": "object",
         "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommentMention"
+            },
+            "maxItems": 50
+          },
           "parentId": {
             "type": "string",
             "format": "uuid"
-          },
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "UpdateCommentBody": {
+        "type": "object",
+        "properties": {
           "text": {
             "type": "string",
             "minLength": 1,
@@ -5495,6 +5516,201 @@
           },
           "422": {
             "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{key}/comments/{commentId}": {
+      "patch": {
+        "operationId": "updateTaskComment",
+        "tags": [
+          "Комментарии"
+        ],
+        "summary": "Изменить свой комментарий",
+        "description": "Автор может изменить текст и упоминания. Администратор не может редактировать чужой комментарий. Гостю изменение запрещено.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Id комментария"
+            },
+            "required": true,
+            "description": "Id комментария",
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommentBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Комментарий изменён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskComment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена\n- `COMMENT_NOT_FOUND`: Комментарий не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "- `VALIDATION_ERROR`: Проверьте заполнение полей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTaskComment",
+        "tags": [
+          "Комментарии"
+        ],
+        "summary": "Удалить комментарий",
+        "description": "Автор удаляет свой комментарий, администратор — любой. Ответы сохраняются и переходят к родителю удалённого комментария. Гостю удаление запрещено.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,6}-\\d+$",
+              "example": "GWT-101",
+              "description": "Ключ задачи"
+            },
+            "required": true,
+            "description": "Ключ задачи",
+            "name": "key",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Id комментария"
+            },
+            "required": true,
+            "description": "Id комментария",
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Комментарий удалён"
+          },
+          "400": {
+            "description": "- `BAD_REQUEST`: Неверный формат запроса",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "- `ACCESS_TOKEN_MISSING`: Нужно войти в систему\n- `ACCESS_TOKEN_EXPIRED`: Сессия истекла\n- `ACCESS_TOKEN_INVALID`: Нужно войти заново",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "- `ROLE_FORBIDDEN`: Вашей роли не хватает прав на это действие",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "- `TASK_NOT_FOUND`: Задача не найдена\n- `COMMENT_NOT_FOUND`: Комментарий не найден",
             "content": {
               "application/json": {
                 "schema": {

@@ -6,6 +6,8 @@ import { CommentItem } from '@/entities/comment';
 import { UserAvatar } from '@/entities/user';
 import { AddCommentForm } from '@/features/comment/add-comment';
 import { CopyCommentLinkButton } from '@/features/comment/copy-link';
+import { DeleteCommentButton } from '@/features/comment/delete-comment';
+import { EditCommentForm } from '@/features/comment/edit-comment';
 import { UIButton } from '@/shared/ui';
 
 import { useCommentTarget } from '../model/use-comment-target';
@@ -19,6 +21,7 @@ export function TaskCommentRow({
   timeZone,
   targetKey,
   parent,
+  permissions,
 }: {
   readonly comment: TaskComment;
   readonly depth: number;
@@ -28,8 +31,13 @@ export function TaskCommentRow({
   readonly timeZone: string;
   readonly targetKey?: string;
   readonly parent?: TaskComment;
+  readonly permissions: {
+    readonly canEdit: boolean;
+    readonly canDelete: boolean;
+  };
 }) {
   const [replying, setReplying] = useState(false);
+  const [editing, setEditing] = useState(false);
   const ref = useCommentTarget(targetKey);
   return (
     <div
@@ -61,9 +69,33 @@ export function TaskCommentRow({
               </UIButton>
             )}
             <CopyCommentLinkButton taskKey={taskKey} commentId={comment.id} />
+            {permissions.canEdit && (
+              <UIButton
+                size='sm'
+                variant='ghost'
+                aria-expanded={editing}
+                onClick={() => {
+                  setEditing(!editing);
+                  setReplying(false);
+                }}
+              >
+                Редактировать комментарий
+              </UIButton>
+            )}
+            {permissions.canDelete && (
+              <DeleteCommentButton taskKey={taskKey} commentId={comment.id} />
+            )}
           </>
         }
       />
+      {permissions.canEdit && editing && (
+        <EditCommentForm
+          taskKey={taskKey}
+          boardId={boardId}
+          comment={comment}
+          onDone={() => setEditing(false)}
+        />
+      )}
       {canComment && replying && (
         <AddCommentForm
           taskKey={taskKey}

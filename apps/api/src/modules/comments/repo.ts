@@ -1,7 +1,7 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import type { Db } from '../../db/client.js';
-import { taskComments, users } from '../../db/schema.js';
+import { notifications, taskComments, users } from '../../db/schema.js';
 import { userBriefColumns } from '../boards/repo.js';
 
 const commentColumns = {
@@ -45,4 +45,30 @@ export async function insertComment(
     .returning({ id: taskComments.id });
   if (!comment) throw new Error('comment was not created');
   return comment.id;
+}
+
+export async function updateComment(
+  db: Db,
+  commentId: string,
+  values: Pick<typeof taskComments.$inferInsert, 'mentions' | 'text'>,
+) {
+  await db
+    .update(taskComments)
+    .set(values)
+    .where(eq(taskComments.id, commentId));
+}
+
+/** Ответы других людей сохраняются и переходят к родителю удалённого комментария. */
+export async function deleteComment(db: Db, comment: CommentRow) {
+  await db
+    .update(taskComments)
+    .set({ parentId: comment.parentId })
+    .where(
+      and(
+        eq(taskComments.taskId, comment.taskId),
+        eq(taskComments.parentId, comment.id),
+      ),
+    );
+  await db.delete(notifications).where(eq(notifications.commentId, comment.id));
+  await db.delete(taskComments).where(eq(taskComments.id, comment.id));
 }

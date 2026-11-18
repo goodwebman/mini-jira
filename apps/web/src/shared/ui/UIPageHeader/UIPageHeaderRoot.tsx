@@ -25,6 +25,7 @@ const UIPageHeaderRootBase = forwardRef<HTMLElement, IUIPageHeaderProps>(
       title,
       caption,
       onBack,
+      backDisabled,
       backLabel = 'Назад',
       onTitleClick,
       actions,
@@ -41,12 +42,17 @@ const UIPageHeaderRootBase = forwardRef<HTMLElement, IUIPageHeaderProps>(
       )}
       {...props}
     >
-      {onBack && (
-        <UIIconButton label={backLabel} onClick={onBack} className='-ml-[10px]'>
+      {(onBack || backDisabled) && (
+        <UIIconButton
+          label={backLabel}
+          onClick={onBack}
+          disabled={backDisabled}
+          className='-ml-[10px]'
+        >
           <UIIcons.ArrowLeft />
         </UIIconButton>
       )}
-      <div className='flex min-w-0 flex-1 flex-col'>
+      <div className='flex min-w-0 flex-1 flex-col gap-1'>
         <h1 className='m-0 text-heading font-semibold tracking-title'>
           {onTitleClick ? (
             <button

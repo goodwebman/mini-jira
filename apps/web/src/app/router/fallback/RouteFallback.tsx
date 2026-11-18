@@ -61,6 +61,7 @@ export function RouteFallback() {
     <AppShellSkeleton>
       <ShellPageSkeleton
         title={title}
+        backDisabled={isTask}
         scroll={isBoard ? 'fixed' : 'auto'}
         actions={
           isBoard ? (

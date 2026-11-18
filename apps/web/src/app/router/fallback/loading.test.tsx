@@ -1,4 +1,10 @@
-import { act, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import {
   afterEach,
   beforeAll,
@@ -14,6 +20,7 @@ import {
   makeBoardTasks,
   makeMe,
   makeTask,
+  makeTaskDetail,
 } from '@/shared/lib/testing';
 
 import { signIn } from '../testing/auth-mock';
@@ -38,6 +45,45 @@ beforeEach(() => {
 afterEach(() => teardownRouterTest(api));
 
 describe('независимая загрузка блоков', () => {
+  it.each([
+    ['/boards/9/tasks/GWT-101', 'Загрузка задачи'],
+    ['/tasks/GWT-101', 'Открываем задачу'],
+  ])(
+    'задача %s сохраняет отключённую стрелку и два плейсхолдера до загрузки',
+    async (path, label) => {
+      let finish!: (value: unknown) => void;
+      const pending = new Promise((resolve) => {
+        finish = resolve;
+      });
+      api.on('GET', '/tasks/GWT-101', () => pending);
+      const { router } = renderApp(path);
+      await screen.findByLabelText(label);
+      const back = screen.getByRole('button', { name: 'Назад' });
+      expect(back).toBeDisabled();
+      const header = back.closest('header')!;
+      expect(header.querySelectorAll('[data-name="UISkeleton"]')).toHaveLength(
+        2,
+      );
+      fireEvent.click(back);
+      expect(router.state.location.pathname).toBe(path);
+      await act(async () => {
+        finish(makeTaskDetail({ key: 'GWT-101' }));
+      });
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Назад' })).toBeEnabled(),
+      );
+      expect(
+        within(
+          screen.getByRole('button', { name: 'Назад' }).closest('header')!,
+        ).getByRole('heading', { name: 'GWT-101' }),
+      ).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
+      await waitFor(() =>
+        expect(router.state.location.pathname).toBe('/boards/9'),
+      );
+    },
+  );
+
   it('доска показывает шапку и фильтры, пока задачи ещё загружаются', async () => {
     let finish!: (value: unknown) => void;
     const pending = new Promise((resolve) => {

@@ -22,6 +22,8 @@ export {
 export { createTaskLink, deleteTaskLink } from './api/taskLinks';
 export {
   appendTaskComment,
+  replaceTaskComment,
+  removeTaskComment,
   moveTaskInBoardCache,
   putTaskCardInCache,
   removeTaskFromCache,

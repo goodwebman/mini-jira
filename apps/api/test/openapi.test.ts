@@ -50,6 +50,8 @@ const EXPECTED: [string, string][] = [
   ['post', '/tasks/{key}/links'],
   ['delete', '/tasks/{key}/links/{targetKey}'],
   ['post', '/tasks/{key}/comments'],
+  ['patch', '/tasks/{key}/comments/{commentId}'],
+  ['delete', '/tasks/{key}/comments/{commentId}'],
 ];
 
 const NAMED_SCHEMAS = [
@@ -103,6 +105,7 @@ const NAMED_SCHEMAS = [
   'UpdateTaskBody',
   'CreateLinkBody',
   'CreateCommentBody',
+  'UpdateCommentBody',
 ];
 
 interface Parameter {
@@ -171,7 +174,7 @@ describe('OpenAPI', () => {
     expect(documented.sort()).toEqual(
       EXPECTED.map(([m, p]) => `${m} ${p}`).sort(),
     );
-    expect(EXPECTED).toHaveLength(44);
+    expect(EXPECTED).toHaveLength(46);
   });
 
   it('ошибки Google описаны рядом с его callback', () => {

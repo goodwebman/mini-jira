@@ -9,6 +9,7 @@ import {
   allowedStatuses,
   can,
   createStatusError,
+  getCommentPermissions,
   statusMoveError,
 } from '../src/index.js';
 
@@ -45,6 +46,22 @@ describe('can', () => {
     expect(can('admin', action)).toBe(admin);
     expect(can('worker', action)).toBe(workerAllowed);
     expect(can('guest', action)).toBe(false);
+  });
+});
+
+describe('права на комментарий', () => {
+  it.each([
+    ['admin', true, true, true],
+    ['admin', false, false, true],
+    ['worker', true, true, true],
+    ['worker', false, false, false],
+    ['guest', true, false, false],
+    ['guest', false, false, false],
+  ] as const)('%s, свой: %s', (role, own, canEdit, canDelete) => {
+    expect(getCommentPermissions(role, AUTHOR, own ? AUTHOR : OTHER)).toEqual({
+      canEdit,
+      canDelete,
+    });
   });
 });
 

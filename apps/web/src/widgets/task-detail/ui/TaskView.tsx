@@ -65,6 +65,7 @@ export function TaskView({
       comments={
         <TaskCommentsCard
           task={task}
+          currentUserId={me.id}
           commentTarget={commentTarget}
           canComment={permissions.canComment}
           timeZone={me.timezone}

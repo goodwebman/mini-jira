@@ -181,9 +181,8 @@ export const createLinkBodySchema = z
   .meta({ id: 'CreateLinkBody' });
 export type CreateLinkBody = z.infer<typeof createLinkBodySchema>;
 
-export const createCommentBodySchema = z
+const commentTextBodySchema = z
   .object({
-    parentId: z.uuid().optional(),
     text: requiredText('Введите комментарий', 10_000),
     mentions: z.array(commentMentionSchema).max(50).optional(),
   })
@@ -204,9 +203,16 @@ export const createCommentBodySchema = z
       }
       previousEnd = mention.end;
     }
-  })
+  });
+export const createCommentBodySchema = commentTextBodySchema
+  .safeExtend({ parentId: z.uuid().optional() })
   .meta({ id: 'CreateCommentBody' });
 export type CreateCommentBody = z.infer<typeof createCommentBodySchema>;
+
+export const updateCommentBodySchema = commentTextBodySchema.meta({
+  id: 'UpdateCommentBody',
+});
+export type UpdateCommentBody = z.infer<typeof updateCommentBodySchema>;
 
 // Заголовки подписи клиента на входе и регистрации
 
@@ -257,6 +263,9 @@ export const sprintNumberParamSchema = z.object({
 });
 export const taskKeyParamSchema = z.object({
   key: taskKeyField().describe(TASK_KEY_DESCRIPTION),
+});
+export const taskCommentParamSchema = taskKeyParamSchema.extend({
+  commentId: z.uuid().describe('Id комментария'),
 });
 export const taskLinkParamSchema = z.object({
   key: taskKeyField().describe(TASK_KEY_DESCRIPTION),

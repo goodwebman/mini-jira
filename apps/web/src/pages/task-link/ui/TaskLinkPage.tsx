@@ -19,7 +19,7 @@ export function TaskLinkPage() {
     <AsyncBoundary
       resetKeys={[taskKey]}
       fallback={
-        <ShellPageSkeleton label='Открываем задачу' title={taskKey}>
+        <ShellPageSkeleton label='Открываем задачу' backDisabled>
           <TaskSkeleton />
         </ShellPageSkeleton>
       }

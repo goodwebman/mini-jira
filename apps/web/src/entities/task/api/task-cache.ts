@@ -69,6 +69,49 @@ export async function appendTaskComment(
   );
 }
 
+export async function replaceTaskComment(
+  client: QueryClient,
+  taskKey: string,
+  comment: TaskComment,
+): Promise<void> {
+  const queryKey = taskQueryKeys.detail(taskKey);
+  await client.cancelQueries({ queryKey, exact: true });
+  client.setQueryData<TaskDetail>(
+    queryKey,
+    (detail) =>
+      detail && {
+        ...detail,
+        comments: detail.comments.map((item) =>
+          item.id === comment.id ? comment : item,
+        ),
+      },
+  );
+}
+
+export async function removeTaskComment(
+  client: QueryClient,
+  taskKey: string,
+  commentId: string,
+): Promise<void> {
+  const queryKey = taskQueryKeys.detail(taskKey);
+  await client.cancelQueries({ queryKey, exact: true });
+  client.setQueryData<TaskDetail>(queryKey, (detail) => {
+    if (!detail) return detail;
+    const removed = detail.comments.find((item) => item.id === commentId);
+    if (!removed) return detail;
+    return {
+      ...detail,
+      comments: detail.comments
+        .filter((item) => item.id !== commentId)
+        .map((item) =>
+          item.parentId === commentId
+            ? { ...item, parentId: removed.parentId }
+            : item,
+        ),
+    };
+  });
+}
+
 /** Что нужно, чтобы откатить один оптимистичный перенос. */
 export interface TaskMoveSnapshot {
   readonly boardId: number;

@@ -27,7 +27,7 @@ export function TaskPage() {
     <AsyncBoundary
       resetKeys={[taskKey]}
       fallback={
-        <ShellPageSkeleton label='Загрузка задачи' title={taskKey}>
+        <ShellPageSkeleton label='Загрузка задачи' backDisabled>
           <TaskSkeleton task={task} role={board?.myRole} />
         </ShellPageSkeleton>
       }

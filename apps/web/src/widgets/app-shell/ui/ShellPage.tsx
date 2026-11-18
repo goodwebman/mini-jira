@@ -11,6 +11,7 @@ export interface IShellPageProps {
   readonly title: ReactNode;
   readonly caption?: ReactNode;
   readonly onBack?: () => void;
+  readonly backDisabled?: boolean;
   /** Заголовок-переключатель с шевроном (название доски открывает список досок). */
   readonly onTitleClick?: () => void;
   readonly actions?: ReactNode;
@@ -30,6 +31,7 @@ export function ShellPage({
   title,
   caption,
   onBack,
+  backDisabled,
   onTitleClick,
   actions,
   banner,
@@ -44,6 +46,7 @@ export function ShellPage({
         title={title}
         caption={caption}
         onBack={onBack}
+        backDisabled={backDisabled}
         onTitleClick={onTitleClick}
         actions={
           <>

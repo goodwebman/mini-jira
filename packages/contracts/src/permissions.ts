@@ -38,6 +38,19 @@ export function can(role: BoardRole, action: BoardAction): boolean {
   return role === 'admin' || (role === 'worker' && WORKER_ACTIONS.has(action));
 }
 
+export function getCommentPermissions(
+  role: BoardRole,
+  userId: string,
+  authorId: string,
+) {
+  const canComment = can(role, 'task.comment');
+  const own = userId === authorId;
+  return {
+    canEdit: canComment && own,
+    canDelete: canComment && (own || role === 'admin'),
+  };
+}
+
 export function statusMoveError(
   actor: MoveActor,
   task: MoveTask,

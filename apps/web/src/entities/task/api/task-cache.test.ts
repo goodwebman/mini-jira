@@ -22,7 +22,9 @@ import {
   appendTaskComment,
   moveTaskInBoardCache,
   putTaskCardInCache,
+  removeTaskComment,
   removeTaskFromCache,
+  replaceTaskComment,
   restoreTaskMove,
 } from './task-cache';
 import { taskQueryKeys } from './taskQueries';
@@ -57,6 +59,71 @@ describe('removeTaskFromCache', () => {
     expect(client.getQueryData(taskQueryKeys.detail(task.key))).toBeUndefined();
     client.clear();
   });
+});
+
+describe('изменение комментариев в кэше', () => {
+  const root = {
+    id: 'root',
+    parentId: null,
+    author: users.anna,
+    text: 'Корень',
+    createdAt: '2026-11-11T00:00:00Z',
+  };
+  const reply = { ...root, id: 'reply', parentId: root.id, text: 'Ответ' };
+  const nested = {
+    ...root,
+    id: 'nested',
+    parentId: reply.id,
+    text: 'Вложенный ответ',
+  };
+
+  it('при удалении переносит только прямые ответы к родителю, сохраняя остальные', async () => {
+    const client = createTestQueryClient();
+    const detail = makeTaskDetail({ comments: [root, reply, nested] });
+    const key = taskQueryKeys.detail(detail.key);
+    client.setQueryData(key, detail);
+    await removeTaskComment(client, detail.key, reply.id);
+    expect(client.getQueryData(key)).toMatchObject({
+      comments: [root, { ...nested, parentId: root.id }],
+    });
+    await removeTaskComment(client, detail.key, root.id);
+    expect(client.getQueryData(key)).toMatchObject({
+      comments: [{ ...nested, parentId: null }],
+    });
+    client.clear();
+  });
+
+  it.each(['edit', 'delete'])(
+    '%s: отменённый ответ не возвращает старый комментарий',
+    async (action) => {
+      const client = createTestQueryClient();
+      const detail = makeTaskDetail({ comments: [root, reply] });
+      const queryKey = taskQueryKeys.detail(detail.key);
+      client.setQueryData(queryKey, detail);
+      let release = () => {};
+      const stale = client
+        .fetchQuery({
+          queryKey,
+          staleTime: 0,
+          queryFn: () =>
+            new Promise<typeof detail>((resolve) => {
+              release = () => resolve(detail);
+            }),
+        })
+        .catch(() => {});
+      const updated = { ...root, text: 'Изменён' };
+      if (action === 'edit')
+        await replaceTaskComment(client, detail.key, updated);
+      else await removeTaskComment(client, detail.key, root.id);
+      release();
+      await stale;
+      expect(client.getQueryData(queryKey)).toMatchObject({
+        comments:
+          action === 'edit' ? [updated, reply] : [{ ...reply, parentId: null }],
+      });
+      client.clear();
+    },
+  );
 });
 
 describe('putTaskCardInCache', () => {

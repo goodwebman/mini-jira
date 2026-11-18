@@ -1,20 +1,26 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react';
 
-import type { CommentMention } from '@gwmt/contracts';
-import { useQuery } from '@tanstack/react-query';
+import type { BoardMember, CommentMention } from '@gwmt/contracts';
 
-import { boardQueryOptions } from '@/entities/board';
-import { commentMentionQuery, editCommentMentions } from '@/entities/comment';
 import { UIButton, UITextarea } from '@/shared/ui';
 
+import {
+  commentMentionQuery,
+  editCommentMentions,
+} from '../model/comment-mentions';
+
 export function MentionTextarea({
-  boardId,
+  members,
+  loading,
+  failed,
   value,
   mentions,
   onChange,
   disabled,
 }: {
-  readonly boardId: number;
+  readonly members: readonly BoardMember[];
+  readonly loading: boolean;
+  readonly failed: boolean;
   readonly value: string;
   readonly mentions: CommentMention[];
   readonly onChange: (text: string, mentions: CommentMention[]) => void;
@@ -31,11 +37,7 @@ export function MentionTextarea({
     !mentions.some((mention) => caret > mention.start && caret <= mention.end)
       ? commentMentionQuery(value, caret)
       : null;
-  const board = useQuery({
-    ...boardQueryOptions(boardId),
-    enabled: active !== null && !disabled,
-  });
-  const candidates = (board.data?.members ?? [])
+  const candidates = members
     .filter((member) =>
       `${member.name} ${member.email}`
         .toLocaleLowerCase('ru-RU')
@@ -116,14 +118,14 @@ export function MentionTextarea({
           aria-label='Участники доски для упоминания'
           className='flex max-h-60 flex-col gap-1 overflow-y-auto rounded-control border border-border p-2'
         >
-          {board.isPending && <p role='status'>Загрузка участников…</p>}
-          {board.isError && (
+          {loading && <p role='status'>Загрузка участников…</p>}
+          {failed && (
             <p role='alert'>
               Не удалось загрузить участников. Введите @ заново, чтобы
               повторить.
             </p>
           )}
-          {board.isSuccess && candidates.length === 0 && (
+          {!loading && !failed && candidates.length === 0 && (
             <p>Участники не найдены</p>
           )}
           {candidates.map((member, index) => (

@@ -30,6 +30,7 @@ const ERROR_TABLE: Record<ErrorCode, [ContentfulStatusCode, string]> = {
   TASK_TAKE_LOCKED: [403, 'Администратор запретил брать эту задачу в работу'],
   BOARD_NOT_FOUND: [404, 'Доска не найдена'],
   TASK_NOT_FOUND: [404, 'Задача не найдена'],
+  COMMENT_NOT_FOUND: [404, 'Комментарий не найден'],
   SPRINT_NOT_FOUND: [404, 'Спринт не найден'],
   USER_NOT_FOUND: [404, 'Пользователь не найден'],
   EMAIL_TAKEN: [409, 'Этот email уже зарегистрирован'],

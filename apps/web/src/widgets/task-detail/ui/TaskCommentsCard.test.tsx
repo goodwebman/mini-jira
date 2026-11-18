@@ -69,7 +69,8 @@ function setup(
   const view = (target = commentTarget) => (
     <TestProviders client={client}>
       <TaskCommentsCard
-        task={task}
+        task={{ ...task, myRole: canComment ? task.myRole : 'guest' }}
+        currentUserId={users.anna.id}
         canComment={canComment}
         timeZone='UTC'
         commentTarget={target}
