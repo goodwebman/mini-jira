@@ -26,7 +26,9 @@ describe('сборка на Vercel', () => {
       root: 'apps/api',
       framework: 'hono',
       entrypoint: 'src/index.ts',
+      functions: { 'src/index.ts': { maxDuration: 300 } },
     });
+    expect(config.services.api).not.toHaveProperty('maxDuration');
     expect(config.services.api.buildCommand).toBe(
       'npm run build && npm run db:migrate',
     );

@@ -22,6 +22,7 @@ import {
   makeMember,
   makeSprintKpi,
   makeTask,
+  makeTaskDetail,
   users,
 } from '@/shared/lib/testing';
 
@@ -206,6 +207,187 @@ describe('скоуп доски: границы', () => {
       'aria-pressed',
       'true',
     );
+  });
+});
+
+describe('фильтры доски в URL', () => {
+  const first = makeTask({
+    key: 'GWT-101',
+    title: 'Экран входа',
+    priority: 'high',
+  });
+  const second = makeTask({
+    key: 'GWT-102',
+    title: 'Экран отчёта',
+    priority: 'high',
+    people: {
+      author: users.elena,
+      reviewer: users.anna,
+      tester: null,
+      designer: null,
+    },
+  });
+  const third = makeTask({ key: 'GWT-103', title: 'Сервис', priority: 'med' });
+  const params = new URLSearchParams({
+    q: 'Экран',
+    priority: 'high',
+    assignee: users.ivan.id,
+  });
+  const chips = () =>
+    within(screen.getByRole('group', { name: 'Фильтр по участникам' }));
+
+  beforeEach(() => {
+    signIn();
+    api.on('GET', '/boards/9/tasks', makeBoardTasks([first, second, third]));
+    api.on('GET', '/tasks/GWT-101', makeTaskDetail(first));
+  });
+
+  it('пишет поиск, приоритет и нескольких участников в URL и восстанавливает после перезагрузки', async () => {
+    const app = renderApp('/boards/9?view=compact');
+    fireEvent.change(
+      await screen.findByLabelText('Поиск по названию или ключу'),
+      { target: { value: 'Экран' } },
+    );
+    fireEvent.change(screen.getByLabelText('Приоритет'), {
+      target: { value: 'high' },
+    });
+    fireEvent.click(chips().getByRole('button', { name: /Иван/ }));
+    await waitFor(() =>
+      expect(screen.queryByText(second.title)).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText(first.title)).toBeInTheDocument();
+    fireEvent.click(chips().getByRole('button', { name: /Елена/ }));
+    expect(await screen.findByText(second.title)).toBeInTheDocument();
+    const saved = new URLSearchParams(app.router.state.location.search);
+    expect(saved.get('q')).toBe('Экран');
+    expect(saved.get('priority')).toBe('high');
+    expect(saved.getAll('assignee')).toEqual([users.ivan.id, users.elena.id]);
+    expect(saved.get('view')).toBe('compact');
+    const url =
+      app.router.state.location.pathname + app.router.state.location.search;
+    app.unmount();
+    app.router.dispose();
+    renderApp(url);
+    expect(
+      await screen.findByLabelText('Поиск по названию или ключу'),
+    ).toHaveValue('Экран');
+    expect(screen.getByLabelText('Приоритет')).toHaveValue('high');
+    expect(chips().getByRole('button', { name: /Иван/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(chips().getByRole('button', { name: /Елена/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(await screen.findByText(first.title)).toBeInTheDocument();
+    expect(screen.getByText(second.title)).toBeInTheDocument();
+    expect(screen.queryByText(third.title)).not.toBeInTheDocument();
+  });
+
+  it('параметры ссылки восстанавливаются без локального хранилища; неверный приоритет и чужие участники игнорируются', async () => {
+    renderApp('/boards/9?priority=invalid&assignee=missing');
+    expect(await screen.findByLabelText('Приоритет')).toHaveValue('all');
+    expect(chips().getByRole('button', { name: 'Все' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(await screen.findByText(first.title)).toBeInTheDocument();
+    expect(screen.getByText(second.title)).toBeInTheDocument();
+    expect(screen.getByText(third.title)).toBeInTheDocument();
+  });
+
+  it('переносит фильтры на экран участников и обратно', async () => {
+    const { router } = renderApp(`/boards/9?${params}`);
+    await screen.findByLabelText('Приоритет');
+    fireEvent.click(screen.getByRole('link', { name: /Участники · 4/ }));
+    await screen.findByRole('heading', { name: 'Участники доски' });
+    expect(new URLSearchParams(router.state.location.search)).toEqual(params);
+    fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
+    expect(await screen.findByLabelText('Приоритет')).toHaveValue('high');
+    expect(chips().getByRole('button', { name: /Иван/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(await screen.findByText(first.title)).toBeInTheDocument();
+    expect(screen.queryByText(second.title)).not.toBeInTheDocument();
+  });
+
+  it('переносит фильтры в задачу, сохраняет после обновления на задаче и возвращает их на доску', async () => {
+    const app = renderApp(`/boards/9?${params}`);
+    const card = await screen.findByRole('link', { name: /Экран входа/ });
+    expect(
+      new URL(card.getAttribute('href')!, 'http://localhost').searchParams,
+    ).toEqual(params);
+    fireEvent.click(card);
+    await screen.findByRole('heading', { name: first.title });
+    const url =
+      app.router.state.location.pathname + app.router.state.location.search;
+    app.unmount();
+    app.router.dispose();
+    const refreshed = renderApp(url);
+    await screen.findByRole('heading', { name: first.title });
+    fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
+    expect(
+      await screen.findByLabelText('Поиск по названию или ключу'),
+    ).toHaveValue('Экран');
+    expect(screen.getByLabelText('Приоритет')).toHaveValue('high');
+    expect(new URLSearchParams(refreshed.router.state.location.search)).toEqual(
+      params,
+    );
+    expect(chips().getByRole('button', { name: /Иван/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('назад и вперёд в истории браузера восстанавливают фильтры из адреса', async () => {
+    const { router } = renderApp('/boards/9?priority=med');
+    expect(await screen.findByLabelText('Приоритет')).toHaveValue('med');
+    await router.navigate(`/boards/9?${params}`);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Приоритет')).toHaveValue('high'),
+    );
+    expect(chips().getByRole('button', { name: /Иван/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await router.navigate(-1);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Приоритет')).toHaveValue('med'),
+    );
+    expect(screen.getByLabelText('Поиск по названию или ключу')).toHaveValue(
+      '',
+    );
+    expect(chips().getByRole('button', { name: 'Все' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await router.navigate(1);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Приоритет')).toHaveValue('high'),
+    );
+    expect(screen.getByLabelText('Поиск по названию или ключу')).toHaveValue(
+      'Экран',
+    );
+  });
+
+  it('сброс фильтров убирает их из URL и возвращает все карточки', async () => {
+    const { router } = renderApp(`/boards/9?${params}&view=compact`);
+    fireEvent.change(
+      await screen.findByLabelText('Поиск по названию или ключу'),
+      { target: { value: '' } },
+    );
+    fireEvent.change(screen.getByLabelText('Приоритет'), {
+      target: { value: 'all' },
+    });
+    fireEvent.click(chips().getByRole('button', { name: 'Все' }));
+    await waitFor(() =>
+      expect(router.state.location.search).toBe('?view=compact'),
+    );
+    expect(await screen.findByText(first.title)).toBeInTheDocument();
+    expect(screen.getByText(second.title)).toBeInTheDocument();
+    expect(screen.getByText(third.title)).toBeInTheDocument();
   });
 });
 

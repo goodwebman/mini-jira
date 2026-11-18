@@ -4,7 +4,9 @@
     "api": {
       "root": "apps/api",
       "framework": "hono",
-      "maxDuration": 300,
+      "functions": {
+        "src/index.ts": { "maxDuration": 300 }
+      },
       "entrypoint": "src/index.ts",
       "buildCommand": "npm run build && npm run db:migrate"
     },

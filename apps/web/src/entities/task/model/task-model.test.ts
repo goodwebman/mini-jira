@@ -10,6 +10,7 @@ import { makeTask, users } from '@/shared/lib/testing';
 import {
   EMPTY_TASK_FILTERS,
   canCreateInStatus,
+  effectiveFilters,
   filterTasks,
   getTaskTimerView,
   groupTasksByStatus,
@@ -95,6 +96,12 @@ describe('getTaskTimerView', () => {
 });
 
 describe('фильтры задач', () => {
+  it('исключает недоступных участников, сохраняя ссылку на фильтры без изменений', () => {
+    const filters = { ...EMPTY_TASK_FILTERS, assigneeIds: ['u1', 'u2'] };
+    expect(effectiveFilters(filters, ['u2', 'u3']).assigneeIds).toEqual(['u2']);
+    expect(effectiveFilters(filters, []).assigneeIds).toEqual([]);
+    expect(effectiveFilters(filters, ['u1', 'u2', 'u3'])).toBe(filters);
+  });
   const login = makeTask({
     key: 'GWT-1',
     title: 'Экран входа',

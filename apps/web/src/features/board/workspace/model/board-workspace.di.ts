@@ -24,11 +24,6 @@ export function useBoardWorkspace(): BoardWorkspace {
   return {
     ...state,
     boardId: store.boardId,
-    setQuery: store.setQuery,
-    setPriority: store.setPriority,
-    toggleAssignee: store.toggleAssignee,
-    clearAssignees: store.clearAssignees,
-    resetFilters: store.resetFilters,
     selectPhoneColumn: store.selectPhoneColumn,
     focusTask: store.focusTask,
   };

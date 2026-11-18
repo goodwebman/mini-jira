@@ -1,6 +1,6 @@
 import type { BoardDetail, BoardTasksResponse } from '@gwmt/contracts';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 
 import { boardQueryKeys } from '@/entities/board';
 import { taskQueryKeys } from '@/entities/task';
@@ -15,6 +15,7 @@ import { TaskScreen } from './TaskScreen';
 
 export function TaskPage() {
   const { taskKey = '' } = useParams();
+  const { search } = useLocation();
   const { boardId } = useBoardWorkspaceStore();
   const client = useQueryClient();
   const board = client.getQueryData<BoardDetail>(
@@ -37,7 +38,10 @@ export function TaskPage() {
           retry={retry}
           notFoundTitle='Задача не найдена или недоступна'
           notFoundAction={
-            <Link to={ROUTES.BOARD.build(boardId)} className={buttonVariants()}>
+            <Link
+              to={{ pathname: ROUTES.BOARD.build(boardId), search }}
+              className={buttonVariants()}
+            >
               Вернуться на доску
             </Link>
           }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import type { TaskStatus } from '@gwmt/contracts';
 import { usePrefetchQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { useSessionUser } from '@/entities/auth';
 import {
@@ -15,14 +15,13 @@ import {
 } from '@/entities/board';
 import { sprintCaption } from '@/entities/sprint';
 import {
+  type TaskFilters,
   TaskPriorityFilter,
   TaskSearchInput,
   boardTasksQueryOptions,
-} from '@/entities/task';
-import {
   effectiveFilters,
-  useBoardWorkspace,
-} from '@/features/board/workspace';
+} from '@/entities/task';
+import { useBoardWorkspace } from '@/features/board/workspace';
 import { CreateTaskDialog } from '@/features/task/create-task';
 import { AsyncBoundary } from '@/shared/lib/react';
 import { ROUTES } from '@/shared/routes';
@@ -35,6 +34,10 @@ import {
   KanbanSkeleton,
 } from '@/widgets/kanban-board';
 
+import {
+  readBoardFilters,
+  writeBoardFilters,
+} from '../model/board-filter-params';
 import { BoardTasks } from './BoardTasks';
 
 export function BoardScreen({ boardId }: { readonly boardId: number }) {
@@ -42,6 +45,8 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
   const workspace = useBoardWorkspace();
   const shell = useAppShell();
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   usePrefetchQuery(boardTasksQueryOptions(boardId));
   const { data: board } = useSuspenseQuery(boardQueryOptions(boardId));
   const [createStatus, setCreateStatus] = useState<null | TaskStatus>(null);
@@ -50,9 +55,14 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
   const permissions = getBoardPermissions(board.myRole);
   const people = assignableMembers(board.members);
   const filters = effectiveFilters(
-    workspace.filters,
+    readBoardFilters(searchParams),
     people.map((member) => member.id),
   );
+  const updateFilters = (patch: Partial<TaskFilters>) =>
+    setSearchParams((current) => writeBoardFilters(current, patch), {
+      replace: true,
+      preventScrollReset: true,
+    });
 
   return (
     <ShellPage
@@ -74,18 +84,22 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
       <BoardLayout>
         <BoardLayout.Toolbar>
           <TaskSearchInput
-            value={workspace.filters.query}
-            onValueChange={workspace.setQuery}
+            value={filters.query}
+            onValueChange={(query) => updateFilters({ query })}
             className='min-w-0 flex-[1_1_220px] sm:max-w-[320px] xl:max-w-[420px]'
           />
           <TaskPriorityFilter
-            value={workspace.filters.priority}
-            onValueChange={workspace.setPriority}
+            value={filters.priority}
+            onValueChange={(priority) => updateFilters({ priority })}
             wrapperClassName='min-w-0 flex-[1_1_150px] sm:max-w-[200px] xl:max-w-[260px]'
           />
           <BoardMembersButton
             count={board.members.length}
-            render={<Link to={ROUTES.BOARD_MEMBERS.build(board.id)} />}
+            render={
+              <Link
+                to={{ pathname: ROUTES.BOARD_MEMBERS.build(board.id), search }}
+              />
+            }
           />
         </BoardLayout.Toolbar>
 
@@ -93,11 +107,21 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
           <AssigneeFilterChips
             people={people}
             selectedIds={filters.assigneeIds}
-            onToggle={workspace.toggleAssignee}
-            onClear={workspace.clearAssignees}
+            onToggle={(id) =>
+              updateFilters({
+                assigneeIds: filters.assigneeIds.includes(id)
+                  ? filters.assigneeIds.filter((selected) => selected !== id)
+                  : [...filters.assigneeIds, id],
+              })
+            }
+            onClear={() => updateFilters({ assigneeIds: [] })}
             onAddPeople={
               permissions.canManageMembers
-                ? () => void navigate(ROUTES.BOARD_MEMBERS.build(board.id))
+                ? () =>
+                    void navigate({
+                      pathname: ROUTES.BOARD_MEMBERS.build(board.id),
+                      search,
+                    })
                 : undefined
             }
           />
@@ -118,6 +142,7 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
           <BoardTasks
             board={board}
             filters={filters}
+            search={search}
             onCreateTask={setCreateStatus}
           />
         </AsyncBoundary>

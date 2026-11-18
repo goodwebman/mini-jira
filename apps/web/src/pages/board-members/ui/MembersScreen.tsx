@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 
 import { useSessionUser } from '@/entities/auth';
 import {
@@ -21,6 +21,7 @@ import {
 export function MembersScreen({ boardId }: { readonly boardId: number }) {
   const me = useSessionUser();
   const navigate = useNavigate();
+  const { search } = useLocation();
   const { data: board } = useSuspenseQuery(boardQueryOptions(boardId));
   useRememberCurrentBoard(board.id);
   const { canManageMembers, isReadOnly } = getBoardPermissions(board.myRole);
@@ -29,7 +30,9 @@ export function MembersScreen({ boardId }: { readonly boardId: number }) {
     <ShellPage
       title='Участники доски'
       caption={board.name}
-      onBack={() => void navigate(ROUTES.BOARD.build(board.id))}
+      onBack={() =>
+        void navigate({ pathname: ROUTES.BOARD.build(board.id), search })
+      }
       banner={isReadOnly && <BoardReadOnlyBanner />}
     >
       <MembersLayout

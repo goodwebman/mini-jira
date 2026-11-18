@@ -15,7 +15,7 @@ export function TaskScreen({
   readonly boardId: number;
 }) {
   const navigate = useNavigate();
-  const { hash, key } = useLocation();
+  const { hash, key, search } = useLocation();
   const { data: task } = useSuspenseQuery(taskQueryOptions(taskKey));
   // Задачу открыли по чужому адресу доски: ведём на её настоящую доску
   if (task.board.id !== boardId)
@@ -29,7 +29,9 @@ export function TaskScreen({
     <ShellPage
       title={task.key}
       caption={task.board.name}
-      onBack={() => void navigate(ROUTES.BOARD.build(task.board.id))}
+      onBack={() =>
+        void navigate({ pathname: ROUTES.BOARD.build(task.board.id), search })
+      }
       banner={
         getBoardPermissions(task.myRole).isReadOnly && <BoardReadOnlyBanner />
       }
@@ -38,7 +40,10 @@ export function TaskScreen({
         task={task}
         commentTarget={{ hash, key }}
         onDeleted={() =>
-          void navigate(ROUTES.BOARD.build(task.board.id), { replace: true })
+          void navigate(
+            { pathname: ROUTES.BOARD.build(task.board.id), search },
+            { replace: true },
+          )
         }
       />
     </ShellPage>

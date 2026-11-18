@@ -1,7 +1,6 @@
 /**
- * Тесткейсы: начальное состояние; экшены фильтров, колонки и фокуса; повторный фокус не будит;
- * фильтр по людям — пересечение с текущими участниками (удалённый или ставший гостем не остаётся
- * невидимым фильтром); хук отдаёт плоский объект; провайдер создаёт стор один раз; без провайдера — ошибка.
+ * Тесткейсы: начальное состояние, колонка и фокус, повторный фокус не будит;
+ * хук отдаёт плоский объект; провайдер создаёт стор один раз; без провайдера — ошибка.
  */
 import { act, render, renderHook, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -11,34 +10,23 @@ import { useBoardWorkspace } from './board-workspace.di';
 import {
   INITIAL_WORKSPACE,
   createBoardWorkspaceStore,
-  effectiveFilters,
 } from './board-workspace.store';
 
 const createStore = () => createBoardWorkspaceStore({ boardId: 9 });
 
 describe('createBoardWorkspaceStore', () => {
-  it('стартует с пустых фильтров и колонки «В работе»', () => {
+  it('стартует с колонки «В работе» и без подсвеченной задачи', () => {
     expect(createStore().getSnapshot()).toEqual(INITIAL_WORKSPACE);
   });
 
-  it('экшены меняют фильтры, колонку и фокус', () => {
+  it('экшены меняют колонку и фокус', () => {
     const store = createStore();
-    store.setQuery('kpi');
-    store.setPriority('crit');
-    store.toggleAssignee('u1');
-    store.toggleAssignee('u2');
-    store.toggleAssignee('u1');
     store.selectPhoneColumn('done');
     store.focusTask('GWT-1');
     expect(store.getSnapshot()).toEqual({
-      filters: { query: 'kpi', priority: 'crit', assigneeIds: ['u2'] },
       phoneColumn: 'done',
       focusedTaskKey: 'GWT-1',
     });
-    store.clearAssignees();
-    expect(store.getSnapshot().filters.assigneeIds).toEqual([]);
-    store.resetFilters();
-    expect(store.getSnapshot().filters).toEqual(INITIAL_WORKSPACE.filters);
   });
 
   it('повторный фокус той же задачи не будит подписчиков', () => {
@@ -48,23 +36,6 @@ describe('createBoardWorkspaceStore', () => {
     store.subscribe(listener);
     store.focusTask('GWT-1');
     expect(listener).not.toHaveBeenCalled();
-  });
-});
-
-describe('effectiveFilters', () => {
-  const filters = {
-    query: '',
-    priority: 'all',
-    assigneeIds: ['u1', 'u2'],
-  } as const;
-
-  it('оставляет только тех, кого на доске можно выбрать', () => {
-    expect(effectiveFilters(filters, ['u2', 'u3']).assigneeIds).toEqual(['u2']);
-    expect(effectiveFilters(filters, []).assigneeIds).toEqual([]);
-  });
-
-  it('без изменений возвращает тот же объект: мемоизация ниже не сбрасывается', () => {
-    expect(effectiveFilters(filters, ['u1', 'u2', 'u3'])).toBe(filters);
   });
 });
 
@@ -79,9 +50,9 @@ describe('useBoardWorkspace', () => {
       ),
     });
     expect(result.current.boardId).toBe(9);
-    act(() => result.current.setQuery('kpi'));
-    expect(result.current.filters.query).toBe('kpi');
-    expect(store.getSnapshot().filters.query).toBe('kpi');
+    act(() => result.current.selectPhoneColumn('done'));
+    expect(result.current.phoneColumn).toBe('done');
+    expect(store.getSnapshot().phoneColumn).toBe('done');
   });
 
   it('провайдер создаёт стор один раз за жизнь', () => {

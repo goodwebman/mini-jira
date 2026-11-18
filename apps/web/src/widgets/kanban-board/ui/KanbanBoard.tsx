@@ -31,6 +31,7 @@ import { BoardLayout } from './BoardLayout';
 
 export interface IKanbanBoardProps {
   readonly boardId: number;
+  readonly taskSearch: string;
   readonly tasks: readonly TaskCardData[];
   readonly actor: MoveActor;
   readonly role: BoardRole;
@@ -48,6 +49,7 @@ export interface IKanbanBoardProps {
  */
 export function KanbanBoard({
   boardId,
+  taskSearch,
   tasks,
   actor,
   role,
@@ -121,7 +123,10 @@ export function KanbanBoard({
                   }
                   render={
                     <Link
-                      to={ROUTES.BOARD_TASK.build(boardId, task.key)}
+                      to={{
+                        pathname: ROUTES.BOARD_TASK.build(boardId, task.key),
+                        search: taskSearch,
+                      }}
                       onClick={() => onOpenTask(task.key)}
                     />
                   }

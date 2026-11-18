@@ -5,12 +5,16 @@ import { taskQueryOptions } from '@/entities/task';
 import { ROUTES } from '@/shared/routes';
 
 export function TaskRedirect({ taskKey }: { readonly taskKey: string }) {
-  const { hash } = useLocation();
+  const { hash, search } = useLocation();
   const { data: task } = useSuspenseQuery(taskQueryOptions(taskKey));
   return (
     <Navigate
       replace
-      to={`${ROUTES.BOARD_TASK.build(task.board.id, task.key)}${hash}`}
+      to={{
+        pathname: ROUTES.BOARD_TASK.build(task.board.id, task.key),
+        search,
+        hash,
+      }}
     />
   );
 }

@@ -2,12 +2,9 @@ import type { BoardDetail, TaskStatus } from '@gwmt/contracts';
 
 import { useSessionUser } from '@/entities/auth';
 import { getBoardPermissions } from '@/entities/board';
-import { filterTasks } from '@/entities/task';
+import { type TaskFilters, filterTasks } from '@/entities/task';
 import { useLiveBoardTasks } from '@/features/board/sync-tasks';
-import {
-  effectiveFilters,
-  useBoardWorkspace,
-} from '@/features/board/workspace';
+import { useBoardWorkspace } from '@/features/board/workspace';
 import {
   BoardLayout,
   KanbanBoard,
@@ -17,10 +14,12 @@ import {
 export function BoardTasks({
   board,
   filters,
+  search,
   onCreateTask,
 }: {
   readonly board: BoardDetail;
-  readonly filters: ReturnType<typeof effectiveFilters>;
+  readonly filters: TaskFilters;
+  readonly search: string;
   readonly onCreateTask: (status: TaskStatus) => void;
 }) {
   const user = useSessionUser();
@@ -38,6 +37,7 @@ export function BoardTasks({
       </BoardLayout.PhoneColumns>
       <KanbanBoard
         boardId={board.id}
+        taskSearch={search}
         tasks={visible}
         actor={{ id: user.id, role: board.myRole }}
         role={board.myRole}

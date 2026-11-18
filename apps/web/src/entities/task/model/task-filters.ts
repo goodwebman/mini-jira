@@ -14,6 +14,19 @@ export const EMPTY_TASK_FILTERS: TaskFilters = {
   assigneeIds: [],
 };
 
+/** Удалённые участники и гости не должны оставаться невидимыми фильтрами. */
+export function effectiveFilters(
+  filters: TaskFilters,
+  assignableIds: readonly string[],
+): TaskFilters {
+  const assigneeIds = filters.assigneeIds.filter((id) =>
+    assignableIds.includes(id),
+  );
+  return assigneeIds.length === filters.assigneeIds.length
+    ? filters
+    : { ...filters, assigneeIds };
+}
+
 export function hasActiveTaskFilters(filters: TaskFilters): boolean {
   return (
     filters.query.trim() !== '' ||

@@ -7,6 +7,5 @@ export {
   type BoardWorkspaceState,
   type BoardWorkspaceStore,
   createBoardWorkspaceStore,
-  effectiveFilters,
 } from './model/board-workspace.store';
 export { BoardWorkspaceProvider } from './ui/BoardWorkspaceProvider';
