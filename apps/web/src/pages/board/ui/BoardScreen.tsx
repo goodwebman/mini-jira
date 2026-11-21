@@ -20,6 +20,8 @@ import {
   boardTasksQueryOptions,
   effectiveFilters,
 } from '@/entities/task';
+import { DeleteBoardButton } from '@/features/board/delete-board';
+import { EditBoardButton } from '@/features/board/edit-board';
 import { useBoardWorkspace } from '@/features/board/workspace';
 import { CreateTaskDialog } from '@/features/task/create-task';
 import { AsyncBoundary } from '@/shared/lib/react';
@@ -60,13 +62,26 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
       caption={sprintCaption(board.currentSprint)}
       onTitleClick={shell.openBoardsSwitcher}
       actions={
-        permissions.canCreateTask && (
-          <UIPageHeader.Action
-            icon={<UIIcons.Plus />}
-            label='Создать задачу'
-            onClick={() => setCreateStatus('todo')}
-          />
-        )
+        <>
+          {permissions.canManageBoard && (
+            <>
+              <EditBoardButton board={board} />
+              <DeleteBoardButton
+                board={board}
+                onDeleted={() =>
+                  navigate(ROUTES.BOARDS.build(), { replace: true })
+                }
+              />
+            </>
+          )}
+          {permissions.canCreateTask && (
+            <UIPageHeader.Action
+              icon={<UIIcons.Plus />}
+              label='Создать задачу'
+              onClick={() => setCreateStatus('todo')}
+            />
+          )}
+        </>
       }
       banner={permissions.isReadOnly && <BoardReadOnlyBanner />}
       scroll='fixed'

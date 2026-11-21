@@ -2,6 +2,7 @@ export {
   boardSprintsQueryOptions,
   fetchBoardSprints,
   fetchSprintKpi,
+  removeBoardSprintsFromCache,
   sprintKpiQueryOptions,
   sprintQueryKeys,
   sprintsPath,

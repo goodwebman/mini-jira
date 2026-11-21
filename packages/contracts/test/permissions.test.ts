@@ -32,6 +32,7 @@ const worker = (id = AUTHOR) => ({ id, role: 'worker' as const });
 
 describe('can', () => {
   const table: [BoardAction, boolean, boolean][] = [
+    ['board.manage', true, false],
     ['members.manage', true, false],
     ['task.create', true, true],
     ['task.delete', true, false],

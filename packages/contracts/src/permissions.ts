@@ -1,6 +1,7 @@
 import { type BoardRole, TASK_STATUSES, type TaskStatus } from './enums.js';
 
 export type BoardAction =
+  | 'board.manage'
   | 'members.manage'
   | 'task.comment'
   | 'task.create'

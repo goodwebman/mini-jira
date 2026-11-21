@@ -3,7 +3,7 @@ import {
   sprintListResponseSchema,
   sprintsQuerySchema,
 } from '@gwmt/contracts';
-import { queryOptions } from '@tanstack/react-query';
+import { type QueryClient, queryOptions } from '@tanstack/react-query';
 
 import { QUERY_TAGS, apiClient, withQuery } from '@/shared/api';
 import { syncServerClock } from '@/shared/lib/time';
@@ -50,6 +50,16 @@ export const sprintQueryKeys = {
   kpi: (boardId: number, number: number) =>
     ['sprint', 'kpi', boardId, number] as const,
 };
+
+export function removeBoardSprintsFromCache(
+  client: QueryClient,
+  boardId: number,
+): void {
+  client.removeQueries({
+    queryKey: sprintQueryKeys.all,
+    predicate: ({ queryKey }) => queryKey[2] === boardId,
+  });
+}
 
 export function boardSprintsQueryOptions(
   boardId: number,

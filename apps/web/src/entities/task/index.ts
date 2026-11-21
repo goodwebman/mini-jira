@@ -26,6 +26,7 @@ export {
   removeTaskComment,
   moveTaskInBoardCache,
   putTaskCardInCache,
+  removeBoardTasksFromCache,
   removeTaskFromCache,
   restoreTaskMove,
   type TaskMoveSnapshot,

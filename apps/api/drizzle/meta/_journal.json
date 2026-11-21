@@ -50,6 +50,13 @@
       "when": 1794846122214,
       "tag": "0006_stale_the_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795285259537,
+      "tag": "0007_board_delete_cascade",
+      "breakpoints": true
     }
   ]
 }

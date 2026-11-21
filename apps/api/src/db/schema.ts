@@ -130,7 +130,7 @@ export const boardMembers = pgTable(
   {
     boardId: integer('board_id')
       .notNull()
-      .references(() => boards.id),
+      .references(() => boards.id, { onDelete: 'cascade' }),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id),
@@ -154,7 +154,7 @@ export const boardFavorites = pgTable(
       .references(() => users.id),
     boardId: integer('board_id')
       .notNull()
-      .references(() => boards.id),
+      .references(() => boards.id, { onDelete: 'cascade' }),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.boardId] })],
@@ -196,7 +196,7 @@ export const sprints = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     boardId: integer('board_id')
       .notNull()
-      .references(() => boards.id),
+      .references(() => boards.id, { onDelete: 'cascade' }),
     number: integer('number').notNull(),
     startDate: date('start_date', { mode: 'string' }).notNull(),
     endDate: date('end_date', { mode: 'string' }).notNull(),
@@ -269,7 +269,7 @@ export const sprintTasks = pgTable(
       .references(() => sprints.id),
     taskId: uuid('task_id')
       .notNull()
-      .references(() => tasks.id),
+      .references(() => tasks.id, { onDelete: 'cascade' }),
     addedAt: timestamptz('added_at').notNull(),
   },
   (t) => [
@@ -284,7 +284,7 @@ export const taskStatusIntervals = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     taskId: uuid('task_id')
       .notNull()
-      .references(() => tasks.id),
+      .references(() => tasks.id, { onDelete: 'cascade' }),
     status: taskStatusEnum('status').notNull(),
     enteredAt: timestamptz('entered_at').notNull(),
     leftAt: timestamptz('left_at'),
@@ -328,10 +328,10 @@ export const taskLinks = pgTable(
   {
     taskId: uuid('task_id')
       .notNull()
-      .references(() => tasks.id),
+      .references(() => tasks.id, { onDelete: 'cascade' }),
     targetTaskId: uuid('target_task_id')
       .notNull()
-      .references(() => tasks.id),
+      .references(() => tasks.id, { onDelete: 'cascade' }),
     type: taskLinkTypeEnum('type').notNull(),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
   },
@@ -349,7 +349,7 @@ export const taskComments = pgTable(
     parentId: uuid('parent_id'),
     taskId: uuid('task_id')
       .notNull()
-      .references(() => tasks.id),
+      .references(() => tasks.id, { onDelete: 'cascade' }),
     authorId: uuid('author_id')
       .notNull()
       .references(() => users.id),

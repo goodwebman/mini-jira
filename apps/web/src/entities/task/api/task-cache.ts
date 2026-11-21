@@ -53,6 +53,21 @@ export async function removeTaskFromCache(
   client.removeQueries({ queryKey: taskQueryKeys.detail(key), exact: true });
 }
 
+export function removeBoardTasksFromCache(
+  client: QueryClient,
+  boardId: number,
+  boardKey: string,
+): void {
+  client.removeQueries({ queryKey: taskQueryKeys.board(boardId) });
+  client.removeQueries({
+    queryKey: taskQueryKeys.all,
+    predicate: ({ queryKey: [, kind, key] }) =>
+      kind === 'detail' &&
+      typeof key === 'string' &&
+      key.startsWith(`${boardKey}-`),
+  });
+}
+
 /** Ответ сервера на комментарий дописывается в деталь задачи без перезапроса. */
 export async function appendTaskComment(
   client: QueryClient,

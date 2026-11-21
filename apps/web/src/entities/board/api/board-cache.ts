@@ -14,7 +14,7 @@ export function writeBoardFavorite(
   isFavorite: boolean,
 ): void {
   client.setQueriesData<BoardListResponse>(
-    { queryKey: [...boardQueryKeys.all, 'list'] },
+    { queryKey: boardQueryKeys.lists },
     (data) =>
       data && {
         ...data,
@@ -39,6 +39,21 @@ export async function setBoardFavoriteInCache(
   boardId: number,
   isFavorite: boolean,
 ): Promise<void> {
-  await client.cancelQueries({ queryKey: [...boardQueryKeys.all, 'list'] });
+  await client.cancelQueries({ queryKey: boardQueryKeys.lists });
   writeBoardFavorite(client, boardId, isFavorite);
+}
+
+export async function removeBoardFromLists(
+  client: QueryClient,
+  boardId: number,
+): Promise<void> {
+  const lists = { queryKey: boardQueryKeys.lists };
+  await client.cancelQueries(lists);
+  client.setQueriesData<BoardListResponse>(lists, (data) => {
+    if (!data?.items.some((item) => item.id === boardId)) return data;
+    return {
+      items: data.items.filter((item) => item.id !== boardId),
+      total: data.total - 1,
+    };
+  });
 }

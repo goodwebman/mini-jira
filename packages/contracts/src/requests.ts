@@ -119,6 +119,16 @@ export const createBoardBodySchema = z
   .meta({ id: 'CreateBoardBody' });
 export type CreateBoardBody = z.infer<typeof createBoardBodySchema>;
 
+export const updateBoardBodySchema = createBoardBodySchema
+  .pick({ name: true, description: true })
+  .partial()
+  .strict()
+  .refine((body) => body.name !== undefined || body.description !== undefined, {
+    message: 'Укажите название или описание',
+  })
+  .meta({ id: 'UpdateBoardBody' });
+export type UpdateBoardBody = z.infer<typeof updateBoardBodySchema>;
+
 export const addMemberBodySchema = z
   .object({
     userId: z.uuid(),

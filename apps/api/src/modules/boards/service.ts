@@ -4,10 +4,12 @@ import type {
   BoardListResponse,
   BoardMember,
   CreateBoardBody,
+  UpdateBoardBody,
   UpdateMemberBody,
   UserBrief,
 } from '@gwmt/contracts';
 
+import type { Db } from '../../db/client.js';
 import type { AppDeps } from '../../lib/context.js';
 import { AppError } from '../../lib/errors.js';
 import * as authRepo from '../auth/repo.js';
@@ -15,6 +17,11 @@ import { insertBoardInvitations } from '../notifications/repo.js';
 import { notifyBoardMemberChange } from '../notifications/service.js';
 import * as sprintsRepo from '../sprints/repo.js';
 import { createFirstSprint, toSprintBrief } from '../sprints/service.js';
+import {
+  findTasksLinkedToBoard,
+  notifyBoardTasksChanged,
+  notifyTaskUpdated,
+} from '../tasks/repo.js';
 import * as repo from './repo.js';
 
 const COLOR_COUNT = 6;
@@ -63,15 +70,15 @@ export async function listBoards(
 }
 
 export async function getBoardDetail(
-  deps: AppDeps,
+  db: Db,
   boardId: number,
   userId: string,
 ): Promise<BoardDetail> {
   const [board, members, favorite, sprint] = await Promise.all([
-    repo.findBoard(deps.db, boardId),
-    repo.listBoardMembers(deps.db, boardId),
-    repo.isFavorite(deps.db, boardId, userId),
-    sprintsRepo.findActiveSprint(deps.db, boardId),
+    repo.findBoard(db, boardId),
+    repo.listBoardMembers(db, boardId),
+    repo.isFavorite(db, boardId, userId),
+    sprintsRepo.findActiveSprint(db, boardId),
   ]);
   const me = members.find((member) => member.id === userId);
   if (!board || !sprint || !me) throw new AppError('BOARD_NOT_FOUND');
@@ -145,7 +152,31 @@ export async function createBoard(
     return board.id;
   });
 
-  return getBoardDetail(deps, boardId, userId);
+  return getBoardDetail(deps.db, boardId, userId);
+}
+
+export function updateBoard(
+  deps: AppDeps,
+  boardId: number,
+  userId: string,
+  body: UpdateBoardBody,
+): Promise<BoardDetail> {
+  return deps.withTx(async (tx) => {
+    if (!(await repo.updateBoard(tx, boardId, body)))
+      throw new AppError('BOARD_NOT_FOUND');
+    return getBoardDetail(tx, boardId, userId);
+  });
+}
+
+export function deleteBoard(deps: AppDeps, boardId: number): Promise<void> {
+  return deps.withTx(async (tx) => {
+    if (!(await repo.lockBoard(tx, boardId)))
+      throw new AppError('BOARD_NOT_FOUND');
+    const linkedTasks = await findTasksLinkedToBoard(tx, boardId);
+    await repo.deleteBoard(tx, boardId);
+    await notifyBoardTasksChanged(tx, boardId);
+    for (const { id } of linkedTasks) await notifyTaskUpdated(tx, id);
+  });
 }
 
 export async function addMember(

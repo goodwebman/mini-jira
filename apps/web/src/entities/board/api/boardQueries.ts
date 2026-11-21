@@ -32,6 +32,7 @@ export async function fetchBoard(boardId: number, signal?: AbortSignal) {
 
 export const boardQueryKeys = {
   all: ['board'] as const,
+  lists: ['board', 'list'] as const,
   list: (params: BoardsQuery = {}) =>
     ['board', 'list', boardsQuerySchema.parse(params)] as const,
   detail: (boardId: number) => ['board', 'detail', boardId] as const,

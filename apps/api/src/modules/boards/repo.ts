@@ -1,4 +1,4 @@
-import type { BoardRole } from '@gwmt/contracts';
+import type { BoardRole, UpdateBoardBody } from '@gwmt/contracts';
 import { and, asc, eq, ilike, inArray, isNotNull, or, sql } from 'drizzle-orm';
 
 import type { Db } from '../../db/client.js';
@@ -106,6 +106,34 @@ export async function listMembersOfBoards(db: Db, boardIds: number[]) {
 export async function findBoard(db: Db, boardId: number) {
   const [board] = await db.select().from(boards).where(eq(boards.id, boardId));
   return board ?? null;
+}
+
+export async function lockBoard(db: Db, boardId: number) {
+  const [board] = await db
+    .select({ id: boards.id })
+    .from(boards)
+    .where(eq(boards.id, boardId))
+    .for('update');
+  return board !== undefined;
+}
+
+export async function updateBoard(
+  db: Db,
+  boardId: number,
+  body: UpdateBoardBody,
+) {
+  const [board] = await db
+    .update(boards)
+    .set(body)
+    .where(eq(boards.id, boardId))
+    .returning({ id: boards.id });
+  return board !== undefined;
+}
+
+export async function deleteBoard(db: Db, boardId: number) {
+  // Задачи ссылаются на спринты, которые удалит каскад доски.
+  await db.delete(tasks).where(eq(tasks.boardId, boardId));
+  await db.delete(boards).where(eq(boards.id, boardId));
 }
 
 export async function isFavorite(db: Db, boardId: number, userId: string) {

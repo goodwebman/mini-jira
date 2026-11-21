@@ -9,5 +9,6 @@ export type {
   BoardMember,
   BoardRole,
   CreateBoardBody,
+  UpdateBoardBody,
   UpdateMemberBody,
 } from '@gwmt/contracts';

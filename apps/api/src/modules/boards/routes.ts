@@ -7,6 +7,7 @@ import {
   boardMemberSchema,
   boardsQuerySchema,
   createBoardBodySchema,
+  updateBoardBodySchema,
   updateMemberBodySchema,
 } from '@gwmt/contracts';
 import { createRoute } from '@hono/zod-openapi';
@@ -28,6 +29,7 @@ import * as service from './service.js';
 
 const boardTags = [TAG.boards];
 const memberTags = [TAG.members];
+const boardPath = '/boards/{boardId}';
 
 const memberErrors = {
   ...boardErrors,
@@ -38,6 +40,7 @@ const memberErrors = {
 export function boardsRoutes(deps: AppDeps) {
   const router = createRouter();
   const member = requireBoardMember(deps);
+  const manageBoard = requireAction('board.manage');
   const manageMembers = requireAction('members.manage');
 
   router.openapi(
@@ -95,7 +98,7 @@ export function boardsRoutes(deps: AppDeps) {
   router.openapi(
     createRoute({
       method: 'get',
-      path: '/boards/{boardId}',
+      path: boardPath,
       operationId: 'getBoard',
       tags: boardTags,
       summary: 'Деталь доски',
@@ -111,9 +114,71 @@ export function boardsRoutes(deps: AppDeps) {
     }),
     async (c) =>
       c.json(
-        await service.getBoardDetail(deps, c.get('boardId'), c.get('userId')),
+        await service.getBoardDetail(
+          deps.db,
+          c.get('boardId'),
+          c.get('userId'),
+        ),
         200,
       ),
+  );
+
+  router.openapi(
+    createRoute({
+      method: 'patch',
+      path: boardPath,
+      operationId: 'updateBoard',
+      tags: boardTags,
+      summary: 'Изменить доску',
+      description: 'Только `admin`. Можно изменить название и описание.',
+      security: bearerAuth,
+      middleware: [member, manageBoard],
+      request: {
+        params: boardIdParamSchema,
+        body: jsonBody(updateBoardBodySchema),
+      },
+      responses: {
+        200: jsonResponse(boardDetailSchema, 'Доска изменена'),
+        ...errors({
+          ...boardErrors,
+          403: ['ROLE_FORBIDDEN'],
+          422: ['VALIDATION_ERROR'],
+        }),
+      },
+    }),
+    async (c) =>
+      c.json(
+        await service.updateBoard(
+          deps,
+          c.get('boardId'),
+          c.get('userId'),
+          c.req.valid('json'),
+        ),
+        200,
+      ),
+  );
+
+  router.openapi(
+    createRoute({
+      method: 'delete',
+      path: boardPath,
+      operationId: 'deleteBoard',
+      tags: boardTags,
+      summary: 'Удалить доску',
+      description:
+        'Только `admin`. Доска, её задачи, спринты и связанные данные удаляются безвозвратно.',
+      security: bearerAuth,
+      middleware: [member, manageBoard],
+      request: { params: boardIdParamSchema },
+      responses: {
+        204: { description: 'Доска удалена' },
+        ...errors({ ...boardErrors, 403: ['ROLE_FORBIDDEN'] }),
+      },
+    }),
+    async (c) => {
+      await service.deleteBoard(deps, c.get('boardId'));
+      return c.body(null, 204);
+    },
   );
 
   router.openapi(

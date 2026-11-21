@@ -23,6 +23,7 @@ describe('getBoardPermissions', () => {
       canPauseTasks: true,
       canLockTasks: true,
       canManageMembers: true,
+      canManageBoard: true,
       isReadOnly: false,
     });
   });
@@ -37,6 +38,7 @@ describe('getBoardPermissions', () => {
       canPauseTasks: true,
       canLockTasks: false,
       canManageMembers: false,
+      canManageBoard: false,
       isReadOnly: false,
     });
   });

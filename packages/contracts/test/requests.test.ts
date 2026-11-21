@@ -9,6 +9,7 @@ import {
   loginBodySchema,
   registerBodySchema,
   taskKeyParamSchema,
+  updateBoardBodySchema,
   updateCommentBodySchema,
   updateMeBodySchema,
   userSearchQuerySchema,
@@ -132,6 +133,22 @@ describe('тексты ошибок из контракта', () => {
         'key',
       ),
     ).toBe('Введите ключ');
+  });
+
+  it('изменение доски принимает только непустой набор редактируемых полей', () => {
+    expect(updateBoardBodySchema.parse({ name: '  Команда  ' })).toEqual({
+      name: 'Команда',
+    });
+    expect(updateBoardBodySchema.parse({ description: '' })).toEqual({
+      description: '',
+    });
+    expect(updateBoardBodySchema.safeParse({}).success).toBe(false);
+    expect(
+      updateBoardBodySchema.safeParse({ name: 'Команда', key: 'NEW' }).success,
+    ).toBe(false);
+    expect(fieldMessage(updateBoardBodySchema, { name: ' ' }, 'name')).toBe(
+      'Введите название',
+    );
   });
 
   describe('задача', () => {

@@ -139,6 +139,30 @@ export function findAffectedCards(db: Db, taskId: string) {
   );
 }
 
+export function findTasksLinkedToBoard(db: Db, boardId: number) {
+  const boardTasks = db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(eq(tasks.boardId, boardId));
+  return db
+    .selectDistinct({ id: tasks.id })
+    .from(tasks)
+    .innerJoin(
+      taskLinks,
+      or(
+        and(
+          eq(taskLinks.taskId, tasks.id),
+          inArray(taskLinks.targetTaskId, boardTasks),
+        ),
+        and(
+          eq(taskLinks.targetTaskId, tasks.id),
+          inArray(taskLinks.taskId, boardTasks),
+        ),
+      ),
+    )
+    .where(ne(tasks.boardId, boardId));
+}
+
 export function listCardsBySprint(db: Db, sprintId: string) {
   return cardQuery(db)
     .where(eq(tasks.sprintId, sprintId))

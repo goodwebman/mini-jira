@@ -7,6 +7,7 @@ export {
   fetchBoards,
 } from './api/boardQueries';
 export { createBoard } from './api/createBoard';
+export { deleteBoard, updateBoard } from './api/board-management';
 export {
   addBoardToFavorites,
   removeBoardFromFavorites,
@@ -16,7 +17,11 @@ export {
   removeBoardMember,
   updateBoardMember,
 } from './api/boardMembers';
-export { setBoardFavoriteInCache, writeBoardFavorite } from './api/board-cache';
+export {
+  removeBoardFromLists,
+  setBoardFavoriteInCache,
+  writeBoardFavorite,
+} from './api/board-cache';
 export type {
   BoardsQuery,
   AddMemberBody,
@@ -26,6 +31,7 @@ export type {
   BoardMember,
   BoardRole,
   CreateBoardBody,
+  UpdateBoardBody,
   UpdateMemberBody,
 } from './model/types';
 export {

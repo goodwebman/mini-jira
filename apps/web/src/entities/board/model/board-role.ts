@@ -19,7 +19,7 @@ export const BOARD_ROLE_META: Record<BoardRole, BoardRoleMeta> = {
     short: 'Админ',
     tone: 'accent',
     description:
-      'Полные права: участники и роли, любые переходы статусов, свойства задач, запрет брать задачу в работу.',
+      'Полные права: управление доской, участники и роли, любые переходы статусов, свойства задач, запрет брать задачу в работу.',
   },
   worker: {
     label: BOARD_ROLE_LABELS.worker,
@@ -55,6 +55,7 @@ export interface BoardPermissions {
   readonly canPauseTasks: boolean;
   readonly canLockTasks: boolean;
   readonly canManageMembers: boolean;
+  readonly canManageBoard: boolean;
   /** Гость: интерфейс показывает плашку «можно только смотреть». */
   readonly isReadOnly: boolean;
 }
@@ -73,6 +74,7 @@ export function getBoardPermissions(role: BoardRole): BoardPermissions {
     canPauseTasks: can(role, 'task.pause'),
     canLockTasks: can(role, 'task.lock'),
     canManageMembers: can(role, 'members.manage'),
+    canManageBoard: can(role, 'board.manage'),
     isReadOnly: role === 'guest',
   };
 }

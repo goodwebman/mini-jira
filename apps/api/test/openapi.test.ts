@@ -29,6 +29,8 @@ const EXPECTED: [string, string][] = [
   ['get', '/boards'],
   ['post', '/boards'],
   ['get', '/boards/{boardId}'],
+  ['patch', '/boards/{boardId}'],
+  ['delete', '/boards/{boardId}'],
   ['put', '/boards/{boardId}/favorite'],
   ['delete', '/boards/{boardId}/favorite'],
   ['post', '/boards/{boardId}/members'],
@@ -99,6 +101,7 @@ const NAMED_SCHEMAS = [
   'UpdateMeBody',
   'ChangePasswordBody',
   'CreateBoardBody',
+  'UpdateBoardBody',
   'AddMemberBody',
   'UpdateMemberBody',
   'CreateTaskBody',
@@ -174,7 +177,7 @@ describe('OpenAPI', () => {
     expect(documented.sort()).toEqual(
       EXPECTED.map(([m, p]) => `${m} ${p}`).sort(),
     );
-    expect(EXPECTED).toHaveLength(46);
+    expect(EXPECTED).toHaveLength(48);
   });
 
   it('ошибки Google описаны рядом с его callback', () => {
