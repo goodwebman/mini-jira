@@ -11,11 +11,13 @@ import {
 import {
   UIButton,
   UIDrawer,
+  UIEmptyState,
   UIIconButton,
   UIIcons,
   UILink,
   UIRequestError,
 } from '@/shared/ui';
+import { EmptyNotifications } from '@/shared/ui/icons';
 
 import { useNotificationActions } from '../model/use-notification-actions';
 
@@ -58,7 +60,10 @@ export function NotificationCenter() {
           </UIButton>
         }
       >
-        <div className='flex flex-col gap-2' aria-busy={query.isFetching}>
+        <div
+          className='flex flex-1 flex-col gap-2'
+          aria-busy={query.isFetching}
+        >
           {query.isPending && <p role='status'>Загрузка уведомлений…</p>}
           {query.isError && (
             <UIRequestError
@@ -68,7 +73,17 @@ export function NotificationCenter() {
               }}
             />
           )}
-          {data?.total === 0 && <p>Уведомлений пока нет</p>}
+          {data?.total === 0 && (
+            <UIEmptyState
+              className='flex-1 justify-center'
+              icon={
+                <EmptyNotifications
+                  title='Уведомлений пока нет'
+                  className='size-20 w640:size-24'
+                />
+              }
+            />
+          )}
           {data &&
             data.items.map((notification) => (
               <article

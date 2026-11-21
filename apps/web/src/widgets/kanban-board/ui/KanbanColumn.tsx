@@ -10,7 +10,8 @@ import type { TaskStatus } from '@gwmt/contracts';
 
 import { TASK_STATUS_DOT_CLASS } from '@/entities/task';
 import { cn } from '@/shared/lib/cn';
-import { UIIcons } from '@/shared/ui/icons';
+import { UIEmptyState } from '@/shared/ui';
+import { EmptyTasks, Plus } from '@/shared/ui/icons';
 
 interface KanbanColumnProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   readonly testId?: string;
@@ -20,8 +21,6 @@ interface KanbanColumnProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   readonly count?: number;
   /** Подпись справа в шапке, например «12 SP». */
   readonly meta?: ReactNode;
-  /** Текст пустой колонки. */
-  readonly emptyText?: string;
   /** Если передан, после карточек появляется кнопка добавления. */
   readonly onAdd?: () => void;
   readonly addLabel?: string;
@@ -47,7 +46,6 @@ const KanbanColumnBase = forwardRef<HTMLElement, KanbanColumnProps>(
       title,
       count,
       meta,
-      emptyText = 'Нет задач',
       onAdd,
       addLabel = 'Добавить задачу',
       dropState,
@@ -90,9 +88,12 @@ const KanbanColumnBase = forwardRef<HTMLElement, KanbanColumnProps>(
 
       <div className='flex min-h-0 flex-none flex-col gap-2 w640:flex-1 w640:overflow-y-auto w640:scrollbar-thin'>
         {Children.count(children) === 0 ? (
-          <div className='px-2 py-4 text-center text-small text-muted-foreground'>
-            {emptyText}
-          </div>
+          <UIEmptyState
+            className='px-2 py-4 max-w640:py-6'
+            icon={
+              <EmptyTasks title='Нет задач' className='size-20 w640:size-16' />
+            }
+          />
         ) : (
           children
         )}
@@ -102,7 +103,7 @@ const KanbanColumnBase = forwardRef<HTMLElement, KanbanColumnProps>(
             onClick={onAdd}
             className='flex h-control flex-none cursor-pointer items-center justify-center gap-1 rounded-control font-medium text-muted-foreground transition-colors duration-150 focus-ring hover:bg-border focus-visible:outline-offset-[-2px] [&_svg]:size-icon'
           >
-            <UIIcons.Plus />
+            <Plus />
             {addLabel}
           </button>
         )}

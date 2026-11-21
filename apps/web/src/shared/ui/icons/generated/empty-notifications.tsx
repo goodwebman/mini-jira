@@ -1,0 +1,15 @@
+// АВТОГЕНЕРАЦИЯ — не редактировать руками. Источник: src/shared/ui/icons/raw. Пересобрать: `npm run icons:build`.
+import { createIcon } from '../create-icon';
+
+export const EmptyNotifications = createIcon(
+  'empty-notifications',
+  '0 0 64 64',
+  <>
+      <circle cx="32" cy="32" r="29" fill="var(--primary-tint)" stroke="none" />
+      <path d="M32 13v4m-4 25v3a4 4 0 0 0 8 0v-3" stroke="var(--primary)" />
+      <path d="M21 28a11 11 0 0 1 22 0c0 7 2 10 6 14H15c4-4 6-7 6-14Z" fill="var(--surface)" stroke="var(--primary)" />
+      <path d="M15 23l-3-3m37 3 3-3" stroke="var(--primary)" opacity=".55" />
+      <circle cx="47" cy="46" r="9" fill="var(--primary)" stroke="var(--surface)" strokeWidth="2" />
+      <path d="M44 46h6" stroke="var(--primary-foreground)" strokeWidth="2" />
+  </>,
+);

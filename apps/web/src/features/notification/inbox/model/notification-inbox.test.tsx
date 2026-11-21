@@ -253,7 +253,7 @@ describe('notification inbox', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Удалить уведомление' }),
     );
-    await screen.findByText('Уведомлений пока нет');
+    await screen.findByRole('img', { name: 'Уведомлений пока нет' });
     expect(api.unmatched).toEqual([]);
   });
 
@@ -295,7 +295,7 @@ describe('notification inbox', () => {
       items: [],
     });
     fireEvent.click(screen.getByRole('button', { name: 'Повторить' }));
-    await screen.findByText('Уведомлений пока нет');
+    await screen.findByRole('img', { name: 'Уведомлений пока нет' });
   });
 
   it('rejects an invalid server response', async () => {

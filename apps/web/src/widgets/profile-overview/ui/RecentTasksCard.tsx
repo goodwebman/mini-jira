@@ -3,7 +3,8 @@ import { Link } from 'react-router';
 
 import { TaskPriorityMark } from '@/entities/task';
 import { ROUTES } from '@/shared/routes';
-import { UICard, UILink } from '@/shared/ui';
+import { UICard, UIEmptyState, UILink } from '@/shared/ui';
+import { EmptyTasks } from '@/shared/ui/icons';
 
 /** Ближайшие открытые задачи и ссылка на весь список. */
 export function RecentTasksCard({
@@ -22,7 +23,10 @@ export function RecentTasksCard({
         </UILink>
       </div>
       {tasks.length === 0 && (
-        <p className='m-0 py-2 text-muted-foreground'>Открытых задач нет</p>
+        <UIEmptyState
+          className='p-2'
+          icon={<EmptyTasks title='Открытых задач нет' className='size-16' />}
+        />
       )}
       {tasks.map((task) => (
         <Link

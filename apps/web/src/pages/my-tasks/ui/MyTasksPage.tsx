@@ -21,7 +21,7 @@ import {
   UIPageHeader,
   UIRequestError,
 } from '@/shared/ui';
-import { UIIcons } from '@/shared/ui/icons';
+import { EmptyTasks, UIIcons } from '@/shared/ui/icons';
 import { ShellPage } from '@/widgets/app-shell';
 import {
   MyTasksCards,
@@ -125,7 +125,12 @@ export function MyTasksPage() {
         {pastTheEnd && (
           <UIEmptyState
             boxed
-            title='На этой странице задач нет'
+            icon={
+              <EmptyTasks
+                title='На этой странице задач нет'
+                className='size-20 w640:size-24'
+              />
+            }
             action={
               <UIButton variant='secondary' onClick={() => update({ page: 1 })}>
                 К первой странице
@@ -134,7 +139,15 @@ export function MyTasksPage() {
           />
         )}
         {data && data.items.length === 0 && !pastTheEnd && (
-          <UIEmptyState boxed title='Задач по этим условиям нет' />
+          <UIEmptyState
+            boxed
+            icon={
+              <EmptyTasks
+                title='Задач по этим условиям нет'
+                className='size-20 w640:size-24'
+              />
+            }
+          />
         )}
         {data && data.items.length > 0 && (
           <div aria-busy={tasks.isFetching} className='flex flex-col gap-3'>

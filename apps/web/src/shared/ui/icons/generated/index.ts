@@ -12,6 +12,8 @@ export { CircleAlert } from './circle-alert';
 export { CircleCheck } from './circle-check';
 export { Clock } from './clock';
 export { Copy } from './copy';
+export { EmptyNotifications } from './empty-notifications';
+export { EmptyTasks } from './empty-tasks';
 export { Equal } from './equal';
 export { Eye } from './eye';
 export { Inbox } from './inbox';

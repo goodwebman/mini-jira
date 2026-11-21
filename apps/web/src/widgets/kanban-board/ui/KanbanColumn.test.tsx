@@ -4,17 +4,17 @@ import { describe, expect, it, vi } from 'vitest';
 import { KanbanColumn } from './KanbanColumn';
 
 describe('KanbanColumn', () => {
-  it('пустая колонка показывает текст, с карточками — нет', () => {
+  it('в пустой колонке показывает иллюстрацию с доступным именем', () => {
     const { rerender } = render(
       <KanbanColumn status='todo' title='К работе' />,
     );
-    expect(screen.getByText('Нет задач')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Нет задач' })).toBeInTheDocument();
     rerender(
       <KanbanColumn status='todo' title='К работе'>
         <div>карточка</div>
       </KanbanColumn>,
     );
-    expect(screen.queryByText('Нет задач')).not.toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Нет задач' })).toBeNull();
   });
 
   it('кнопка добавления есть только с onAdd', () => {

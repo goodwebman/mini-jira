@@ -13,6 +13,8 @@ import { CircleAlert } from './generated/circle-alert';
 import { CircleCheck } from './generated/circle-check';
 import { Clock } from './generated/clock';
 import { Copy } from './generated/copy';
+import { EmptyNotifications } from './generated/empty-notifications';
+import { EmptyTasks } from './generated/empty-tasks';
 import { Equal } from './generated/equal';
 import { Eye } from './generated/eye';
 import { Inbox } from './generated/inbox';
@@ -53,6 +55,8 @@ export const UIIcons = {
   CircleCheck,
   Clock,
   Copy,
+  EmptyNotifications,
+  EmptyTasks,
   Equal,
   Eye,
   Inbox,

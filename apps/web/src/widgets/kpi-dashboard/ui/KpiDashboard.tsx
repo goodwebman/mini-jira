@@ -7,6 +7,7 @@ import {
   KpiSprintPickerDialog,
 } from '@/features/sprint/pick-sprint';
 import { UIEmptyState } from '@/shared/ui';
+import { EmptyTasks } from '@/shared/ui/icons';
 
 import { KpiCharts } from './KpiCharts';
 import { KpiSelectionBar } from './KpiSelectionBar';
@@ -31,7 +32,12 @@ export function KpiDashboard({
       {kpi.isEmpty ? (
         <UIEmptyState
           boxed
-          title='В этом спринте пока нет задач'
+          icon={
+            <EmptyTasks
+              title='В этом спринте пока нет задач'
+              className='size-20 w640:size-24'
+            />
+          }
           description='Создайте первую, и метрики появятся здесь.'
         />
       ) : (

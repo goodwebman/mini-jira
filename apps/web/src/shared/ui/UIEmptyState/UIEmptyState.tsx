@@ -7,7 +7,8 @@ export interface IUIEmptyStateProps extends Omit<
   'title'
 > {
   readonly testId?: string;
-  readonly title: ReactNode;
+  /** Подпись. Для состояния с одной иллюстрацией доступное имя задаёт иконка. */
+  readonly title?: ReactNode;
   /** Пояснение под заголовком. */
   readonly description?: ReactNode;
   /** Иконка над текстом. */
@@ -48,8 +49,10 @@ const UIEmptyStateBase = forwardRef<HTMLDivElement, IUIEmptyStateProps>(
       )}
       {...props}
     >
-      {icon != null && <div className='[&_svg]:size-[32px]'>{icon}</div>}
-      <p className='m-0'>{title}</p>
+      {icon != null && (
+        <div className="[&_svg:not([class*='size-'])]:size-8">{icon}</div>
+      )}
+      {title != null && <p className='m-0'>{title}</p>}
       {description != null && <p className='m-0 text-small'>{description}</p>}
       {action != null && <div className='mt-2'>{action}</div>}
     </div>
