@@ -35,6 +35,7 @@
   --animate-dialog-in: ui-dialog-in 180ms ease-out;
   --animate-toast-in: ui-toast-in 200ms ease-out;
   --animate-shimmer: ui-shimmer 1.8s linear infinite;
+  --animate-autofill: ui-autofill 1ms;
 
   @keyframes ui-fade-in {
     from {
@@ -62,6 +63,16 @@
     }
     to {
       background-position: -200% 0;
+    }
+  }
+
+  /* Сигнал для формы, когда браузер показывает автозаполнение до события ввода. */
+  @keyframes ui-autofill {
+    from {
+      --autofill: 0;
+    }
+    to {
+      --autofill: 1;
     }
   }
 }

@@ -70,6 +70,7 @@ const UIInputBase = forwardRef<HTMLInputElement, IUIInputProps>(
             className={cn(
               fieldControlVariants({ size }),
               'px-3',
+              'autofill:inset-shadow-[0_0_0_100px_var(--primary-tint)] autofill:[-webkit-text-fill-color:var(--foreground)]',
               leftSlot != null && 'pl-[calc(var(--icon-lg)+20px)]',
               rightSlot != null && 'pr-[calc(var(--control-md)+4px)]',
               className,

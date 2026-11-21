@@ -11,11 +11,7 @@ import {
   useToast,
 } from '@/shared/ui';
 
-import {
-  type LoginDraft,
-  type LoginField,
-  validateLogin,
-} from '../model/login-form';
+import { type LoginField, validateLogin } from '../model/login-form';
 
 /**
  * Вход по паролю. Подпись запроса, refresh-cookie и гонки вкладок — забота
@@ -28,28 +24,41 @@ export function LoginForm({
 }) {
   const { phase } = useAuth();
   const { toast } = useToast();
-  const [draft, setDraft] = useState<LoginDraft>({
-    email: '',
-    password: '',
-    remember: true,
-  });
+  const [canSubmit, setCanSubmit] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<LoginField, string>>>({});
   const [formError, setFormError] = useState(initialError);
   const busy = phase === 'signing-in' || phase === 'redirecting';
-  const canSubmit = [draft.email, draft.password].every(
-    (value) => value.trim().length > 0,
-  );
 
-  const set = <K extends LoginField>(field: K, value: LoginDraft[K]) => {
-    setDraft((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: undefined }));
+  const updateCanSubmit = (form: HTMLFormElement) => {
+    setCanSubmit(
+      ['email', 'password'].every((name) => {
+        const input = form.elements.namedItem(name);
+        return (
+          input instanceof HTMLInputElement &&
+          (input.value.trim().length > 0 || input.matches(':autofill'))
+        );
+      }),
+    );
   };
 
-  const submit = async (event: FormEvent) => {
+  const clearError = (field: LoginField) => {
+    setErrors((current) =>
+      current[field] ? { ...current, [field]: undefined } : current,
+    );
+  };
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canSubmit || busy) return;
+    if (busy) return;
+
+    // Менеджер паролей может заполнить поля без события change.
+    const form = new FormData(event.currentTarget);
     setFormError('');
-    const result = validateLogin(draft);
+    const result = validateLogin({
+      email: String(form.get('email') ?? ''),
+      password: String(form.get('password') ?? ''),
+      remember: form.has('remember'),
+    });
     if (!result.ok) {
       setErrors(result.errors);
       return;
@@ -68,6 +77,8 @@ export function LoginForm({
   return (
     <form
       noValidate
+      onChange={(event) => updateCanSubmit(event.currentTarget)}
+      onAnimationStart={(event) => updateCanSubmit(event.currentTarget)}
       onSubmit={(event) => void submit(event)}
       className='flex flex-col gap-3'
     >
@@ -78,11 +89,12 @@ export function LoginForm({
       >
         <UIField label='Email' error={errors.email}>
           <UIInput
+            className='autofill:animate-autofill'
+            name='email'
             type='email'
             autoComplete='username'
             placeholder='name@company.com'
-            value={draft.email}
-            onChange={(event) => set('email', event.target.value)}
+            onChange={() => clearError('email')}
           />
         </UIField>
         <UIField
@@ -103,18 +115,15 @@ export function LoginForm({
           }
         >
           <UIInput
+            className='autofill:animate-autofill'
+            name='password'
             type='password'
             autoComplete='current-password'
             placeholder='Введите пароль'
-            value={draft.password}
-            onChange={(event) => set('password', event.target.value)}
+            onChange={() => clearError('password')}
           />
         </UIField>
-        <UICheckbox
-          label='Запомнить меня'
-          checked={draft.remember}
-          onCheckedChange={(checked) => set('remember', checked)}
-        />
+        <UICheckbox name='remember' label='Запомнить меня' defaultChecked />
         <UIButton type='submit' size='lg' disabled={!canSubmit} loading={busy}>
           Войти
         </UIButton>
