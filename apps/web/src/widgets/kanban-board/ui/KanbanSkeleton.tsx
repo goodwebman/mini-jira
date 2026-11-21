@@ -36,7 +36,7 @@ export function KanbanSkeleton({
             key={status}
             status={status}
             title={TASK_STATUS_LABELS[status]}
-            className={status === phoneColumn ? undefined : 'max-sm:hidden'}
+            className={status === phoneColumn ? undefined : 'max-w640:hidden'}
             onAdd={canCreateInStatus(role, status) ? () => {} : undefined}
             aria-hidden='true'
           >

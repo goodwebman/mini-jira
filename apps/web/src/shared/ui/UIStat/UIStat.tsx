@@ -27,15 +27,13 @@ const UIStatBase = forwardRef<HTMLDivElement, IUIStatProps>(
       ref={ref}
       padding='sm'
       testId={testId ? `stat-${testId}` : 'stat'}
-      className={cn('gap-1', className)}
+      className={cn('min-w-0 gap-1 wrap-anywhere', className)}
       {...props}
     >
       <p className='m-0 text-small font-medium text-muted-foreground'>
         {label}
       </p>
-      <div className='text-metric font-semibold tracking-display tabular-nums'>
-        {value}
-      </div>
+      <div className='text-metric font-semibold tabular-nums'>{value}</div>
       {progress != null && (
         <UIProgress
           value={progress}

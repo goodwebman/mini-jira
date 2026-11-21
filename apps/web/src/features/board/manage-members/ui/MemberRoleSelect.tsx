@@ -18,7 +18,7 @@ export function MemberRoleSelect({
       aria-label={`Роль: ${member.name}`}
       value={isPending ? pending.role : member.role}
       disabled={isPending}
-      wrapperClassName='min-w-[150px] flex-[0_1_190px]'
+      wrapperClassName='w-44 min-w-0'
       onValueChange={(role) => {
         if (role !== member.role) changeRole(member, role);
       }}

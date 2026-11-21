@@ -10,7 +10,7 @@ import {
   formatDateTime,
   formatDuration,
 } from '@/shared/lib/format';
-import { UICard } from '@/shared/ui';
+import { UICard, UIIcons } from '@/shared/ui';
 
 import { TaskTimeHistoryRow } from './TaskTimeHistoryRow';
 
@@ -38,7 +38,7 @@ export function TaskTimeHistoryCard({
       <UICard.Title as='h3' size='sm'>
         Время задачи
       </UICard.Title>
-      <dl className='m-0 grid grid-cols-2 gap-3 sm:grid-cols-3'>
+      <dl className='m-0 grid grid-cols-2 gap-3 w640:grid-cols-3'>
         <div>
           <dt className='text-small text-muted-foreground'>
             Затрачено без пауз
@@ -78,8 +78,9 @@ export function TaskTimeHistoryCard({
           ? `Впервые в работе: ${formatDateTime(starts[0].enteredAt, timeZone)}`
           : 'Задачу ещё не брали в работу'}
       </p>
-      <details>
-        <summary className='cursor-pointer rounded-control text-small font-medium focus-ring'>
+      <details className='group'>
+        <summary className='flex min-h-control-sm cursor-pointer list-none items-center gap-2 rounded-control text-small font-medium focus-ring [&::-webkit-details-marker]:hidden'>
+          <UIIcons.ChevronDown className='size-icon-sm group-open:rotate-180' />
           История статусов и пауз · {task.timeHistory.length}
         </summary>
         <ol className='m-0 mt-3 flex list-none flex-col gap-3 p-0'>

@@ -1,6 +1,6 @@
 import { copyText } from '@/shared/lib/dom';
 import { ROUTES } from '@/shared/routes';
-import { UIButton, useToast } from '@/shared/ui';
+import { UIIconButton, useToast } from '@/shared/ui';
 import { UIIcons } from '@/shared/ui/icons';
 
 export function CopyCommentLinkButton({
@@ -23,9 +23,12 @@ export function CopyCommentLinkButton({
     );
   };
   return (
-    <UIButton variant='ghost' size='sm' onClick={() => void copy()}>
-      <UIIcons.Copy />
-      Ссылка
-    </UIButton>
+    <UIIconButton
+      label='Скопировать ссылку на комментарий'
+      variant='muted'
+      onClick={() => void copy()}
+    >
+      <UIIcons.Link />
+    </UIIconButton>
   );
 }

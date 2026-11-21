@@ -12,8 +12,8 @@ const UIBottomNavItemBase = forwardRef<HTMLElement, IUIBottomNavItemProps>(
       aria-current={active ? 'page' : undefined}
       data-name='UIBottomNavItem'
       className={cn(
-        'flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] text-caption font-medium text-foreground no-underline focus-ring',
-        '[&_svg]:size-icon-lg aria-[current=page]:font-semibold aria-[current=page]:text-primary-hover',
+        'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-caption font-medium text-foreground no-underline focus-ring',
+        '[&_svg]:size-icon aria-[current=page]:font-semibold aria-[current=page]:text-primary-hover',
         className,
       )}
       {...props}

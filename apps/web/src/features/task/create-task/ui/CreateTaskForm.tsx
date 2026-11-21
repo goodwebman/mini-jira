@@ -34,7 +34,7 @@ import {
 } from '../model/task-draft';
 import { useCreateTask } from '../model/use-create-task';
 
-const HALF = 'sm:col-span-1';
+const HALF = 'w640:col-span-1';
 
 export interface ICreateTaskFormProps {
   /** Доска по умолчанию: текущая. `null` — первая доступная. */
@@ -123,16 +123,16 @@ export function CreateTaskForm({
   return (
     <UIDialog.Content title='Новая задача' size='lg'>
       <form noValidate onSubmit={submit} className='contents'>
-        <UIDialog.Body className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+        <UIDialog.Body className='grid grid-cols-1 gap-4 w640:grid-cols-2'>
           {formError && (
-            <UIAlert tone='danger' className='sm:col-span-2'>
+            <UIAlert tone='danger' className='w640:col-span-2'>
               {formError}
             </UIAlert>
           )}
           <UIField
             label='Название'
             error={errors.title}
-            className='sm:col-span-2'
+            className='w640:col-span-2'
           >
             <UIInput
               placeholder='Что нужно сделать'
@@ -145,7 +145,7 @@ export function CreateTaskForm({
             label='Описание'
             optional
             error={errors.description}
-            className='sm:col-span-2'
+            className='w640:col-span-2'
           >
             <UITextarea
               rows={3}
@@ -223,7 +223,7 @@ export function CreateTaskForm({
               onValueChange={(id) => set('designerId', id)}
             />
           </UIField>
-          <UIField label='Дата создания' className='sm:col-span-2'>
+          <UIField label='Дата создания' className='w640:col-span-2'>
             <div className='text-muted-foreground'>
               {formatLongDate(new Date().toISOString(), timeZone)}, заполняется
               автоматически

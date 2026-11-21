@@ -86,12 +86,12 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
           <TaskSearchInput
             value={filters.query}
             onValueChange={(query) => updateFilters({ query })}
-            className='min-w-0 flex-[1_1_220px] sm:max-w-[320px] xl:max-w-[420px]'
+            className='min-w-0 flex-[1_1_100%] w640:max-w-[320px] w640:flex-[1_1_200px] w1920:max-w-[420px]'
           />
           <TaskPriorityFilter
             value={filters.priority}
             onValueChange={(priority) => updateFilters({ priority })}
-            wrapperClassName='min-w-0 flex-[1_1_150px] sm:max-w-[200px] xl:max-w-[260px]'
+            wrapperClassName='min-w-0 flex-[1_1_144px] w640:max-w-[200px] w1920:max-w-[260px]'
           />
           <BoardMembersButton
             count={board.members.length}

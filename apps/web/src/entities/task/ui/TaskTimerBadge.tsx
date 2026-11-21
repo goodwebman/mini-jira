@@ -3,7 +3,7 @@ import { UIBadge } from '@/shared/ui';
 import type { TaskTimerView } from '../model/task-timer';
 import { TIMER_ICON } from './timer-icon';
 
-/** Сколько задача в статусе или на паузе. `compact` — короткая подпись для таблиц. */
+/** Длительность в текущей колонке. `compact` убирает иконку в таблице. */
 export function TaskTimerBadge({
   view,
   compact = false,
@@ -16,9 +16,17 @@ export function TaskTimerBadge({
     <UIBadge
       tone={view.tone}
       icon={compact ? undefined : <Icon className='size-icon-sm' />}
-      className='min-w-0'
+      title={view.label}
+      className={compact ? undefined : 'rounded-control px-2'}
     >
-      <span className='truncate'>{compact ? view.short : view.label}</span>
+      {compact ? (
+        view.short
+      ) : (
+        <>
+          <span className='sr-only'>{view.label}</span>
+          <span aria-hidden='true'>{view.short}</span>
+        </>
+      )}
     </UIBadge>
   );
 }

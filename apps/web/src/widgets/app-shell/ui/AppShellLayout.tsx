@@ -1,11 +1,10 @@
 import { type ReactNode, useMemo, useState } from 'react';
 
-import { Link, Outlet, useLocation, useNavigate } from 'react-router';
+import { Link, Outlet, useLocation } from 'react-router';
 
 import { useSessionUser } from '@/entities/auth';
 import { CreateBoardDialog } from '@/features/board/create-board';
 import { useNotificationSync } from '@/features/notification/inbox';
-import { BREAKPOINTS, useMediaQuery } from '@/shared/lib/hooks';
 import { ROUTES } from '@/shared/routes';
 import { UIDrawer, UIIconButton, buttonVariants } from '@/shared/ui';
 import { UIIcons } from '@/shared/ui/icons';
@@ -33,8 +32,6 @@ export function AppShellLayout({ renderBoardsPanel }: IAppShellLayoutProps) {
   useNotificationSync();
   const user = useSessionUser();
   const location = useLocation();
-  const navigate = useNavigate();
-  const isWide = useMediaQuery(`(min-width: ${String(BREAKPOINTS.md)}px)`);
   // Панель привязана к адресу, на котором её открыли: любой переход её закрывает
   const [panelAt, setPanelAt] = useState<null | string>(null);
   const [creating, setCreating] = useState(false);
@@ -43,18 +40,15 @@ export function AppShellLayout({ renderBoardsPanel }: IAppShellLayoutProps) {
 
   const api = useMemo<AppShellApi>(
     () => ({
-      openBoardsSwitcher: () => {
-        if (isWide) setPanelAt(location.key);
-        else void navigate(ROUTES.BOARDS.build());
-      },
+      openBoardsSwitcher: () => setPanelAt(location.key),
     }),
-    [isWide, location.key, navigate],
+    [location.key],
   );
 
   return (
     <ShellNotificationsContext value={true}>
       <AppShellInjector value={api}>
-        <div className='flex h-dvh flex-col bg-background text-foreground'>
+        <div className='mx-auto flex h-dvh w-full max-w-[2080px] flex-col bg-background text-foreground'>
           <div className='flex min-h-0 flex-1'>
             <ShellSideNav />
             <div className='relative flex min-h-0 min-w-0 flex-1 flex-col'>

@@ -8,7 +8,7 @@ export interface IUIBrandProps extends HTMLAttributes<HTMLDivElement> {
   readonly testId?: string;
   /** Название продукта. */
   readonly name?: string;
-  /** Класс подписи, например `hidden lg:inline`, чтобы прятать её в узком меню. */
+  /** Класс подписи, например `hidden w1280:inline`, чтобы прятать её в узком меню. */
   readonly nameClassName?: string;
 }
 

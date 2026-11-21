@@ -12,11 +12,14 @@ const UIPageHeaderActionBase = forwardRef<
 >(({ className, icon, label, ...props }, ref) => (
   <UIButton
     ref={ref}
-    className={cn('shrink-0 pl-2 pr-3 max-sm:w-control max-sm:px-0', className)}
+    className={cn(
+      'shrink-0 pl-2 pr-3 max-w640:w-control max-w640:px-0',
+      className,
+    )}
     {...props}
   >
     {icon}
-    <span className='max-sm:sr-only'>{label}</span>
+    <span className='max-w640:sr-only'>{label}</span>
   </UIButton>
 ));
 UIPageHeaderActionBase.displayName = 'UIPageHeaderAction';

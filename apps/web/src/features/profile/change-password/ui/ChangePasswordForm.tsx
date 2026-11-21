@@ -63,12 +63,12 @@ export function ChangePasswordForm({
   return (
     <form noValidate onSubmit={submit} className='flex flex-col gap-4'>
       {formError && <UIAlert tone='danger'>{formError}</UIAlert>}
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+      <div className='grid grid-cols-1 gap-4 w640:grid-cols-2'>
         {hasPassword && (
           <UIField
             label='Текущий пароль'
             error={errors.currentPassword}
-            className='sm:col-span-2'
+            className='w640:col-span-2'
           >
             <UIInput
               type='password'

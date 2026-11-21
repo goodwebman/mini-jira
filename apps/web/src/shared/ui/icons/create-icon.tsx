@@ -60,7 +60,7 @@ export function createIcon(
         viewBox={viewBox}
         fill='none'
         stroke='currentColor'
-        strokeWidth={2}
+        strokeWidth={1.5}
         strokeLinecap='round'
         strokeLinejoin='round'
         role={labelled ? 'img' : undefined}

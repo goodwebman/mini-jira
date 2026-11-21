@@ -1,6 +1,6 @@
 import { copyText } from '@/shared/lib/dom';
 import { ROUTES } from '@/shared/routes';
-import { UIButton, useToast } from '@/shared/ui';
+import { UIIconButton, useToast } from '@/shared/ui';
 import { UIIcons } from '@/shared/ui/icons';
 
 /** Копирует постоянную ссылку `/tasks/KEY`: она откроется у любого участника доски. */
@@ -15,9 +15,12 @@ export function CopyTaskLinkButton({ taskKey }: { readonly taskKey: string }) {
     );
   };
   return (
-    <UIButton variant='secondary' onClick={() => void copy()}>
-      <UIIcons.Copy />
-      Скопировать ссылку
-    </UIButton>
+    <UIIconButton
+      label='Скопировать ссылку'
+      variant='muted'
+      onClick={() => void copy()}
+    >
+      <UIIcons.Link />
+    </UIIconButton>
   );
 }

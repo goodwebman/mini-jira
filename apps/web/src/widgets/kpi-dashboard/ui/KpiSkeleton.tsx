@@ -1,6 +1,7 @@
 import { UICard, UISkeleton } from '@/shared/ui';
 
 import { KpiLayout } from './KpiLayout';
+import { SPANS } from './KpiLayout/spans';
 
 export function KpiSkeleton() {
   return (
@@ -16,19 +17,21 @@ export function KpiSkeleton() {
       </div>
       <KpiLayout>
         {['a', 'b', 'c', 'd'].map((key) => (
-          <KpiLayout.Panel key={key} area='tile'>
-            <UICard padding='sm' className='gap-1'>
-              <UISkeleton className='h-[1.35em] w-28 text-small' />
-              <UISkeleton className='h-[1.2em] w-24 text-metric' />
-              <UISkeleton className='h-[1.34em] w-32 max-w-full text-caption' />
-            </UICard>
-          </KpiLayout.Panel>
+          <UICard
+            key={key}
+            padding='sm'
+            className={`${SPANS.tile} min-w-0 gap-1`}
+          >
+            <UISkeleton className='h-[1.35em] w-28 max-w-full text-small' />
+            <UISkeleton className='h-[1.2em] w-24 max-w-full text-metric' />
+            <UISkeleton className='h-[1.34em] w-32 max-w-full text-caption' />
+          </UICard>
         ))}
         <KpiLayout.Panel
           area='burndown'
           title={<UISkeleton className='h-5 w-40' />}
         >
-          <UISkeleton className='h-[220px] sm:h-[240px] md:h-[260px] lg:h-[280px] xl:h-[340px]' />
+          <UISkeleton className='h-[220px] w640:h-[240px] w960:h-[260px] w1280:h-[280px] w1920:h-[340px]' />
         </KpiLayout.Panel>
         <KpiLayout.Panel
           area='donut'
@@ -56,7 +59,7 @@ export function KpiSkeleton() {
             area={area}
             title={<UISkeleton className='h-5 w-40' />}
           >
-            <UISkeleton className='h-[200px] sm:h-[220px] md:h-[230px] lg:h-[240px] xl:h-[300px]' />
+            <UISkeleton className='h-[200px] w640:h-[220px] w960:h-[230px] w1280:h-[240px] w1920:h-[300px]' />
           </KpiLayout.Panel>
         ))}
         <KpiLayout.Panel

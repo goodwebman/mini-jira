@@ -13,6 +13,7 @@ import {
   UIDrawer,
   UIIconButton,
   UIIcons,
+  UILink,
   UIRequestError,
 } from '@/shared/ui';
 
@@ -36,8 +37,11 @@ export function NotificationCenter() {
       >
         <UIIcons.Bell />
         {unread > 0 && (
-          <span className='absolute -right-1 -top-1 rounded-full bg-primary px-1 text-caption text-primary-foreground'>
-            {unread}
+          <span
+            aria-hidden='true'
+            className='absolute -end-1 -top-1 rounded-full bg-primary px-1 text-caption text-primary-foreground tabular-nums'
+          >
+            {unread > 99 ? '99+' : unread}
           </span>
         )}
       </UIIconButton>
@@ -54,7 +58,7 @@ export function NotificationCenter() {
           </UIButton>
         }
       >
-        <div className='flex flex-col gap-3 p-4' aria-busy={query.isFetching}>
+        <div className='flex flex-col gap-2' aria-busy={query.isFetching}>
           {query.isPending && <p role='status'>Загрузка уведомлений…</p>}
           {query.isError && (
             <UIRequestError
@@ -69,19 +73,22 @@ export function NotificationCenter() {
             data.items.map((notification) => (
               <article
                 key={notification.id}
-                className='flex flex-col gap-2 rounded-lg border p-3'
+                className='flex min-w-0 flex-col gap-2 rounded-card border border-border p-3 wrap-anywhere'
               >
                 <p>
-                  {notification.readAt === null && <strong>Новое. </strong>}
+                  {notification.readAt === null && <strong>Новое · </strong>}
                   {notificationText(notification)}
                 </p>
-                <time dateTime={notification.createdAt}>
+                <time
+                  dateTime={notification.createdAt}
+                  className='text-caption text-muted-foreground tabular-nums'
+                >
                   {new Date(notification.createdAt).toLocaleString('ru-RU')}
                 </time>
                 <div className='flex flex-wrap items-center gap-2'>
                   {notificationTarget(notification) && (
-                    <Link
-                      to={notificationTarget(notification)!}
+                    <UILink
+                      render={<Link to={notificationTarget(notification)!} />}
                       onClick={(event) => {
                         if (
                           event.button !== 0 ||
@@ -99,7 +106,7 @@ export function NotificationCenter() {
                       {notification.taskKey
                         ? 'Открыть задачу'
                         : 'Открыть доску'}
-                    </Link>
+                    </UILink>
                   )}
                   {notification.readAt === null && (
                     <UIButton
@@ -112,15 +119,16 @@ export function NotificationCenter() {
                       Прочитано
                     </UIButton>
                   )}
-                  <UIButton
-                    variant='secondary'
+                  <UIIconButton
+                    label='Удалить уведомление'
+                    className='text-destructive hover:bg-destructive-tint'
                     disabled={actions.isPending}
                     onClick={() =>
                       actions.mutate({ type: 'delete', id: notification.id })
                     }
                   >
-                    Удалить
-                  </UIButton>
+                    <UIIcons.Trash />
+                  </UIIconButton>
                 </div>
               </article>
             ))}

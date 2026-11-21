@@ -8,7 +8,7 @@ import { AddCommentForm } from '@/features/comment/add-comment';
 import { CopyCommentLinkButton } from '@/features/comment/copy-link';
 import { DeleteCommentButton } from '@/features/comment/delete-comment';
 import { EditCommentForm } from '@/features/comment/edit-comment';
-import { UIButton } from '@/shared/ui';
+import { UIIconButton, UIIcons } from '@/shared/ui';
 
 import { useCommentTarget } from '../model/use-comment-target';
 
@@ -59,28 +59,28 @@ export function TaskCommentRow({
         actions={
           <>
             {canComment && (
-              <UIButton
-                size='sm'
-                variant='ghost'
+              <UIIconButton
+                label='Ответить'
+                variant='muted'
                 aria-expanded={replying}
                 onClick={() => setReplying(!replying)}
               >
-                Ответить
-              </UIButton>
+                <UIIcons.Reply />
+              </UIIconButton>
             )}
             <CopyCommentLinkButton taskKey={taskKey} commentId={comment.id} />
             {permissions.canEdit && (
-              <UIButton
-                size='sm'
-                variant='ghost'
+              <UIIconButton
+                label='Редактировать комментарий'
+                variant='muted'
                 aria-expanded={editing}
                 onClick={() => {
                   setEditing(!editing);
                   setReplying(false);
                 }}
               >
-                Редактировать комментарий
-              </UIButton>
+                <UIIcons.Pencil />
+              </UIIconButton>
             )}
             {permissions.canDelete && (
               <DeleteCommentButton taskKey={taskKey} commentId={comment.id} />

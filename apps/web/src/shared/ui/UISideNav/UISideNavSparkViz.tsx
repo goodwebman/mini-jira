@@ -33,7 +33,7 @@ function UISideNavSparkVizBase({ values }: IUISideNavSparkVizProps) {
       aria-hidden='true'
       viewBox={`0 0 ${String(SPARK_WIDTH)} ${String(SPARK_HEIGHT)}`}
       preserveAspectRatio='none'
-      className='block min-h-0 w-full flex-1'
+      className='block h-8 w-full'
     >
       <path d={area} className='fill-(--tile-soft)' />
       <path

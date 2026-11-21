@@ -3,7 +3,7 @@ import { UISearchInput } from '@/shared/ui';
 export function TaskSearchInput({
   value,
   onValueChange,
-  placeholder = 'Поиск по названию или ключу',
+  placeholder,
   className,
 }: {
   readonly value: string;
@@ -13,8 +13,8 @@ export function TaskSearchInput({
 }) {
   return (
     <UISearchInput
-      aria-label={placeholder}
-      placeholder={placeholder}
+      aria-label={placeholder ?? 'Поиск по названию или ключу'}
+      placeholder={placeholder ?? 'Название или ключ'}
       value={value}
       onChange={(event) => onValueChange(event.target.value)}
       onClear={() => onValueChange('')}

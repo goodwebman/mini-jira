@@ -5,7 +5,7 @@ import { cn } from '@/shared/lib/cn';
 import type { IUITabBarProps } from './types';
 
 /**
- * Вкладки разделов под шапкой. Видны только на ширине 520–799.
+ * Вкладки разделов под шапкой от 640 до 960 px.
  *
  * @example
  * <UITabBar aria-label="Основная навигация">
@@ -18,7 +18,7 @@ const UITabBarRootBase = forwardRef<HTMLElement, IUITabBarProps>(
       ref={ref}
       data-name={testId ? `UITabBar-${testId}` : 'UITabBar'}
       className={cn(
-        'hidden h-[48px] flex-none border-b border-border bg-surface px-2 sm:flex md:hidden',
+        'hidden h-[48px] flex-none border-b border-border bg-surface px-2 w640:flex w960:hidden',
         className,
       )}
       {...props}

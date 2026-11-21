@@ -19,8 +19,8 @@ export const iconButtonVariants = cva(
       size: {
         /** 26 px, на узких 36: кнопка паузы на карточке. */
         xs: "size-icon-button [&_svg:not([class*='size-'])]:size-icon-sm",
-        md: "size-control [&_svg:not([class*='size-'])]:size-icon-lg",
-        lg: "size-control-lg [&_svg:not([class*='size-'])]:size-icon-lg",
+        md: "size-control [&_svg:not([class*='size-'])]:size-icon",
+        lg: "size-control-lg [&_svg:not([class*='size-'])]:size-icon",
       },
       shape: {
         square: 'rounded-control',

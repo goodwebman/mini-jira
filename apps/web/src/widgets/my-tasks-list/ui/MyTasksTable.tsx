@@ -31,28 +31,28 @@ export function MyTasksTable({
   readonly loading?: boolean;
 }) {
   return (
-    <UITable aria-busy={loading} wrapperClassName='hidden sm:block'>
+    <UITable aria-busy={loading} wrapperClassName='hidden w640:block'>
       <UITable.Head>
         <UITable.Row>
           <UITable.HeadCell className='w-[88px]'>Ключ</UITable.HeadCell>
           <UITable.HeadCell>Задача</UITable.HeadCell>
-          <UITable.HeadCell className='hidden xl:table-cell'>
+          <UITable.HeadCell className='hidden w1920:table-cell'>
             Доска
           </UITable.HeadCell>
-          <UITable.HeadCell className='hidden lg:table-cell'>
+          <UITable.HeadCell className='hidden w1280:table-cell'>
             Роль
           </UITable.HeadCell>
           <UITable.HeadCell>Статус</UITable.HeadCell>
-          <UITable.HeadCell className='hidden md:table-cell'>
+          <UITable.HeadCell className='hidden w960:table-cell'>
             Время
           </UITable.HeadCell>
           <UITable.HeadCell>
-            <span className='max-md:sr-only'>Приоритет</span>
+            <span className='max-w960:sr-only'>Приоритет</span>
           </UITable.HeadCell>
-          <UITable.HeadCell className='hidden text-right md:table-cell'>
+          <UITable.HeadCell className='hidden text-right w960:table-cell'>
             SP
           </UITable.HeadCell>
-          <UITable.HeadCell className='hidden lg:table-cell'>
+          <UITable.HeadCell className='hidden w1280:table-cell'>
             Создана
           </UITable.HeadCell>
         </UITable.Row>
@@ -67,25 +67,25 @@ export function MyTasksTable({
               <UITable.Cell>
                 <UISkeleton className='h-4 w-full' />
               </UITable.Cell>
-              <UITable.Cell className='hidden xl:table-cell'>
+              <UITable.Cell className='hidden w1920:table-cell'>
                 <UISkeleton className='h-4 w-24' />
               </UITable.Cell>
-              <UITable.Cell className='hidden lg:table-cell'>
+              <UITable.Cell className='hidden w1280:table-cell'>
                 <UISkeleton className='h-4 w-20' />
               </UITable.Cell>
               <UITable.Cell>
                 <UISkeleton className='h-6 w-24' />
               </UITable.Cell>
-              <UITable.Cell className='hidden md:table-cell'>
+              <UITable.Cell className='hidden w960:table-cell'>
                 <UISkeleton className='h-6 w-20' />
               </UITable.Cell>
               <UITable.Cell>
                 <UISkeleton className='h-4 w-12' />
               </UITable.Cell>
-              <UITable.Cell className='hidden md:table-cell'>
+              <UITable.Cell className='hidden w960:table-cell'>
                 <UISkeleton className='h-4 w-6' />
               </UITable.Cell>
-              <UITable.Cell className='hidden lg:table-cell'>
+              <UITable.Cell className='hidden w1280:table-cell'>
                 <UISkeleton className='h-4 w-20' />
               </UITable.Cell>
             </UITable.Row>
@@ -102,16 +102,16 @@ export function MyTasksTable({
                 <span className='block truncate'>{row.title}</span>
               </UITable.RowLink>
             </UITable.Cell>
-            <UITable.Cell className='hidden xl:table-cell'>
+            <UITable.Cell className='hidden w1920:table-cell'>
               {row.board.name}
             </UITable.Cell>
-            <UITable.Cell className='hidden lg:table-cell'>
+            <UITable.Cell className='hidden w1280:table-cell'>
               {taskRolesLabel(row.roles)}
             </UITable.Cell>
             <UITable.Cell>
               <TaskStatusBadge status={row.status} />
             </UITable.Cell>
-            <UITable.Cell className='hidden md:table-cell'>
+            <UITable.Cell className='hidden w960:table-cell'>
               <TaskTimerBadge
                 compact
                 view={getTaskTimerView(row.status, row.timer, now)}
@@ -119,12 +119,12 @@ export function MyTasksTable({
             </UITable.Cell>
             <UITable.Cell>
               <UIPriority priority={row.priority}>
-                <span className='max-md:sr-only'>
+                <span className='max-w960:sr-only'>
                   {TASK_PRIORITY_LABELS[row.priority]}
                 </span>
               </UIPriority>
             </UITable.Cell>
-            <UITable.Cell className='hidden text-right tabular-nums md:table-cell'>
+            <UITable.Cell className='hidden text-right tabular-nums w960:table-cell'>
               <span
                 className={
                   getTaskSpentSec(row.status, row.timer, now) >
@@ -136,7 +136,7 @@ export function MyTasksTable({
                 {formatNumber(row.sp)}
               </span>
             </UITable.Cell>
-            <UITable.Cell className='hidden text-muted-foreground lg:table-cell'>
+            <UITable.Cell className='hidden text-muted-foreground w1280:table-cell'>
               {formatShortDate(row.createdAt, timeZone)}
             </UITable.Cell>
           </UITable.Row>

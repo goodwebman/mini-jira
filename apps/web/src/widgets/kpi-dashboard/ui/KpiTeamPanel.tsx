@@ -7,7 +7,7 @@ import { UIProgress } from '@/shared/ui';
 import { KpiLayout } from './KpiLayout';
 
 const GRID =
-  'grid grid-cols-[minmax(0,1fr)_56px_52px_52px] gap-x-2 xl:grid-cols-[minmax(0,1fr)_64px_64px_64px]';
+  'grid grid-cols-[minmax(0,1fr)_56px_52px_52px] gap-x-2 w1920:grid-cols-[minmax(0,1fr)_64px_64px_64px]';
 
 /** Вклад участников: закрытые SP, ревью и тесты, полоса — доля от лидера. */
 export function KpiTeamPanel({ kpi }: { readonly kpi: SprintKpi }) {

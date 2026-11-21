@@ -38,6 +38,34 @@ const topLevelComponent = `:matches(${componentStatement}, ExportNamedDeclaratio
 const { browserslist: browserTargets } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 );
+const defaultViewportVariant =
+  /(?:^|\s|:)((?:(?:min|max)-)?(?:sm|md|lg|xl|2xl)):(?=\S|$)/u;
+const namedViewportRule = {
+  meta: {
+    schema: [],
+    messages: {
+      useNamed:
+        'Use a named viewport variant such as w640: or max-w960: in place of {{variant}}:.',
+    },
+  },
+  create(context) {
+    const check = (node, text) => {
+      if (typeof text !== 'string') return;
+      const match = defaultViewportVariant.exec(text);
+      if (match) {
+        context.report({
+          node,
+          messageId: 'useNamed',
+          data: { variant: match[1] },
+        });
+      }
+    };
+    return {
+      Literal: (node) => check(node, node.value),
+      TemplateElement: (node) => check(node, node.value.cooked),
+    };
+  },
+};
 
 export default defineConfig([
   globalIgnores([
@@ -138,6 +166,7 @@ export default defineConfig([
       'import-x': importX,
       '@eslint-react': react,
       tailwindcss,
+      'mini-jira': { rules: { 'named-viewport': namedViewportRule } },
     },
     settings: {
       ...importX.flatConfigs.typescript.settings,
@@ -206,6 +235,7 @@ export default defineConfig([
       '@eslint-react/dom-no-dangerously-set-innerhtml': 'error',
       'tailwindcss/enforces-shorthand': 'error',
       'tailwindcss/no-contradicting-classname': 'error',
+      'mini-jira/named-viewport': 'error',
       'boundaries/no-unknown-files': 'error',
       'boundaries/no-unknown-dependencies': 'error',
       'boundaries/dependencies': [

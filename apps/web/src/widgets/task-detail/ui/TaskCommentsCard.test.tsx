@@ -148,7 +148,7 @@ describe('TaskCommentsCard', () => {
     fireEvent.click(
       within(document.getElementById(`comment-${reply.id}`)!).getByRole(
         'button',
-        { name: 'Ссылка' },
+        { name: 'Скопировать ссылку на комментарий' },
       ),
     );
     await waitFor(() =>
@@ -164,7 +164,11 @@ describe('TaskCommentsCard', () => {
   it('показывает ссылку для ручного копирования при отказе буфера', async () => {
     vi.mocked(copyText).mockResolvedValue(false);
     setup(false);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Ссылка' })[0]!);
+    fireEvent.click(
+      screen.getAllByRole('button', {
+        name: 'Скопировать ссылку на комментарий',
+      })[0]!,
+    );
     expect(
       await screen.findByText(
         `Скопируйте вручную: ${location.origin}/tasks/${task.key}#comment-${root.id}`,

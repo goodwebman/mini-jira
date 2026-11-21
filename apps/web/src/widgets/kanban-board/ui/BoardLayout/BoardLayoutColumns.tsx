@@ -12,7 +12,7 @@ export function BoardLayoutColumns({
     <div
       aria-busy={loading || undefined}
       aria-label={loading ? 'Загрузка задач' : undefined}
-      className='flex min-h-0 flex-1 gap-3 overflow-x-auto overflow-y-hidden scrollbar-thin'
+      className='flex min-h-0 flex-none gap-3 w640:flex-1 w640:overflow-x-auto w640:overflow-y-hidden w640:scrollbar-thin'
     >
       {children}
     </div>

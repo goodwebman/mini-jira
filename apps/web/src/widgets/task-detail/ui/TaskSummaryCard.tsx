@@ -29,7 +29,7 @@ export function TaskSummaryCard({
   const overEstimate =
     getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS;
   return (
-    <UICard padding='lg' className='flex flex-col gap-3'>
+    <UICard padding='lg' className='flex flex-col gap-3 max-w640:p-4'>
       <div className='flex flex-wrap items-center gap-2'>
         <TaskStatusBadge status={task.status} />
         <TaskPriorityMark priority={task.priority} withLabel />
@@ -45,9 +45,6 @@ export function TaskSummaryCard({
         >
           {formatSp(task.sp)}
         </span>
-        <span className='ml-auto'>
-          <CopyTaskLinkButton taskKey={task.key} />
-        </span>
       </div>
       <h2 className='m-0 text-display font-semibold tracking-title wrap-anywhere'>
         {task.title}
@@ -55,18 +52,17 @@ export function TaskSummaryCard({
       <p className='m-0 whitespace-pre-line wrap-anywhere'>
         {task.description || 'Описание не заполнено.'}
       </p>
-      {(canEdit || canDelete) && (
-        <div className='flex flex-wrap gap-2'>
-          {canEdit && <EditTaskButton task={task} />}
-          {canDelete && (
-            <DeleteTaskButton
-              boardId={task.boardId}
-              taskKey={task.key}
-              onDeleted={onDeleted}
-            />
-          )}
-        </div>
-      )}
+      <div className='flex flex-wrap gap-2'>
+        <CopyTaskLinkButton taskKey={task.key} />
+        {canEdit && <EditTaskButton task={task} />}
+        {canDelete && (
+          <DeleteTaskButton
+            boardId={task.boardId}
+            taskKey={task.key}
+            onDeleted={onDeleted}
+          />
+        )}
+      </div>
     </UICard>
   );
 }

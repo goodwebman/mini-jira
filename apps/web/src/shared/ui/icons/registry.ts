@@ -21,12 +21,16 @@ import { Lock } from './generated/lock';
 import { Logout } from './generated/logout';
 import { Minus } from './generated/minus';
 import { Pause } from './generated/pause';
+import { Pencil } from './generated/pencil';
 import { Play } from './generated/play';
 import { Plus } from './generated/plus';
+import { Reply } from './generated/reply';
 import { Search } from './generated/search';
 import { Spinner } from './generated/spinner';
 import { Star } from './generated/star';
 import { Tasks } from './generated/tasks';
+import { Trash } from './generated/trash';
+import { UserMinus } from './generated/user-minus';
 import { User } from './generated/user';
 import { Users } from './generated/users';
 import { X } from './generated/x';
@@ -57,12 +61,16 @@ export const UIIcons = {
   Logout,
   Minus,
   Pause,
+  Pencil,
   Play,
   Plus,
+  Reply,
   Search,
   Spinner,
   Star,
   Tasks,
+  Trash,
+  UserMinus,
   User,
   Users,
   X,

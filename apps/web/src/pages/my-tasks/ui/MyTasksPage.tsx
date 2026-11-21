@@ -91,17 +91,17 @@ export function MyTasksPage() {
             placeholder='Поиск по задачам'
             value={params.q}
             onValueChange={(value) => update({ q: value })}
-            className='min-w-0 flex-[1_1_200px] sm:max-w-[320px] xl:max-w-[420px]'
+            className='min-w-0 flex-[1_1_200px] w640:max-w-[320px] w1920:max-w-[420px]'
           />
           <TaskStatusFilter
             value={params.status}
             onValueChange={(status) => update({ status })}
-            wrapperClassName='min-w-0 flex-[1_1_140px] sm:max-w-[200px]'
+            wrapperClassName='min-w-0 flex-[1_1_140px] w640:max-w-[200px]'
           />
           <TaskRoleFilter
             value={params.role}
             onValueChange={(role) => update({ role })}
-            wrapperClassName='min-w-0 flex-[1_1_140px] sm:max-w-[200px]'
+            wrapperClassName='min-w-0 flex-[1_1_140px] w640:max-w-[200px]'
           />
         </MyTasksLayout.Filters>
 

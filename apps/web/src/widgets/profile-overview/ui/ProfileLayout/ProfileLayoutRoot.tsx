@@ -10,7 +10,7 @@ export function ProfileLayoutRoot({
   readonly children?: ReactNode;
 }) {
   return (
-    <div className='grid grid-cols-1 items-start gap-section md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]'>
+    <div className='grid grid-cols-1 items-start gap-section w960:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] w1280:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] w1920:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]'>
       {children}
     </div>
   );

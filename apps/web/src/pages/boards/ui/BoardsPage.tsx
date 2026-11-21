@@ -30,7 +30,7 @@ export function BoardsPage() {
         />
       }
     >
-      <div className='mx-auto w-full max-w-[880px] xl:max-w-[1200px]'>
+      <div className='mx-auto w-full max-w-[880px] w1920:max-w-[1200px]'>
         <BoardList variant='page' />
       </div>
       <CreateBoardDialog

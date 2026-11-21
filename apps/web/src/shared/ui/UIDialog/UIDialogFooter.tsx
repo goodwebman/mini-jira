@@ -11,7 +11,7 @@ const UIDialogFooterBase = forwardRef<HTMLDivElement, IUIDialogFooterProps>(
       ref={ref}
       data-name='UIDialogFooter'
       className={cn(
-        'flex shrink-0 justify-end gap-2 border-t border-border px-6 py-4',
+        'flex shrink-0 flex-wrap justify-end gap-2 border-t border-border px-4 pt-4 pb-[max(var(--space-4),env(safe-area-inset-bottom))] w640:px-6',
         className,
       )}
       {...props}

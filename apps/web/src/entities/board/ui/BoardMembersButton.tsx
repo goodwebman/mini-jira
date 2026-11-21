@@ -14,10 +14,15 @@ export function BoardMembersButton({
   return (
     <Slot
       render={render}
-      className={cn(buttonVariants({ variant: 'secondary' }), 'shrink-0')}
+      aria-label={`Участники · ${String(count)}`}
+      className={cn(
+        buttonVariants({ variant: 'secondary' }),
+        'shrink-0 max-w438:px-3',
+      )}
     >
       <UIIcons.Users />
-      Участники · {count}
+      <span className='max-w438:sr-only'>Участники · </span>
+      <span className='tabular-nums'>{count}</span>
     </Slot>
   );
 }

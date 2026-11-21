@@ -9,8 +9,8 @@ export function BoardSkeleton() {
     <div aria-hidden='true' className='flex min-h-0 flex-1 flex-col'>
       <BoardLayout>
         <BoardLayout.Toolbar>
-          <UISkeleton className='h-control min-w-0 flex-[1_1_220px] sm:max-w-[320px] xl:max-w-[420px]' />
-          <UISkeleton className='h-control min-w-0 flex-[1_1_150px] sm:max-w-[200px] xl:max-w-[260px]' />
+          <UISkeleton className='h-control min-w-0 flex-[1_1_100%] w640:max-w-[320px] w640:flex-[1_1_200px] w1920:max-w-[420px]' />
+          <UISkeleton className='h-control min-w-0 flex-[1_1_144px] w640:max-w-[200px] w1920:max-w-[260px]' />
           <UISkeleton className='w-fit shrink-0'>
             <div className='invisible'>
               <BoardMembersButton

@@ -7,7 +7,7 @@ export function ProfileLayoutMain({
   readonly children?: ReactNode;
 }) {
   return (
-    <div className='flex min-w-0 flex-col gap-section xl:contents'>
+    <div className='flex min-w-0 flex-col gap-section w1920:contents'>
       {children}
     </div>
   );

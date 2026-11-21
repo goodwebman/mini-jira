@@ -1,7 +1,13 @@
 import { useState } from 'react';
 
 import { readApiError } from '@/shared/api';
-import { UIAlert, UIButton, UIDialog } from '@/shared/ui';
+import {
+  UIAlert,
+  UIButton,
+  UIDialog,
+  UIIconButton,
+  UIIcons,
+} from '@/shared/ui';
 
 import { useDeleteComment } from '../model/use-delete-comment';
 
@@ -21,13 +27,13 @@ export function DeleteCommentButton({
   };
   return (
     <>
-      <UIButton
-        size='sm'
-        variant='danger-ghost'
+      <UIIconButton
+        label='Удалить комментарий'
+        className='text-destructive hover:bg-destructive-tint'
         onClick={() => changeOpen(true)}
       >
-        Удалить комментарий
-      </UIButton>
+        <UIIcons.Trash />
+      </UIIconButton>
       <UIDialog open={open} onOpenChange={changeOpen}>
         <UIDialog.Content title='Удалить комментарий?'>
           <UIDialog.Body className='flex flex-col gap-3'>

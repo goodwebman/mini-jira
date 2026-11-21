@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 /**
- * Раскладка задачи. От 800 px — две колонки: содержимое и панель свойств.
+ * От 960 px задача занимает две колонки: содержимое и панель свойств.
  * На узком экране панель встаёт сразу под описанием (`order`), до связей
  * и комментариев: статус и таймер важнее истории.
  */
@@ -19,8 +19,8 @@ export function TaskLayout({
   readonly timeHistory?: ReactNode;
 }) {
   return (
-    <div className='grid grid-cols-1 items-start gap-section md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_440px]'>
-      <div className='contents md:flex md:min-w-0 md:flex-col md:gap-section'>
+    <div className='grid grid-cols-1 items-start gap-section w960:grid-cols-[minmax(0,1fr)_300px] w1280:grid-cols-[minmax(0,1fr)_360px] w1920:grid-cols-[minmax(0,1fr)_440px]'>
+      <div className='contents w960:flex w960:min-w-0 w960:flex-col w960:gap-section'>
         <div className='order-1 min-w-0'>{summary}</div>
         <div className='order-3 min-w-0'>{timeHistory}</div>
         <div className='order-4 min-w-0'>{links}</div>

@@ -202,7 +202,9 @@ describe('notification inbox', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Далее' }));
     await screen.findByText(/Страница 2/);
-    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Удалить уведомление' }),
+    );
     fireEvent.click(
       await screen.findByRole('button', { name: 'К новым уведомлениям' }),
     );
@@ -248,7 +250,9 @@ describe('notification inbox', () => {
     await screen.findByRole('button', {
       name: 'Уведомления, непрочитанных: 0',
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Удалить уведомление' }),
+    );
     await screen.findByText('Уведомлений пока нет');
     expect(api.unmatched).toEqual([]);
   });

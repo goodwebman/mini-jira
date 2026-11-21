@@ -89,7 +89,7 @@ export function KanbanBoard({
                 : undefined
             }
             // На телефоне видна одна колонка: выбор — чипами над доской
-            className={status === phoneColumn ? undefined : 'max-sm:hidden'}
+            className={status === phoneColumn ? undefined : 'max-w640:hidden'}
             {...dropHandlers}
           >
             {cards.map((task) => {

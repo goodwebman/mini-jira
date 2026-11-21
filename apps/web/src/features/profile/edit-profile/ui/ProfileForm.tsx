@@ -71,7 +71,7 @@ export function ProfileForm({ me }: { readonly me: Me }) {
   return (
     <form noValidate onSubmit={submit} className='flex flex-col gap-4'>
       {formError && <UIAlert tone='danger'>{formError}</UIAlert>}
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+      <div className='grid grid-cols-1 gap-4 w640:grid-cols-2'>
         {FIELDS.map(({ field, label, type, autoComplete }) => (
           <UIField key={field} label={label} error={errors[field]}>
             <UIInput

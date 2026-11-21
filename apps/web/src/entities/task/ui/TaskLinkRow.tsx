@@ -39,7 +39,7 @@ export function TaskLinkRow({
     </>
   );
   const rowClass =
-    'flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5 py-2 text-foreground no-underline sm:flex-nowrap';
+    'flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5 py-2 text-foreground no-underline w640:flex-nowrap';
 
   return (
     <div className='flex min-h-control items-center gap-2 border-t border-border'>

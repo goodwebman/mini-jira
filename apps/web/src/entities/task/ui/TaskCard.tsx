@@ -35,6 +35,14 @@ export interface ITaskCardProps extends Omit<
   readonly now: number;
 }
 
+const statusBorder = {
+  todo: 'border-s-status-todo',
+  work: 'border-s-status-work',
+  review: 'border-s-status-review',
+  test: 'border-s-status-test',
+  done: 'border-s-status-done',
+} satisfies Record<TaskCardData['status'], string>;
+
 /**
  * Карточка задачи на доске. Только данные задачи: действия и люди приходят
  * слотами (IoC), поэтому карточка не знает ни про права, ни про мутации.
@@ -56,6 +64,8 @@ export function TaskCard({
       className={cn(
         getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS &&
           'border-destructive/50 bg-destructive-tint/30',
+        'border-s-2',
+        statusBorder[task.status],
         className,
       )}
       points={

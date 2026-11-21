@@ -5,7 +5,7 @@ import { cn } from '@/shared/lib/cn';
 import type { IUIBottomNavProps } from './types';
 
 /**
- * Нижнее меню телефона. Видно только на ширине до 520.
+ * Нижнее меню телефона на ширинах меньше 640 px.
  *
  * @example
  * <UIBottomNav aria-label="Основная навигация">
@@ -18,7 +18,7 @@ const UIBottomNavRootBase = forwardRef<HTMLElement, IUIBottomNavProps>(
       ref={ref}
       data-name={testId ? `UIBottomNav-${testId}` : 'UIBottomNav'}
       className={cn(
-        'flex h-[64px] flex-none border-t border-border bg-surface sm:hidden',
+        'flex h-[calc(64px+env(safe-area-inset-bottom))] flex-none border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] w640:hidden',
         className,
       )}
       {...props}

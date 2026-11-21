@@ -45,7 +45,7 @@ export function PopoverPanel({
         tabIndex={-1}
         data-name='UIPopoverContent'
         className={cn(
-          'invisible fixed left-0 top-0 z-60 min-w-[192px] rounded-block border border-border bg-surface p-4 text-foreground shadow-popover outline-none',
+          'invisible fixed left-0 top-0 z-60 max-h-[calc(100dvh-16px)] max-w-[calc(100vw-16px)] min-w-[min(192px,calc(100vw-16px))] overflow-y-auto rounded-block border border-border bg-surface p-4 text-foreground shadow-popover outline-none',
           className,
         )}
       >

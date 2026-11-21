@@ -32,13 +32,15 @@ export function BoardListRow({
       >
         <BoardIconTile colorIndex={board.colorIndex} />
         <span className='flex min-w-0 flex-1 flex-col'>
-          <span className='truncate font-medium'>{board.name}</span>
-          <span className='truncate text-caption text-muted-foreground'>
+          <span className='line-clamp-2 font-medium wrap-anywhere'>
+            {board.name}
+          </span>
+          <span className='text-caption wrap-anywhere text-muted-foreground tabular-nums'>
             {boardMetaLine(board)}
           </span>
         </span>
         {people != null && (
-          <span className='hidden flex-none md:flex'>{people}</span>
+          <span className='hidden flex-none w960:flex'>{people}</span>
         )}
       </Slot>
       {action}

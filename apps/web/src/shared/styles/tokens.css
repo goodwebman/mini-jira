@@ -83,23 +83,6 @@
   --tint-pink: #fbe9f1;
   --tint-pink-foreground: #a12a63;
 
-  /* ---- Меню-плитки: активная / покой / текст / визуализация / подложка ---- */
-  --tile-blue-solid: #1d5499;
-  --tile-blue-tint: #e8f0fb;
-  --tile-blue-ink: #174478;
-  --tile-blue-viz: #256abf;
-  --tile-blue-soft: #cfe0f5;
-  --tile-violet-solid: #4a3ab0;
-  --tile-violet-tint: #efecfb;
-  --tile-violet-ink: #3a2d8f;
-  --tile-violet-viz: #6250d6;
-  --tile-violet-soft: #ddd7f6;
-  --tile-green-solid: #147a4b;
-  --tile-green-tint: #e3f5ec;
-  --tile-green-ink: #0f5c39;
-  --tile-green-viz: #199e70;
-  --tile-green-soft: #c3ead6;
-
   /* ---- Графики: выдавать по порядку, не перемешивая ---- */
   --chart-1: #256abf;
   --chart-2: #eb6834;
@@ -118,8 +101,8 @@
   --sh-modal: 0 16px 48px rgb(24 24 27 / 0.25);
   --sh-drawer: 8px 0 32px rgb(24 24 27 / 0.18);
 
-  /* ---- Типографика (десктоп 800–1799) ---- */
-  --fs-micro: 10px;
+  /* ---- Типографика ---- */
+  --fs-micro: 11px;
   --fs-caption: 12px;
   --fs-small: 13px;
   --fs-body: 14px;
@@ -164,55 +147,35 @@
   --textarea-min: 80px;
   --textarea-max: 320px;
 
-  /* Плитка меню не бывает ниже обязательного содержимого: отступы, шапка
-     (иконка или две строки названия, что выше), зазоры и подпись */
-  --tile-min: calc(
-    var(--space-4) * 2 + max(var(--avatar-lg), var(--fs-title) * 2.4) +
-      var(--space-3) + var(--space-2) + var(--fs-caption) * 1.34
-  );
-
   /* ---- Каркас ---- */
   --header: 64px;
   --page-padding: 24px;
   --block-gap: 16px;
   --sidebar: 260px;
-}
 
-/* 800–1279: меню сжимается до узких плиток */
-@media (width < 1280px) {
-  :root {
+  /* Компактная боковая навигация. */
+  @variant max-w1280 {
     --sidebar: 96px;
-    /* Узкая плитка: иконка и число. Подпись показывается, если останется место */
-    --tile-min: calc(
-      var(--space-3) * 2 + var(--avatar-lg) + var(--space-2) * 2 +
-        var(--fs-lead) * 1.5
-    );
   }
-}
 
-/* < 800: крупные контролы под палец, меню уходит из сайдбара */
-@media (width < 800px) {
-  :root {
+  /* Крупные контролы под палец, меню уходит из сайдбара. */
+  @variant max-w960 {
     --control-md: 44px;
     --icon-button: 36px;
     --page-padding: 16px;
     --block-gap: 12px;
     --sidebar: 0px;
   }
-}
 
-/* < 520: телефон. Поля 16 px, иначе iOS зумит экран при фокусе */
-@media (width < 520px) {
-  :root {
+  /* Поля 16 px, иначе iOS зумит экран при фокусе. */
+  @variant max-w640 {
     --fs-body: 15px;
     --fs-field: 16px;
     --chip: 44px;
   }
-}
 
-/* >= 1800: на больших экранах растут шрифт, контролы и отступы */
-@media (width >= 1800px) {
-  :root {
+  /* На широких экранах растут шрифт, контролы и отступы. */
+  @variant w1920 {
     --fs-micro: 12px;
     --fs-caption: 14px;
     --fs-small: 15px;
@@ -224,9 +187,6 @@
     --fs-metric: 36px;
     --fs-field: 16px;
 
-    --space-1: 6px;
-    --space-2: 10px;
-    --space-3: 14px;
     --space-4: 20px;
     --space-5: 24px;
     --space-6: 32px;
@@ -240,9 +200,6 @@
     --control-lg: 52px;
     --chip: 42px;
     --icon-button: 32px;
-    --icon-sm: 20px;
-    --icon-md: 22px;
-    --icon-lg: 24px;
     --avatar-xs: 30px;
     --avatar-sm: 34px;
     --avatar-md: 40px;
@@ -256,6 +213,5 @@
     --header: 80px;
     --page-padding: 32px;
     --block-gap: 20px;
-    --sidebar: 320px;
   }
 }

@@ -1,6 +1,10 @@
 import { type RefCallback, useCallback, useState } from 'react';
 
-import { type Breakpoint, useBreakpoint } from '@/shared/lib/hooks';
+import {
+  BREAKPOINTS,
+  type Breakpoint,
+  useBreakpoint,
+} from '@/shared/lib/hooks';
 
 /** Ширина до первого замера: в браузере замер успевает до paint. */
 const FALLBACK_WIDTH = 640;
@@ -8,8 +12,30 @@ const FALLBACK_WIDTH = 640;
 export type ChartHeightPreset = 'regular' | 'tall';
 
 const HEIGHTS: Record<ChartHeightPreset, Record<Breakpoint, number>> = {
-  tall: { wide: 340, desktop: 280, laptop: 260, tablet: 240, phone: 220 },
-  regular: { wide: 300, desktop: 240, laptop: 230, tablet: 220, phone: 200 },
+  tall: {
+    w320: 220,
+    w375: 220,
+    w438: 220,
+    w640: 240,
+    w960: 260,
+    w1280: 280,
+    w1440: 280,
+    w1920: 340,
+    w2k: 340,
+    w4k: 340,
+  },
+  regular: {
+    w320: 200,
+    w375: 200,
+    w438: 200,
+    w640: 220,
+    w960: 230,
+    w1280: 240,
+    w1440: 240,
+    w1920: 300,
+    w2k: 300,
+    w4k: 300,
+  },
 };
 
 export interface ChartBox {
@@ -52,6 +78,6 @@ export function useChartBox(
     ref,
     width,
     height: height ?? HEIGHTS[preset][breakpoint],
-    unit: breakpoint === 'wide' ? 1.2 : 1,
+    unit: BREAKPOINTS[breakpoint] >= BREAKPOINTS.w1920 ? 1.2 : 1,
   };
 }

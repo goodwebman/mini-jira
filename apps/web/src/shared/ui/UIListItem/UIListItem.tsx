@@ -56,9 +56,9 @@ const UIListItemBase = forwardRef<HTMLDivElement, IUIListItemProps>(
       <>
         {media}
         <span className='flex min-w-0 flex-1 flex-col'>
-          <span className='truncate font-medium'>{title}</span>
+          <span className='font-medium wrap-anywhere'>{title}</span>
           {description != null && (
-            <span className='truncate text-caption text-muted-foreground'>
+            <span className='text-caption wrap-anywhere text-muted-foreground'>
               {description}
             </span>
           )}
@@ -66,14 +66,14 @@ const UIListItemBase = forwardRef<HTMLDivElement, IUIListItemProps>(
       </>
     );
     const contentClass =
-      'flex min-w-0 flex-1 items-center gap-3 py-2 text-foreground no-underline';
+      'flex min-w-0 flex-[1_1_192px] items-center gap-3 text-foreground no-underline';
 
     return (
       <div
         ref={ref}
         data-name={testId ? `UIListItem-${testId}` : 'UIListItem'}
         className={cn(
-          'flex min-h-[calc(var(--avatar-lg)+24px)] items-center gap-x-3',
+          'flex min-h-[calc(var(--avatar-lg)+24px)] flex-wrap items-center gap-x-3 gap-y-2 py-2',
           divided ? 'border-t border-border' : 'rounded-card',
           // Подсветка отдельным слоем: выступает за края, а контент остаётся на линии с разделителями
           interactive && [
@@ -96,7 +96,9 @@ const UIListItemBase = forwardRef<HTMLDivElement, IUIListItemProps>(
           <div className={contentClass}>{content}</div>
         )}
         {actions != null && (
-          <div className='flex shrink-0 items-center gap-1'>{actions}</div>
+          <div className='ms-auto flex max-w-full flex-wrap items-center justify-end gap-1'>
+            {actions}
+          </div>
         )}
       </div>
     );

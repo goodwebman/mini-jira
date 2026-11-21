@@ -9,7 +9,7 @@ export function PersonalDataSkeleton() {
         <UISkeleton className='h-10 w-40' />
       </div>
       <div className='flex flex-col gap-4'>
-        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+        <div className='grid grid-cols-1 gap-4 w640:grid-cols-2'>
           {['name', 'email', 'job', 'timezone'].map((key) => (
             <div key={key} className='flex flex-col gap-1'>
               <UISkeleton className='h-[1.43em] w-24' />

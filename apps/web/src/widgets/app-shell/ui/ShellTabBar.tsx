@@ -5,7 +5,7 @@ import { UITabBar } from '@/shared/ui';
 import { useShellSection } from '../model/use-shell-navigation';
 import { SECTIONS } from './shell-sections';
 
-/** Вкладки разделов под шапкой (520–799 px). */
+/** Вкладки разделов под шапкой от 640 до 960 px. */
 export function ShellTabBar() {
   const section = useShellSection();
   return (

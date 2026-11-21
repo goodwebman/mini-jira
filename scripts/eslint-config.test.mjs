@@ -99,6 +99,28 @@ async function ruleIds(file, code) {
   return result.messages.map((message) => message.ruleId);
 }
 
+test('named viewport variants reject default prefixes in strings and templates', async () => {
+  const rule = 'mini-jira/named-viewport';
+  for (const source of [
+    '<div className="sm:hidden" />;',
+    'export const classes = "w640:hover:max-xl:flex";',
+    'export const classes = `2xl:grid ${"gap-2"}`;',
+    'export const classes = "min-md:grid";',
+  ]) {
+    assert.ok(
+      (await ruleIds('shared/viewport-check.tsx', source)).includes(rule),
+    );
+  }
+  const ids = await ruleIds(
+    'shared/viewport-check.tsx',
+    `
+    export const sizes = { sm: 'size-icon-sm' };
+    <div className="max-w640:hidden w640:max-w960:flex w1920:grid w2k:p-6 w4k:p-8" />;
+  `,
+  );
+  assert.ok(!ids.includes(rule), JSON.stringify(ids));
+});
+
 for (const [fromIndex, from] of layers.entries()) {
   for (const [toIndex, to] of layers.entries()) {
     if (from === to) continue;

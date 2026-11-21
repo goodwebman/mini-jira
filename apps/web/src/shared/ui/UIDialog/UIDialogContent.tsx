@@ -25,14 +25,14 @@ import { useDialogContext } from './dialog-context';
 const dialogPanelVariants = cva(
   [
     'relative flex flex-col bg-surface shadow-modal outline-none animate-dialog-in size-full',
-    'sm:h-auto sm:max-h-full sm:rounded-modal',
+    'w640:h-auto w640:max-h-full w640:rounded-modal',
   ],
   {
     variants: {
       size: {
-        sm: 'sm:max-w-[520px] xl:max-w-[640px]',
-        md: 'sm:max-w-[560px] xl:max-w-[720px]',
-        lg: 'sm:max-w-[640px] xl:max-w-[800px]',
+        sm: 'w640:max-w-[520px] w1920:max-w-[640px]',
+        md: 'w640:max-w-[560px] w1920:max-w-[720px]',
+        lg: 'w640:max-w-[640px] w1920:max-w-[800px]',
       },
     },
     defaultVariants: { size: 'sm' },
@@ -86,7 +86,7 @@ const UIDialogContentBase = forwardRef<HTMLDivElement, IUIDialogContentProps>(
 
     return (
       <Portal>
-        <div className='fixed inset-0 z-50 flex items-stretch justify-center sm:items-center sm:p-6'>
+        <div className='fixed inset-0 z-50 flex items-stretch justify-center w640:items-center w640:p-6'>
           <div
             aria-hidden='true'
             data-name='UIDialogOverlay'
@@ -104,9 +104,12 @@ const UIDialogContentBase = forwardRef<HTMLDivElement, IUIDialogContentProps>(
             className={cn(dialogPanelVariants({ size }), className)}
             {...props}
           >
-            <header className='flex shrink-0 items-center gap-2 border-b border-border py-4 pl-6 pr-4'>
+            <header className='flex shrink-0 items-center gap-2 border-b border-border px-4 py-3 w640:ps-6'>
               <div className='min-w-0 flex-1'>
-                <h2 id={titleId} className='m-0 text-title font-semibold'>
+                <h2
+                  id={titleId}
+                  className='m-0 text-title font-semibold wrap-anywhere'
+                >
                   {title}
                 </h2>
                 {description != null && (

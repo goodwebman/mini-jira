@@ -37,7 +37,7 @@ const UIPageHeaderRootBase = forwardRef<HTMLElement, IUIPageHeaderProps>(
       ref={ref}
       data-name={testId ? `UIPageHeader-${testId}` : 'UIPageHeader'}
       className={cn(
-        'flex h-header flex-none items-center gap-2 border-b border-border bg-surface px-page',
+        'flex min-h-header flex-none items-center gap-2 border-b border-border bg-surface px-page py-2',
         className,
       )}
       {...props}
@@ -47,24 +47,27 @@ const UIPageHeaderRootBase = forwardRef<HTMLElement, IUIPageHeaderProps>(
           label={backLabel}
           onClick={onBack}
           disabled={backDisabled}
-          className='-ml-[10px]'
+          className='-ms-2'
         >
           <UIIcons.ArrowLeft />
         </UIIconButton>
       )}
       <div className='flex min-w-0 flex-1 flex-col gap-1'>
-        <h1 className='m-0 text-heading font-semibold tracking-title'>
+        <h1 className='m-0 text-heading font-semibold'>
           {onTitleClick ? (
             <button
               type='button'
               onClick={onTitleClick}
-              className='inline-flex max-w-full cursor-pointer items-center gap-1 rounded-[2px] focus-ring'
+              aria-haspopup='dialog'
+              className='flex max-w-full cursor-pointer items-center gap-1 rounded-control text-start focus-ring'
             >
-              <span className='truncate'>{title}</span>
-              <UIIcons.ChevronDown className='size-icon-lg' />
+              <span className='line-clamp-2 min-w-0 wrap-anywhere'>
+                {title}
+              </span>
+              <UIIcons.ChevronDown className='size-icon shrink-0' />
             </button>
           ) : (
-            <span className='block truncate'>{title}</span>
+            <span className='line-clamp-2 wrap-anywhere'>{title}</span>
           )}
         </h1>
         {caption != null && (

@@ -9,5 +9,9 @@ export function BoardLayoutRoot({
 }: {
   readonly children?: ReactNode;
 }) {
-  return <div className='flex min-h-0 flex-1 flex-col gap-3'>{children}</div>;
+  return (
+    <div className='flex min-h-0 flex-none flex-col gap-3 w640:flex-1 w640:[@media(height<560px)]:min-h-[360px]'>
+      {children}
+    </div>
+  );
 }

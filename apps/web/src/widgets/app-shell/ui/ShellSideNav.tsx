@@ -12,7 +12,7 @@ import {
   useShellSummary,
 } from '../model/use-shell-navigation';
 
-/** Боковое меню-плитки (от 800 px): живая сводка по доске, задачам и KPI. */
+/** Боковое меню со сводкой по доске, задачам и KPI. */
 export function ShellSideNav() {
   const user = useSessionUser();
   const { pathname } = useLocation();
@@ -32,7 +32,6 @@ export function ShellSideNav() {
       }
     >
       <UISideNav.Tile
-        tone='blue'
         active={section === 'boards'}
         icon={<UIIcons.Board />}
         label='Доски'
@@ -42,8 +41,7 @@ export function ShellSideNav() {
           <Link
             to={ROUTES.BOARDS.build()}
             onClick={(event) => {
-              // С плитки — быстрый переключатель поверх текущего экрана, как в макете.
-              // Ctrl/⌘-клик по-прежнему открывает список в новой вкладке.
+              // Ctrl/⌘-клик открывает список в новой вкладке.
               if (pathname === ROUTES.BOARDS.path || !isPlainClick(event))
                 return;
               event.preventDefault();
@@ -57,7 +55,6 @@ export function ShellSideNav() {
         )}
       </UISideNav.Tile>
       <UISideNav.Tile
-        tone='violet'
         active={section === 'tasks'}
         icon={<UIIcons.Tasks />}
         label='Мои задачи'
@@ -70,7 +67,6 @@ export function ShellSideNav() {
         )}
       </UISideNav.Tile>
       <UISideNav.Tile
-        tone='green'
         active={section === 'kpi'}
         icon={<UIIcons.Chart />}
         label='KPI'

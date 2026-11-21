@@ -10,10 +10,7 @@ export interface IUISideNavBoardVizProps {
 /** Мини-доска на плитке: колонки с плашками задач. */
 function UISideNavBoardVizBase({ columns }: IUISideNavBoardVizProps) {
   return (
-    <div
-      aria-hidden='true'
-      className='flex min-h-0 flex-1 gap-1 overflow-hidden'
-    >
+    <div aria-hidden='true' className='flex h-20 gap-1 overflow-hidden'>
       {columns.map((count, column) => (
         <div
           // eslint-disable-next-line @eslint-react/no-array-index-key -- Колонки миниатюры обозначают позиции; это счётчики без состояния и идентификаторов задач.

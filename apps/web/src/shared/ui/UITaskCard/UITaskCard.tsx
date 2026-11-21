@@ -85,9 +85,7 @@ const UITaskCardBase = forwardRef<HTMLElement, IUITaskCardProps>(
         {priority && <UIPriority priority={priority} label={priorityLabel} />}
         <span className='min-w-0 truncate'>{taskKey}</span>
         {points != null && (
-          <span className='ml-auto shrink-0 rounded-tag bg-muted px-1 py-px text-foreground'>
-            {points}
-          </span>
+          <span className='ml-auto shrink-0 tabular-nums'>{points}</span>
         )}
       </div>
 

@@ -27,7 +27,7 @@ export function MyTasksCards({
   return (
     <ul
       aria-busy={loading}
-      className='m-0 flex list-none flex-col overflow-hidden rounded-block border border-border bg-surface p-0 sm:hidden'
+      className='m-0 flex list-none flex-col overflow-hidden rounded-block border border-border bg-surface p-0 w640:hidden'
     >
       {loading &&
         ['a', 'b', 'c', 'd', 'e', 'f'].map((key) => (

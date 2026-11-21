@@ -41,7 +41,6 @@ export const THEME_TOKENS = {
     'table-row',
     'textarea-min',
     'textarea-max',
-    'tile',
     'header',
     'page',
     'section',

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { readApiError } from '@/shared/api';
-import { UIAlert, UIButton, UIDialog, useToast } from '@/shared/ui';
+import { UIAlert, UIButton, UIDialog, UIIcons, useToast } from '@/shared/ui';
 
 import { useDeleteTask } from '../model/use-delete-task';
 
@@ -24,7 +24,8 @@ export function DeleteTaskButton({
   };
   return (
     <>
-      <UIButton variant='danger' size='sm' onClick={() => changeOpen(true)}>
+      <UIButton variant='danger-ghost' onClick={() => changeOpen(true)}>
+        <UIIcons.Trash />
         Удалить задачу
       </UIButton>
       <UIDialog open={open} onOpenChange={changeOpen}>

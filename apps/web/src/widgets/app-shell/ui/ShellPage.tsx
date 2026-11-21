@@ -40,9 +40,14 @@ export function ShellPage({
   children,
 }: IShellPageProps) {
   const notificationsEnabled = useContext(ShellNotificationsContext);
+  const paddingX =
+    scroll === 'fixed'
+      ? 'px-[max(var(--page-padding),calc((100%_-_1760px)/2))]'
+      : 'px-[max(var(--page-padding),calc((100%_-_1600px)/2))]';
   return (
     <>
       <UIPageHeader
+        className={paddingX}
         title={title}
         caption={caption}
         onBack={onBack}
@@ -58,10 +63,10 @@ export function ShellPage({
       <ShellTabBar />
       <main
         className={cn(
-          'flex min-h-0 min-w-0 flex-1 flex-col gap-section p-page',
-          scroll === 'auto'
-            ? 'overflow-y-auto scrollbar-thin'
-            : 'overflow-hidden',
+          'flex min-h-0 min-w-0 flex-1 flex-col gap-section overflow-y-auto py-page scrollbar-thin',
+          paddingX,
+          scroll === 'fixed' &&
+            'w640:[@media(min-height:560px)]:overflow-hidden',
           className,
         )}
       >

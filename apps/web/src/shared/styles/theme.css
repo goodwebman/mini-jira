@@ -16,11 +16,17 @@
   --shadow-*: initial;
   --breakpoint-*: initial;
 
-  /* 640 → sm, 960 → md, 1440 → lg, 1920 → xl */
-  --breakpoint-sm: 520px;
-  --breakpoint-md: 800px;
-  --breakpoint-lg: 1280px;
-  --breakpoint-xl: 1800px;
+  /* Брейкпоинты совпадают с BREAKPOINTS в use-breakpoint.ts. */
+  --breakpoint-w320: 320px;
+  --breakpoint-w375: 375px;
+  --breakpoint-w438: 438px;
+  --breakpoint-w640: 640px;
+  --breakpoint-w960: 960px;
+  --breakpoint-w1280: 1280px;
+  --breakpoint-w1440: 1440px;
+  --breakpoint-w1920: 1920px;
+  --breakpoint-w2k: 2560px;
+  --breakpoint-w4k: 3840px;
 
   --tracking-title: -0.01em;
   --tracking-display: -0.02em;
@@ -192,7 +198,6 @@
   --spacing-table-row: var(--table-row);
   --spacing-textarea-min: var(--textarea-min);
   --spacing-textarea-max: var(--textarea-max);
-  --spacing-tile: var(--tile-min);
   --spacing-header: var(--header);
   --spacing-page: var(--page-padding);
   --spacing-section: var(--block-gap);

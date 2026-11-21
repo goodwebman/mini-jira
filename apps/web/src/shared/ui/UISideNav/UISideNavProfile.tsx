@@ -17,7 +17,7 @@ export interface IUISideNavProfileProps extends Omit<
   readonly active?: boolean;
 }
 
-/** Ссылка на профиль внизу меню. В узком меню остаётся только аватар. */
+/** Ссылка на профиль внизу меню. */
 const UISideNavProfileBase = forwardRef<HTMLElement, IUISideNavProfileProps>(
   (
     {
@@ -37,16 +37,16 @@ const UISideNavProfileBase = forwardRef<HTMLElement, IUISideNavProfileProps>(
       aria-current={active ? 'page' : undefined}
       data-name={testId ? `UISideNavProfile-${testId}` : 'UISideNavProfile'}
       className={cn(
-        'flex min-h-[48px] flex-none items-center justify-center gap-2 rounded-block px-2 py-1 text-foreground no-underline',
-        'transition-colors duration-150 focus-ring hover:bg-muted lg:justify-start',
+        'flex min-h-12 flex-none flex-col items-center justify-center gap-1 rounded-control p-2 text-foreground no-underline w1280:flex-row w1280:gap-2',
+        'transition-colors duration-150 focus-ring hover:bg-muted w1280:justify-start',
         'aria-[current=page]:bg-primary-tint aria-[current=page]:text-primary-hover',
         className,
       )}
       {...props}
     >
       <UIAvatar name={name} src={avatarSrc} size='md' />
-      <span className='hidden min-w-0 flex-col lg:flex'>
-        <span className='truncate font-medium'>{name}</span>
+      <span className='flex min-w-0 flex-col'>
+        <span className='hidden truncate font-medium w1280:inline'>{name}</span>
         <span className='text-caption text-muted-foreground'>{caption}</span>
       </span>
     </Slot>

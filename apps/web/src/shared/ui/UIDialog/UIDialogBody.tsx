@@ -11,7 +11,7 @@ const UIDialogBodyBase = forwardRef<HTMLDivElement, IUIDialogBodyProps>(
       ref={ref}
       data-name='UIDialogBody'
       className={cn(
-        'min-h-0 flex-1 overflow-y-auto px-6 py-5 scrollbar-thin',
+        'min-h-0 flex-1 overflow-y-auto p-4 scrollbar-thin w640:px-6 w640:py-5',
         className,
       )}
       {...props}
