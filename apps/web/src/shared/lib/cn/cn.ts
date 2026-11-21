@@ -49,7 +49,7 @@ export const THEME_TOKENS = {
   radius: ['tag', 'control', 'card', 'block', 'modal'],
   shadow: ['popover', 'toast', 'modal', 'drawer'],
   tracking: ['title', 'display'],
-  animate: ['fade-in', 'dialog-in', 'toast-in', 'shimmer'],
+  animate: ['fade-in', 'dialog-in', 'toast-in', 'shimmer', 'autofill'],
 };
 
 const merge = extendTailwindMerge<'scrollbar'>({

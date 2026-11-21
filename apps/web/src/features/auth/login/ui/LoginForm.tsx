@@ -89,7 +89,7 @@ export function LoginForm({
       >
         <UIField label='Email' error={errors.email}>
           <UIInput
-            className='autofill:animate-autofill'
+            className='autofill:animate-autofill autofill:scale-autofill-text'
             name='email'
             type='email'
             autoComplete='username'
@@ -115,7 +115,7 @@ export function LoginForm({
           }
         >
           <UIInput
-            className='autofill:animate-autofill'
+            className='autofill:animate-autofill autofill:scale-autofill-text'
             name='password'
             type='password'
             autoComplete='current-password'

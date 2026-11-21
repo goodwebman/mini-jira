@@ -39,6 +39,18 @@
   }
 }
 
+@utility scale-autofill-text {
+  @supports (-webkit-app-region: drag) and (zoom: tan(atan2(16px, 13.333333px))) {
+    /* Chromium рисует предпросмотр шрифтом 13⅓ px. Коэффициент равен размеру текста поля / 13⅓ px. */
+    --autofill-scale: tan(atan2(var(--fs-field), 13.333333px));
+    zoom: var(--autofill-scale);
+    height: calc(var(--control-md) / var(--autofill-scale));
+    padding-inline: calc(var(--space-3) / var(--autofill-scale));
+    border-radius: calc(var(--r-control) / var(--autofill-scale));
+    font-size: calc(var(--fs-field) / var(--autofill-scale));
+  }
+}
+
 @utility scrollbar-thin {
   @variant w960 {
     scrollbar-width: thin;
