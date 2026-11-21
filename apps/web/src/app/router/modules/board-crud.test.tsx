@@ -161,6 +161,9 @@ describe('управление доской', () => {
     await waitFor(() => expect(localStorage.getItem(storageKey)).toBe('9'));
 
     fireEvent.click(remove);
+    expect(
+      screen.getByRole('dialog', { name: 'Удалить доску?' }),
+    ).toHaveAccessibleDescription(/Разработка.*без возможности восстановления/);
     const dialog = () =>
       within(screen.getByRole('dialog', { name: /Удалить доску/ }));
     fireEvent.click(dialog().getByRole('button', { name: 'Отмена' }));

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 import type { BoardDetail } from '@/entities/board';
 import { readApiError } from '@/shared/api';
@@ -21,6 +21,7 @@ export function DeleteBoardButton({
   readonly onDeleted: () => Promise<void> | void;
 }) {
   const [open, setOpen] = useState(false);
+  const descriptionId = useId();
   const { toast } = useToast();
   const mutation = useDeleteBoard(board, () => {
     toast(`Доска «${board.name}» удалена`);
@@ -43,16 +44,21 @@ export function DeleteBoardButton({
       </UIIconButton>
       <UIDialog open={open} onOpenChange={changeOpen}>
         <UIDialog.Content
-          title={`Удалить доску «${board.name}»?`}
-          description='Доска, её задачи, спринты, комментарии и история времени будут удалены без возможности восстановления.'
+          title='Удалить доску?'
+          aria-describedby={descriptionId}
         >
-          {mutation.error && (
-            <UIDialog.Body>
+          <UIDialog.Body className='flex flex-col gap-4'>
+            <p id={descriptionId} className='m-0 wrap-anywhere'>
+              Доска «<strong>{board.name}</strong>», её задачи, спринты,
+              комментарии и история времени будут удалены без возможности
+              восстановления.
+            </p>
+            {mutation.error && (
               <UIAlert tone='danger'>
                 {readApiError(mutation.error).message}
               </UIAlert>
-            </UIDialog.Body>
-          )}
+            )}
+          </UIDialog.Body>
           <UIDialog.Footer>
             <UIDialog.Close disabled={mutation.isPending}>
               Отмена
