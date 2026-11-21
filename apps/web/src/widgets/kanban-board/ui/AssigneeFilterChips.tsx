@@ -22,6 +22,7 @@ export function AssigneeFilterChips({
   onClear,
   onAddPeople,
 }: IAssigneeFilterChipsProps) {
+  const selected = new Set(selectedIds);
   return (
     <>
       <UIChip pressed={selectedIds.length === 0} onClick={onClear}>
@@ -31,7 +32,7 @@ export function AssigneeFilterChips({
         <UserChip
           key={member.id}
           user={member}
-          pressed={selectedIds.includes(member.id)}
+          pressed={selected.has(member.id)}
           onToggle={() => onToggle(member.id)}
         />
       ))}

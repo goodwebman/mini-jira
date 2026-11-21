@@ -19,9 +19,9 @@ export function effectiveFilters(
   filters: TaskFilters,
   assignableIds: readonly string[],
 ): TaskFilters {
-  const assigneeIds = filters.assigneeIds.filter((id) =>
-    assignableIds.includes(id),
-  );
+  if (filters.assigneeIds.length === 0) return filters;
+  const assignable = new Set(assignableIds);
+  const assigneeIds = filters.assigneeIds.filter((id) => assignable.has(id));
   return assigneeIds.length === filters.assigneeIds.length
     ? filters
     : { ...filters, assigneeIds };
@@ -45,24 +45,25 @@ export function matchesTaskFilters(
   task: Pick<TaskCard, 'key' | 'people' | 'priority' | 'title'>,
   filters: TaskFilters,
 ): boolean {
+  return createTaskFilterMatcher(filters)(task);
+}
+
+function createTaskFilterMatcher(filters: TaskFilters) {
   const query = filters.query.trim().toLowerCase();
-  if (
-    query &&
-    !task.title.toLowerCase().includes(query) &&
-    !task.key.toLowerCase().includes(query)
-  )
-    return false;
-  if (filters.priority !== 'all' && task.priority !== filters.priority)
-    return false;
-  if (filters.assigneeIds.length === 0) return true;
-  const people = taskPeopleIds(task.people);
-  return filters.assigneeIds.some((id) => people.includes(id));
+  const assignees = new Set(filters.assigneeIds);
+  return (task: Pick<TaskCard, 'key' | 'people' | 'priority' | 'title'>) =>
+    (filters.priority === 'all' || task.priority === filters.priority) &&
+    (!query ||
+      task.title.toLowerCase().includes(query) ||
+      task.key.toLowerCase().includes(query)) &&
+    (assignees.size === 0 ||
+      taskPeopleIds(task.people).some((id) => assignees.has(id)));
 }
 
 export function filterTasks<
   T extends Pick<TaskCard, 'key' | 'people' | 'priority' | 'title'>,
 >(tasks: readonly T[], filters: TaskFilters): T[] {
   return hasActiveTaskFilters(filters)
-    ? tasks.filter((task) => matchesTaskFilters(task, filters))
+    ? tasks.filter(createTaskFilterMatcher(filters))
     : [...tasks];
 }

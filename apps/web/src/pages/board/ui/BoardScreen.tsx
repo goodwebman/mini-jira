@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import type { TaskStatus } from '@gwmt/contracts';
 import { usePrefetchQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 
 import { useSessionUser } from '@/entities/auth';
 import {
@@ -15,7 +15,6 @@ import {
 } from '@/entities/board';
 import { sprintCaption } from '@/entities/sprint';
 import {
-  type TaskFilters,
   TaskPriorityFilter,
   TaskSearchInput,
   boardTasksQueryOptions,
@@ -34,10 +33,6 @@ import {
   KanbanSkeleton,
 } from '@/widgets/kanban-board';
 
-import {
-  readBoardFilters,
-  writeBoardFilters,
-} from '../model/board-filter-params';
 import { BoardTasks } from './BoardTasks';
 
 export function BoardScreen({ boardId }: { readonly boardId: number }) {
@@ -46,7 +41,6 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
   const shell = useAppShell();
   const navigate = useNavigate();
   const { search } = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
   usePrefetchQuery(boardTasksQueryOptions(boardId));
   const { data: board } = useSuspenseQuery(boardQueryOptions(boardId));
   const [createStatus, setCreateStatus] = useState<null | TaskStatus>(null);
@@ -55,14 +49,10 @@ export function BoardScreen({ boardId }: { readonly boardId: number }) {
   const permissions = getBoardPermissions(board.myRole);
   const people = assignableMembers(board.members);
   const filters = effectiveFilters(
-    readBoardFilters(searchParams),
+    workspace.filters,
     people.map((member) => member.id),
   );
-  const updateFilters = (patch: Partial<TaskFilters>) =>
-    setSearchParams((current) => writeBoardFilters(current, patch), {
-      replace: true,
-      preventScrollReset: true,
-    });
+  const { updateFilters } = workspace;
 
   return (
     <ShellPage

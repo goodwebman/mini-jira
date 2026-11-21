@@ -26,5 +26,6 @@ export function useBoardWorkspace(): BoardWorkspace {
     boardId: store.boardId,
     selectPhoneColumn: store.selectPhoneColumn,
     focusTask: store.focusTask,
+    updateFilters: store.updateFilters,
   };
 }

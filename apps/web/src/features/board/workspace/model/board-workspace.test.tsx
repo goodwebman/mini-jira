@@ -5,12 +5,15 @@
 import { act, render, renderHook, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { createStoragePersistence } from '@/shared/lib/store';
+
 import { BoardWorkspaceProvider } from '../ui/BoardWorkspaceProvider';
 import { useBoardWorkspace } from './board-workspace.di';
 import {
   INITIAL_WORKSPACE,
   createBoardWorkspaceStore,
 } from './board-workspace.store';
+import { parseStoredBoardFilters } from './stored-board-filters';
 
 const createStore = () => createBoardWorkspaceStore({ boardId: 9 });
 
@@ -24,9 +27,54 @@ describe('createBoardWorkspaceStore', () => {
     store.selectPhoneColumn('done');
     store.focusTask('GWT-1');
     expect(store.getSnapshot()).toEqual({
+      ...INITIAL_WORKSPACE,
       phoneColumn: 'done',
       focusedTaskKey: 'GWT-1',
     });
+  });
+
+  it('восстанавливает 200 исполнителей и сохраняет только фильтры', () => {
+    const key = 'board-workspace-test';
+    const create = () =>
+      createBoardWorkspaceStore({
+        boardId: 9,
+        filterPersistence: createStoragePersistence(
+          localStorage,
+          key,
+          parseStoredBoardFilters,
+        ),
+      });
+    const assigneeIds = Array.from({ length: 200 }, () => crypto.randomUUID());
+    const store = create();
+    store.updateFilters({ assigneeIds });
+    store.updateFilters({ query: 'Экран', priority: 'high' });
+    store.selectPhoneColumn('done');
+    store.focusTask('GWT-1');
+
+    const reloaded = create();
+    expect(reloaded.getSnapshot()).toEqual({
+      ...INITIAL_WORKSPACE,
+      filters: { query: 'Экран', priority: 'high', assigneeIds },
+    });
+    reloaded.updateFilters(INITIAL_WORKSPACE.filters);
+    expect(localStorage.getItem(key)).toBeNull();
+  });
+
+  it('отклоняет сохранённые фильтры с некорректными данными', () => {
+    expect(
+      parseStoredBoardFilters({
+        query: '',
+        priority: 'high',
+        assigneeIds: [1],
+      }),
+    ).toBeNull();
+    expect(
+      parseStoredBoardFilters({
+        query: '',
+        priority: 'unknown',
+        assigneeIds: [],
+      }),
+    ).toBeNull();
   });
 
   it('повторный фокус той же задачи не будит подписчиков', () => {

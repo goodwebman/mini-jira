@@ -8,4 +8,5 @@ export {
   type BoardWorkspaceStore,
   createBoardWorkspaceStore,
 } from './model/board-workspace.store';
+export { parseStoredBoardFilters } from './model/stored-board-filters';
 export { BoardWorkspaceProvider } from './ui/BoardWorkspaceProvider';
