@@ -5,9 +5,10 @@ import {
   TASK_STATUS_LABELS,
   canCreateInStatus,
 } from '@/entities/task';
-import { UIChip, UIKanbanColumn, UISkeleton } from '@/shared/ui';
+import { UIChip, UISkeleton } from '@/shared/ui';
 
 import { BoardLayout } from './BoardLayout';
+import { KanbanColumn } from './KanbanColumn';
 import { TaskCardSkeleton } from './TaskCardSkeleton';
 
 export function KanbanSkeleton({
@@ -32,7 +33,7 @@ export function KanbanSkeleton({
       </BoardLayout.PhoneColumns>
       <BoardLayout.Columns loading>
         {TASK_STATUSES.map((status) => (
-          <UIKanbanColumn
+          <KanbanColumn
             key={status}
             status={status}
             title={TASK_STATUS_LABELS[status]}
@@ -43,7 +44,7 @@ export function KanbanSkeleton({
             {['a', 'b', 'c'].map((key) => (
               <TaskCardSkeleton key={key} />
             ))}
-          </UIKanbanColumn>
+          </KanbanColumn>
         ))}
       </BoardLayout.Columns>
     </>

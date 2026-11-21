@@ -1,8 +1,7 @@
-/** Статусы задач. Совпадают с `TaskStatus` из @gwmt/contracts. */
-export type UITaskStatus = 'done' | 'review' | 'test' | 'todo' | 'work';
+import type { TaskStatus } from '@gwmt/contracts';
 
 /** Цвет точки статуса: бейдж и заголовок колонки. */
-export const STATUS_DOT_CLASS: Record<UITaskStatus, string> = {
+export const TASK_STATUS_DOT_CLASS: Record<TaskStatus, string> = {
   todo: 'bg-status-todo',
   work: 'bg-status-work',
   review: 'bg-status-review',
@@ -10,7 +9,7 @@ export const STATUS_DOT_CLASS: Record<UITaskStatus, string> = {
   done: 'bg-status-done',
 };
 
-export const STATUS_TINT_CLASS: Record<UITaskStatus, string> = {
+export const STATUS_TINT_CLASS: Record<TaskStatus, string> = {
   todo: 'bg-status-todo-tint',
   work: 'bg-status-work-tint',
   review: 'bg-status-review-tint',

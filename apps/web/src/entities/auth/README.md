@@ -31,6 +31,9 @@ entities/auth/
 В mini-jira работает Bearer + refresh-cookie; остальные стратегии — переносимые
 реализации для других API, приложение не включает их одновременно.
 
+В `entities/auth/index.ts` перечислены входы, которыми пользуется mini-jira.
+У переносимого ядра свой публичный вход в `lib/index.ts`.
+
 ## Быстрый старт
 
 Нужны `VITE_APP_VERSION` и `VITE_AUTH_SALT`, см. `apps/web/.env.example`.

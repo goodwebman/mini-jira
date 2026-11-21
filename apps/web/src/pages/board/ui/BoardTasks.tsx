@@ -3,12 +3,12 @@ import type { BoardDetail, TaskStatus } from '@gwmt/contracts';
 import { useSessionUser } from '@/entities/auth';
 import { getBoardPermissions } from '@/entities/board';
 import { type TaskFilters, filterTasks } from '@/entities/task';
-import { useLiveBoardTasks } from '@/features/board/sync-tasks';
 import { useBoardWorkspace } from '@/features/board/workspace';
 import {
   BoardLayout,
   KanbanBoard,
   PhoneColumnChips,
+  useLiveBoardTasks,
 } from '@/widgets/kanban-board';
 
 export function BoardTasks({

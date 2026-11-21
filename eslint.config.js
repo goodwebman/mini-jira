@@ -66,6 +66,21 @@ const namedViewportRule = {
     };
   },
 };
+const namedSliceExportsRule = {
+  meta: {
+    schema: [],
+    messages: {
+      nameExports: 'FSD: name each export in the public API of a slice.',
+    },
+  },
+  create(context) {
+    return {
+      ExportAllDeclaration(node) {
+        context.report({ node, messageId: 'nameExports' });
+      },
+    };
+  },
+};
 
 export default defineConfig([
   globalIgnores([
@@ -166,7 +181,12 @@ export default defineConfig([
       'import-x': importX,
       '@eslint-react': react,
       tailwindcss,
-      'mini-jira': { rules: { 'named-viewport': namedViewportRule } },
+      'mini-jira': {
+        rules: {
+          'named-viewport': namedViewportRule,
+          'named-slice-exports': namedSliceExportsRule,
+        },
+      },
     },
     settings: {
       ...importX.flatConfigs.typescript.settings,
@@ -299,6 +319,15 @@ export default defineConfig([
           ],
         },
       ],
+    },
+  },
+  {
+    files: sliceLayers.map(
+      (layer) =>
+        `apps/web/src/${layer}/${groupedLayers.has(layer) ? '*/*' : '*'}/index.{ts,tsx,js,jsx}`,
+    ),
+    rules: {
+      'mini-jira/named-slice-exports': 'error',
     },
   },
   {

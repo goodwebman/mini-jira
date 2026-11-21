@@ -2,9 +2,11 @@ import type { TaskCard, TaskStatus } from '@gwmt/contracts';
 
 import {
   TASK_STATUSES,
+  TASK_STATUS_DOT_CLASS,
   TASK_STATUS_LABELS,
   groupTasksByStatus,
 } from '@/entities/task';
+import { cn } from '@/shared/lib/cn';
 import { UIChip } from '@/shared/ui';
 
 /** Выбор колонки на телефоне: там видна одна колонка, рядом — число задач в ней. */
@@ -25,7 +27,17 @@ export function PhoneColumnChips({
       pressed={value === status}
       onClick={() => onSelect(status)}
     >
-      {TASK_STATUS_LABELS[status]} {columns[status].length}
+      <span
+        aria-hidden='true'
+        className={cn(
+          'size-1.5 shrink-0 rounded-full',
+          TASK_STATUS_DOT_CLASS[status],
+        )}
+      />
+      {TASK_STATUS_LABELS[status]}{' '}
+      <span className='rounded-full bg-muted px-1.5 text-micro text-muted-foreground tabular-nums'>
+        {columns[status].length}
+      </span>
     </UIChip>
   ));
 }

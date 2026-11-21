@@ -1,4 +1,3 @@
-import type { AuthFetch } from './adapters/fetch';
 import type { AuthError } from './errors';
 
 export type MaybePromise<T> = Promise<T> | T;
@@ -166,6 +165,16 @@ export interface AuthPersistence<TCredentials, TUser> {
   save(session: PersistedSession<TCredentials, TUser>): MaybePromise<void>;
   clear(): MaybePromise<void>;
 }
+
+export interface AuthRequestInit extends RequestInit {
+  /** Отправить запрос без подписи. */
+  readonly skipAuth?: boolean;
+}
+
+export type AuthFetch = (
+  input: RequestInfo | URL,
+  init?: AuthRequestInit,
+) => Promise<Response>;
 
 export interface FetchUserContext {
   /** Авторизованный fetch: сам обновит токен и повторит запрос. */

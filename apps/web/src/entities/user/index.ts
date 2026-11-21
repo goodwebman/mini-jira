@@ -4,7 +4,11 @@ export {
   userSearchPath,
   userSearchQueryOptions,
 } from './api/userQueries';
-export type * from './model';
+export type {
+  UserSearchQuery,
+  UserBrief,
+  UserSearchResponse,
+} from './model/types';
 export { firstName, userTint } from './model/user-view';
 export { NOBODY } from './model/nobody';
 export { type IUserAvatarProps, UserAvatar } from './ui/UserAvatar';

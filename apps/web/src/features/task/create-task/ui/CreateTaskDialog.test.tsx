@@ -96,9 +96,14 @@ describe('CreateTaskDialog', () => {
     fireEvent.change(within(dialog).getByLabelText('Название'), {
       target: { value: 'Экран входа' },
     });
-    fireEvent.change(within(dialog).getByLabelText('Оценка, SP'), {
-      target: { value: '3' },
-    });
+    const estimate = within(dialog).getByLabelText('Оценка, SP');
+    fireEvent.change(estimate, { target: { value: '3' } });
+    expect(estimate).toHaveValue('3');
+    fireEvent.change(estimate, { target: { value: '3a' } });
+    fireEvent.change(estimate, { target: { value: '3e1' } });
+    expect(estimate).toHaveValue('3');
+    fireEvent.change(estimate, { target: { value: '3,5' } });
+    expect(estimate).toHaveValue('3,5');
     expect(button).toBeDisabled();
     fireEvent.change(within(dialog).getByLabelText('Ревьювер'), {
       target: { value: users.anna.id },
@@ -119,7 +124,7 @@ describe('CreateTaskDialog', () => {
     expect(api.callsTo('POST', '/boards/9/tasks')[0]?.body).toMatchObject({
       title: 'Экран входа',
       status: 'todo',
-      sp: 3,
+      sp: 3.5,
       authorId: users.ivan.id,
       reviewerId: users.anna.id,
     });

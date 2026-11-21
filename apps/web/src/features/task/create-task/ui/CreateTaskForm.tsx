@@ -186,9 +186,12 @@ export function CreateTaskForm({
           <UIField label='Оценка, SP' error={errors.sp} className={HALF}>
             <UIInput
               inputMode='decimal'
-              placeholder='Например, 3'
+              placeholder='Например, 2,5'
               value={draft.sp}
-              onChange={(event) => set('sp', event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value.trim();
+                if (/^\d*(?:[.,]\d*)?$/.test(value)) set('sp', value);
+              }}
             />
           </UIField>
           <UIField label='Автор' error={errors.authorId} className={HALF}>

@@ -6,19 +6,15 @@ import {
   memo,
 } from 'react';
 
+import type { TaskStatus } from '@gwmt/contracts';
+
+import { TASK_STATUS_DOT_CLASS } from '@/entities/task';
 import { cn } from '@/shared/lib/cn';
-import {
-  STATUS_DOT_CLASS,
-  type UITaskStatus,
-} from '@/shared/ui/UIStatusBadge/status.styles';
 import { UIIcons } from '@/shared/ui/icons';
 
-export interface IUIKanbanColumnProps extends Omit<
-  HTMLAttributes<HTMLElement>,
-  'title'
-> {
+interface KanbanColumnProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   readonly testId?: string;
-  readonly status: UITaskStatus;
+  readonly status: TaskStatus;
   /** Название колонки; оно же её доступное имя. */
   readonly title: string;
   readonly count?: number;
@@ -38,11 +34,11 @@ export interface IUIKanbanColumnProps extends Omit<
  * На телефоне колонка без фона и шапки: выбор статуса делают через UIChip variant="status".
  *
  * @example
- * <UIKanbanColumn status="work" title="В работе" count={3} meta="13 SP" onAdd={add}>
- *   <UITaskCard … />
- * </UIKanbanColumn>
+ * <KanbanColumn status="work" title="В работе" count={3} meta="13 SP" onAdd={add}>
+ *   <TaskCard … />
+ * </KanbanColumn>
  */
-const UIKanbanColumnBase = forwardRef<HTMLElement, IUIKanbanColumnProps>(
+const KanbanColumnBase = forwardRef<HTMLElement, KanbanColumnProps>(
   (
     {
       className,
@@ -78,7 +74,7 @@ const UIKanbanColumnBase = forwardRef<HTMLElement, IUIKanbanColumnProps>(
           aria-hidden='true'
           className={cn(
             'size-2 shrink-0 rounded-full',
-            STATUS_DOT_CLASS[status],
+            TASK_STATUS_DOT_CLASS[status],
           )}
         />
         <h2 className='m-0 text-[length:inherit] font-semibold'>{title}</h2>
@@ -114,5 +110,5 @@ const UIKanbanColumnBase = forwardRef<HTMLElement, IUIKanbanColumnProps>(
     </section>
   ),
 );
-UIKanbanColumnBase.displayName = 'UIKanbanColumn';
-export const UIKanbanColumn = memo(UIKanbanColumnBase);
+KanbanColumnBase.displayName = 'UIKanbanColumn';
+export const KanbanColumn = memo(KanbanColumnBase);

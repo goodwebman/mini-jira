@@ -17,6 +17,17 @@
   }
 }
 
+/* Вне слоёв Tailwind, чтобы мобильный режим имел приоритет над scrollbar-thin. */
+* {
+  @variant max-w960 {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
 /* Единый фокус интерактивов. Цвет меняется через --focus-color (у опасной кнопки — красный). */
 @utility focus-ring {
   /* Цвет задан заранее: иначе transition-colors проявляет рамку из цвета текста */
@@ -29,7 +40,20 @@
 }
 
 @utility scrollbar-thin {
-  scrollbar-width: thin;
+  @variant w960 {
+    scrollbar-width: thin;
+    scrollbar-color: var(--input) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--input);
+      border-radius: 9999px;
+    }
+  }
 }
 
 @utility scrollbar-none {

@@ -1,10 +1,13 @@
 import { type HTMLAttributes, type ReactNode, forwardRef, memo } from 'react';
 
+import type { TaskPriority } from '@gwmt/contracts';
+
 import { cn } from '@/shared/lib/cn';
 import { type RenderElement, Slot } from '@/shared/lib/dom';
-import { UIPriority, type UITaskPriority } from '@/shared/ui/UIPriority';
 
-export interface IUITaskCardProps extends Omit<
+import { TaskPriorityMark } from './TaskPriorityMark';
+
+export interface TaskCardLayoutProps extends Omit<
   HTMLAttributes<HTMLElement>,
   'title'
 > {
@@ -14,9 +17,7 @@ export interface IUITaskCardProps extends Omit<
   readonly title: string;
   /** Оценка, например «5 SP». */
   readonly points?: ReactNode;
-  readonly priority?: UITaskPriority;
-  /** Имя приоритета для скринридера. */
-  readonly priorityLabel?: string;
+  readonly priority?: TaskPriority;
   /** Адрес задачи. */
   readonly href?: string;
   /** Роутерная ссылка вместо `<a>`. */
@@ -36,7 +37,7 @@ export interface IUITaskCardProps extends Omit<
  * Ссылка растянута на всю карточку; `draggable`, `onDragStart` вешаются прямо на неё.
  *
  * @example
- * <UITaskCard
+ * <TaskCardLayout
  *   taskKey="MJ-143"
  *   title="Панель свойств задачи"
  *   points="5 SP"
@@ -47,7 +48,7 @@ export interface IUITaskCardProps extends Omit<
  *   people={<UIAvatar.Group><UIAvatar name="Иван Петров" size="xs" /></UIAvatar.Group>}
  * />
  */
-const UITaskCardBase = forwardRef<HTMLElement, IUITaskCardProps>(
+const TaskCardLayoutBase = forwardRef<HTMLElement, TaskCardLayoutProps>(
   (
     {
       className,
@@ -56,7 +57,6 @@ const UITaskCardBase = forwardRef<HTMLElement, IUITaskCardProps>(
       title,
       points,
       priority,
-      priorityLabel,
       href,
       render,
       badges,
@@ -82,7 +82,7 @@ const UITaskCardBase = forwardRef<HTMLElement, IUITaskCardProps>(
       {...props}
     >
       <div className='flex items-center gap-1 text-caption font-medium text-muted-foreground'>
-        {priority && <UIPriority priority={priority} label={priorityLabel} />}
+        {priority && <TaskPriorityMark priority={priority} />}
         <span className='min-w-0 truncate'>{taskKey}</span>
         {points != null && (
           <span className='ml-auto shrink-0 tabular-nums'>{points}</span>
@@ -114,5 +114,5 @@ const UITaskCardBase = forwardRef<HTMLElement, IUITaskCardProps>(
     </article>
   ),
 );
-UITaskCardBase.displayName = 'UITaskCard';
-export const UITaskCard = memo(UITaskCardBase);
+TaskCardLayoutBase.displayName = 'UITaskCard';
+export const TaskCardLayout = memo(TaskCardLayoutBase);

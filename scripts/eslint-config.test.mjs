@@ -288,6 +288,31 @@ test('one component per file: tests may declare local components', async () => {
   assert.ok(!ids.includes('no-restricted-syntax'), JSON.stringify(ids));
 });
 
+test('slice public APIs require named value and type re-exports', async () => {
+  const entry = 'features/group/alpha/index.ts';
+  for (const statement of [
+    "export * from './internal';",
+    "export type * from './internal';",
+  ]) {
+    assert.ok(
+      (await ruleIds(entry, statement)).includes(
+        'mini-jira/named-slice-exports',
+      ),
+    );
+  }
+  for (const extension of ['tsx', 'js', 'jsx']) {
+    const ids = await ruleIds(
+      `features/group/alpha/index.${extension}`,
+      "export * from './internal';",
+    );
+    assert.ok(ids.includes('mini-jira/named-slice-exports'), extension);
+  }
+  assert.deepEqual(
+    await ruleIds(entry, "export { value } from './internal';"),
+    [],
+  );
+});
+
 test('shared internals can import each other directly', async () => {
   assert.deepEqual(
     await ruleIds(

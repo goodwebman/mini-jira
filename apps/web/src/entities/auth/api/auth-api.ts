@@ -7,15 +7,15 @@ import {
   meSchema,
 } from '@gwmt/contracts';
 
+import { getApiUrl } from '@/shared/api';
+
 import {
   AuthError,
   type AuthErrorBodyReader,
   type BearerApi,
   type BearerTokens,
   type FetchUserContext,
-} from '@/entities/auth/lib';
-import { getApiUrl } from '@/shared/api';
-
+} from '../lib';
 import { createLoginSignature } from './login-signature';
 
 export type CredentialsInput =

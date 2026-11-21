@@ -17,7 +17,17 @@ export {
   updateBoardMember,
 } from './api/boardMembers';
 export { setBoardFavoriteInCache, writeBoardFavorite } from './api/board-cache';
-export type * from './model';
+export type {
+  BoardsQuery,
+  AddMemberBody,
+  BoardDetail,
+  BoardListItem,
+  BoardListResponse,
+  BoardMember,
+  BoardRole,
+  CreateBoardBody,
+  UpdateMemberBody,
+} from './model/types';
 export {
   BOARD_ROLE_META,
   BOARD_ROLE_OPTIONS,

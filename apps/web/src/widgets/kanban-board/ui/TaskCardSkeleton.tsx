@@ -1,9 +1,10 @@
-import { UIBadge, UISkeleton, UITaskCard } from '@/shared/ui';
+import { TaskCardLayout } from '@/entities/task';
+import { UIBadge, UISkeleton } from '@/shared/ui';
 
 /** Та же карточка и те же строки: высота следует типографике и токенам проекта. */
 export function TaskCardSkeleton() {
   return (
-    <UITaskCard
+    <TaskCardLayout
       aria-hidden='true'
       className='pointer-events-none [&_a]:rounded-control [&_a]:bg-muted [&_a]:text-transparent'
       taskKey='…'

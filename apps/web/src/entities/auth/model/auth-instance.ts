@@ -1,18 +1,15 @@
 import type { Me } from '@gwmt/contracts';
 
-import {
-  type CredentialsInput,
-  authApi,
-  fetchMe,
-} from '@/entities/auth/api/auth-api';
+import { getApiUrl, requireApiUrl } from '@/shared/api';
+
+import { type CredentialsInput, authApi, fetchMe } from '../api/auth-api';
 import {
   AuthService,
   type BearerCredentials,
   BearerStrategy,
   type SsoLoginInput,
   withSsoRedirect,
-} from '@/entities/auth/lib';
-import { getApiUrl, requireApiUrl } from '@/shared/api';
+} from '../lib';
 
 export type OAuthProvider = 'github' | 'google';
 export type AuthLoginInput =

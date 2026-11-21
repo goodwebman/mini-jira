@@ -1,14 +1,9 @@
-import type { AuthAttempt, AuthPipeline, AuthResponseInfo } from '../types';
-
-export interface AuthRequestInit extends RequestInit {
-  /** Отправить запрос без подписи. */
-  readonly skipAuth?: boolean;
-}
-
-export type AuthFetch = (
-  input: RequestInfo | URL,
-  init?: AuthRequestInit,
-) => Promise<Response>;
+import type {
+  AuthAttempt,
+  AuthFetch,
+  AuthPipeline,
+  AuthResponseInfo,
+} from '../types';
 
 export interface CreateAuthFetchOptions {
   /** Базовый fetch. Не должен быть авторизованным. */

@@ -49,7 +49,7 @@ const UIChipBase = forwardRef<HTMLButtonElement, IUIChipProps>(
       data-name={testId ? `UIChip-${testId}` : 'UIChip'}
       className={cn(
         chipVariants({ variant }),
-        avatar != null && 'pl-[5px]',
+        avatar != null && 'pl-1.5 w640:pl-1 w1920:pl-1',
         className,
       )}
       {...props}

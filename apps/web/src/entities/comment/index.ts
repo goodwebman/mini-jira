@@ -1,7 +1,7 @@
 export { createComment, updateComment, deleteComment } from './api/comment-api';
 export { MentionTextarea } from './ui/MentionTextarea';
 export { buildCommentThread } from './model/comment-thread';
-export type * from './model';
+export type { CreateCommentBody, TaskComment } from './model/types';
 export { CommentItem, type ICommentItemProps } from './ui/CommentItem';
 export {
   commentMentionQuery,

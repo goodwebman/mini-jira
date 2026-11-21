@@ -17,7 +17,7 @@ type MovableTask = Pick<
   'boardId' | 'isTakeLocked' | 'key' | 'people' | 'status'
 >;
 
-const MUTATION_KEY = ['task', 'change-status'] as const;
+export const TASK_STATUS_MUTATION_KEY = ['task', 'change-status'] as const;
 
 /**
  * Смена статуса: перетаскивание на доске и селект на странице задачи.
@@ -33,7 +33,7 @@ export function useChangeTaskStatus(actor: MoveActor) {
   const { toast } = useToast();
 
   const mutation = useMutation({
-    mutationKey: MUTATION_KEY,
+    mutationKey: TASK_STATUS_MUTATION_KEY,
     mutationFn: ({ task, status }: { task: MovableTask; status: TaskStatus }) =>
       updateTask(task.key, { status }),
     onMutate: ({ task, status }) =>
@@ -50,7 +50,7 @@ export function useChangeTaskStatus(actor: MoveActor) {
     onSuccess: (card) => putTaskCardInCache(client, card),
     // Блокеры соседних задач, «Мои задачи», сводка и KPI зависят от статуса
     onSettled: () =>
-      client.isMutating({ mutationKey: MUTATION_KEY }) === 1
+      client.isMutating({ mutationKey: TASK_STATUS_MUTATION_KEY }) === 1
         ? invalidateTags(client, [QUERY_TAGS.tasks])
         : undefined,
   });

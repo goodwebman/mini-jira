@@ -24,12 +24,7 @@ export type {
 } from './platform/types';
 export type * from './types';
 
-export {
-  createAuthFetch,
-  type AuthFetch,
-  type AuthRequestInit,
-  type CreateAuthFetchOptions,
-} from './adapters/fetch';
+export { createAuthFetch, type CreateAuthFetchOptions } from './adapters/fetch';
 export { attachAuthToAxios, type AxiosLike } from './adapters/axios';
 export { graphqlEffectiveStatus } from './adapters/graphql';
 export {

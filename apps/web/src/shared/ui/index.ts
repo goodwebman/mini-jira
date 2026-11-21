@@ -30,13 +30,11 @@ export * from './UICharts';
 export * from './UIEmptyState';
 export * from './UIIconTile';
 export * from './UIListItem';
-export * from './UIPriority';
 export * from './UIProgress';
 export * from './UISeparator';
 export * from './UISkeleton';
 export * from './UISpinner';
 export * from './UIStat';
-export * from './UIStatusBadge';
 export * from './UITable';
 
 // Обратная связь и оверлеи
@@ -51,8 +49,6 @@ export * from './UITooltip';
 // Каркас и навигация
 export * from './UIBottomNav';
 export * from './UIBrand';
-export * from './UIKanbanColumn';
 export * from './UIPageHeader';
 export * from './UISideNav';
 export * from './UITabBar';
-export * from './UITaskCard';

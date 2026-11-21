@@ -171,7 +171,7 @@
   @variant max-w640 {
     --fs-body: 15px;
     --fs-field: 16px;
-    --chip: 44px;
+    --chip: 40px;
   }
 
   /* На широких экранах растут шрифт, контролы и отступы. */
@@ -198,7 +198,7 @@
 
     --control-md: 48px;
     --control-lg: 52px;
-    --chip: 42px;
+    --chip: 38px;
     --icon-button: 32px;
     --avatar-xs: 30px;
     --avatar-sm: 34px;

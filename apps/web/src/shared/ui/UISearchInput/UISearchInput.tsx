@@ -62,7 +62,7 @@ const UISearchInputBase = forwardRef<HTMLInputElement, IUISearchInputProps>(
           ) : undefined
         }
         className={cn(
-          'border-border-strong bg-background [&::-webkit-search-cancel-button]:appearance-none',
+          '[&::-webkit-search-cancel-button]:appearance-none',
           className,
         )}
         {...props}

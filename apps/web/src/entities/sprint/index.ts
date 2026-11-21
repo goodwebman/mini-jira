@@ -6,7 +6,15 @@ export {
   sprintQueryKeys,
   sprintsPath,
 } from './api/sprintQueries';
-export type * from './model';
+export type {
+  SprintsQuery,
+  SprintBrief,
+  SprintKpi,
+  SprintKpiDay,
+  SprintListItem,
+  SprintListResponse,
+  SprintState,
+} from './model/types';
 export {
   burndownAlt,
   buildBurndown,

@@ -9,7 +9,15 @@ export {
   profileQueryOptions,
 } from './api/profileQueries';
 export { changePassword, updateProfile } from './api/updateProfile';
-export type * from './model';
+export type {
+  NavSummaryQuery,
+  ChangePasswordBody,
+  Me,
+  MyTaskStats,
+  NavSummary,
+  Timezone,
+  UpdateMeBody,
+} from './model/types';
 export {
   isTimezone,
   TIMEZONE_LABELS,

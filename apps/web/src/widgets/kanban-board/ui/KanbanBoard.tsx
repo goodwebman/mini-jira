@@ -25,9 +25,9 @@ import { TaskPauseButton } from '@/features/task/toggle-pause';
 import { formatShortDate, formatSp } from '@/shared/lib/format';
 import { useServerNow } from '@/shared/lib/time';
 import { ROUTES } from '@/shared/routes';
-import { UIKanbanColumn } from '@/shared/ui';
 
 import { BoardLayout } from './BoardLayout';
+import { KanbanColumn } from './KanbanColumn';
 
 export interface IKanbanBoardProps {
   readonly boardId: number;
@@ -76,7 +76,7 @@ export function KanbanBoard({
         const cards = columns[status];
         const { dropState, ...dropHandlers } = dnd.columnProps(status);
         return (
-          <UIKanbanColumn
+          <KanbanColumn
             key={status}
             status={status}
             title={TASK_STATUS_LABELS[status]}
@@ -134,7 +134,7 @@ export function KanbanBoard({
                 />
               );
             })}
-          </UIKanbanColumn>
+          </KanbanColumn>
         );
       })}
     </BoardLayout.Columns>

@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 
 import {
   SP_SECONDS,
-  TASK_PRIORITY_LABELS,
+  TaskPriorityMark,
   TaskStatusBadge,
   TaskTimerBadge,
   getTaskSpentSec,
@@ -12,7 +12,7 @@ import {
 } from '@/entities/task';
 import { formatNumber } from '@/shared/lib/format';
 import { ROUTES } from '@/shared/routes';
-import { UIPriority, UISkeleton } from '@/shared/ui';
+import { UISkeleton } from '@/shared/ui';
 
 /** Свои задачи на телефоне: карточки вместо таблицы. */
 export function MyTasksCards({
@@ -50,10 +50,7 @@ export function MyTasksCards({
             className='flex flex-col gap-1.5 p-3 text-foreground no-underline focus-ring'
           >
             <span className='flex items-center gap-1.5 text-caption text-muted-foreground'>
-              <UIPriority
-                priority={row.priority}
-                label={TASK_PRIORITY_LABELS[row.priority]}
-              />
+              <TaskPriorityMark priority={row.priority} />
               <span className='font-medium'>{row.key}</span>
               <span>· {taskRolesLabel(row.roles)}</span>
               <span

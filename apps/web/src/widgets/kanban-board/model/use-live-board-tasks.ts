@@ -8,6 +8,7 @@ import {
   subscribeBoardTaskEvents,
   taskQueryKeys,
 } from '@/entities/task';
+import { TASK_STATUS_MUTATION_KEY } from '@/features/task/change-status';
 import { QUERY_TAGS, invalidateTags } from '@/shared/api';
 import { syncServerClock } from '@/shared/lib/time';
 
@@ -21,17 +22,26 @@ export function useLiveBoardTasks(boardId: number) {
     let updates = Promise.resolve();
     const queryKey = taskQueryKeys.board(boardId);
     const moving = () =>
-      client.isMutating({ mutationKey: taskQueryKeys.all }) > 0;
+      client.isMutating({
+        mutationKey: TASK_STATUS_MUTATION_KEY,
+        exact: true,
+      }) > 0;
     const refresh = () => {
-      if (!active || moving()) {
+      if (!active) return;
+      if (moving()) {
         needsRefresh = true;
         return;
       }
       needsRefresh = false;
-      void client.invalidateQueries({ queryKey, exact: true });
+      return client.invalidateQueries({ queryKey, exact: true });
+    };
+    const queueRefresh = () => {
+      updates = updates.then(refresh);
     };
     const unsubscribeMutations = client.getMutationCache().subscribe(() => {
-      if (needsRefresh && !moving()) refresh();
+      if (!needsRefresh || moving()) return;
+      needsRefresh = false;
+      queueRefresh();
     });
     const unsubscribeEvents = subscribeBoardTaskEvents(
       boardId,
@@ -39,7 +49,8 @@ export function useLiveBoardTasks(boardId: number) {
         updates = updates.then(async () => {
           if (!active) return;
           if (event.type === 'ready') {
-            refresh();
+            // Снимок устанавливает базу: следующие события содержат лишь изменённые карточки.
+            await refresh();
             return;
           }
           if (moving()) {
@@ -57,7 +68,7 @@ export function useLiveBoardTasks(boardId: number) {
           await invalidateTags(client, [QUERY_TAGS.tasks], { refetch: false });
         });
       },
-      refresh,
+      queueRefresh,
     );
     return () => {
       active = false;

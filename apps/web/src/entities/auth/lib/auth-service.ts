@@ -1,4 +1,4 @@
-import { type AuthFetch, createAuthFetch } from './adapters/fetch';
+import { createAuthFetch } from './adapters/fetch';
 import { AuthStore } from './auth-store';
 import { AuthError, toAuthError } from './errors';
 import {
@@ -21,6 +21,7 @@ import type {
   AuthAttempt,
   AuthEvent,
   AuthEventSource,
+  AuthFetch,
   AuthGrant,
   AuthKickReason,
   AuthOrigin,

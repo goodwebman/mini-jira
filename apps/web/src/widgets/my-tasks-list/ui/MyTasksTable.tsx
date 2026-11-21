@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 
 import {
   SP_SECONDS,
-  TASK_PRIORITY_LABELS,
+  TaskPriorityMark,
   TaskStatusBadge,
   TaskTimerBadge,
   getTaskSpentSec,
@@ -12,7 +12,7 @@ import {
 } from '@/entities/task';
 import { formatNumber, formatShortDate } from '@/shared/lib/format';
 import { ROUTES } from '@/shared/routes';
-import { UIPriority, UISkeleton, UITable } from '@/shared/ui';
+import { UISkeleton, UITable } from '@/shared/ui';
 
 /**
  * Таблица своих задач. Набор колонок растёт с шириной экрана, как в макетах:
@@ -118,11 +118,11 @@ export function MyTasksTable({
               />
             </UITable.Cell>
             <UITable.Cell>
-              <UIPriority priority={row.priority}>
-                <span className='max-w960:sr-only'>
-                  {TASK_PRIORITY_LABELS[row.priority]}
-                </span>
-              </UIPriority>
+              <TaskPriorityMark
+                priority={row.priority}
+                withLabel
+                labelClassName='max-w960:sr-only'
+              />
             </UITable.Cell>
             <UITable.Cell className='hidden text-right tabular-nums w960:table-cell'>
               <span

@@ -1,16 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
 import * as ui from './index';
-import {
-  UIBadge,
-  UIIcons,
-  UIKanbanColumn,
-  UIProgress,
-  UISideNav,
-  UITable,
-  UITaskCard,
-} from './index';
+import { UIBadge, UIIcons, UIProgress, UISideNav, UITable } from './index';
 
 describe('публичный API', () => {
   it('ни один экспорт не потерялся', () => {
@@ -61,75 +53,6 @@ describe('UIBadge', () => {
     );
     expect(screen.getByText('Запрет')).toBeInTheDocument();
     expect(container.querySelector('[data-icon="lock"]')).toBeInTheDocument();
-  });
-});
-
-describe('UITaskCard', () => {
-  it('ссылка подписана ключом и названием', () => {
-    render(<UITaskCard taskKey='MJ-1' title='Задача' href='/task/1' />);
-    expect(
-      screen.getByRole('link', { name: 'Открыть задачу MJ-1: Задача' }),
-    ).toHaveAttribute('href', '/task/1');
-  });
-
-  it('поддерживает роутерную ссылку через render', () => {
-    render(
-      <UITaskCard
-        taskKey='MJ-1'
-        title='Задача'
-        render={<a href='/router' data-router='' />}
-      />,
-    );
-    expect(screen.getByRole('link')).toHaveAttribute('data-router');
-  });
-
-  it('пробрасывает drag-обработчики на карточку', () => {
-    const onDragStart = vi.fn();
-    render(
-      <UITaskCard
-        taskKey='MJ-1'
-        title='Задача'
-        href='/t'
-        draggable
-        onDragStart={onDragStart}
-      />,
-    );
-    fireEvent.dragStart(screen.getByRole('article'));
-    expect(onDragStart).toHaveBeenCalledOnce();
-  });
-});
-
-describe('UIKanbanColumn', () => {
-  it('пустая колонка показывает текст, с карточками — нет', () => {
-    const { rerender } = render(
-      <UIKanbanColumn status='todo' title='К работе' />,
-    );
-    expect(screen.getByText('Нет задач')).toBeInTheDocument();
-    rerender(
-      <UIKanbanColumn status='todo' title='К работе'>
-        <div>карточка</div>
-      </UIKanbanColumn>,
-    );
-    expect(screen.queryByText('Нет задач')).not.toBeInTheDocument();
-  });
-
-  it('кнопка добавления есть только с onAdd', () => {
-    const onAdd = vi.fn();
-    const { rerender } = render(
-      <UIKanbanColumn status='todo' title='К работе' />,
-    );
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
-    rerender(<UIKanbanColumn status='todo' title='К работе' onAdd={onAdd} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Добавить задачу' }));
-    expect(onAdd).toHaveBeenCalledOnce();
-  });
-
-  it('сообщает о состоянии перетаскивания', () => {
-    render(<UIKanbanColumn status='todo' title='К работе' dropState='bad' />);
-    expect(screen.getByRole('region', { name: 'К работе' })).toHaveAttribute(
-      'data-drop',
-      'bad',
-    );
   });
 });
 

@@ -1,5 +1,6 @@
-import { AuthError } from '@/entities/auth/lib';
 import { env } from '@/shared/config';
+
+import { AuthError } from '../lib';
 
 async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest(

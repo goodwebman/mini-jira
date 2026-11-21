@@ -6,6 +6,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { taskQueryKeys } from '@/entities/task';
+import { TASK_STATUS_MUTATION_KEY } from '@/features/task/change-status';
 import { configureApiTransport } from '@/shared/api';
 import {
   TestProviders,
@@ -15,7 +16,7 @@ import {
   makeTask,
 } from '@/shared/lib/testing';
 
-import { useLiveBoardTasks } from '../index';
+import { useLiveBoardTasks } from './use-live-board-tasks';
 
 const client = createTestQueryClient();
 const wrapper = ({ children }: { readonly children: ReactNode }) => (
@@ -112,6 +113,38 @@ describe('useLiveBoardTasks SSE', () => {
     expect(result.current.data.items[0]?.status).toBe('review');
   });
 
+  it('применяет изменение карточки после снимка, из которого удалили её соседа', async () => {
+    const remaining = makeTask({ key: 'GWT-901' });
+    client.setQueryData(
+      taskQueryKeys.board(9),
+      makeBoardTasks([task, remaining]),
+    );
+    let finishRefresh = () => {};
+    api.on(
+      'GET',
+      '/boards/9/tasks',
+      () =>
+        new Promise((resolve) => {
+          finishRefresh = () => resolve(makeBoardTasks([remaining]));
+        }),
+    );
+    const { result } = renderHook(() => useLiveBoardTasks(9), { wrapper });
+    await flush();
+    await send({ type: 'ready' });
+    await send({
+      type: 'tasks.changed',
+      items: [{ ...remaining, status: 'done' }],
+      serverTime: new Date().toISOString(),
+    });
+    expect(result.current.data.items).toHaveLength(2);
+
+    act(() => finishRefresh());
+    await flush();
+    expect(
+      result.current.data.items.map(({ key, status }) => [key, status]),
+    ).toEqual([[remaining.key, 'done']]);
+  });
+
   it('закрывает соединение в скрытой вкладке и подключается при возвращении', async () => {
     renderHook(() => useLiveBoardTasks(9), { wrapper });
     await flush();
@@ -139,7 +172,7 @@ describe('useLiveBoardTasks SSE', () => {
       () => {
         const query = useLiveBoardTasks(9);
         const move = useMutation({
-          mutationKey: ['task', 'change-status'],
+          mutationKey: TASK_STATUS_MUTATION_KEY,
           mutationFn: () =>
             new Promise<void>((resolve) => {
               release = resolve;
@@ -170,6 +203,37 @@ describe('useLiveBoardTasks SSE', () => {
     await flush();
     expect(result.current.query.data.items[0]?.status).toBe('done');
     expect(api.callsTo('GET', '/boards/9/tasks')).toHaveLength(1);
+  });
+
+  it('применяет события во время мутации, которая не переносит карточки', async () => {
+    let release = () => {};
+    const { result } = renderHook(
+      () => ({
+        query: useLiveBoardTasks(9),
+        editTask: useMutation({
+          mutationKey: ['task', 'edit'],
+          mutationFn: () =>
+            new Promise<void>((resolve) => {
+              release = resolve;
+            }),
+        }),
+      }),
+      { wrapper },
+    );
+    await flush();
+    act(() => result.current.editTask.mutate());
+    await flush();
+
+    await send({
+      type: 'tasks.changed',
+      items: [{ ...task, status: 'work' }],
+      serverTime: new Date().toISOString(),
+    });
+
+    expect(result.current.query.data.items[0]?.status).toBe('work');
+    expect(api.callsTo('GET', '/boards/9/tasks')).toHaveLength(0);
+    act(() => release());
+    await flush();
   });
 
   it('отклоняет карточку чужой доски и не меняет кэш', async () => {

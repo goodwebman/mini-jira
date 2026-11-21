@@ -1,3 +1,4 @@
+export { useLiveBoardTasks } from './model/use-live-board-tasks';
 export { AssigneeFilterChips } from './ui/AssigneeFilterChips';
 export { BoardLayout } from './ui/BoardLayout';
 export { KanbanBoard } from './ui/KanbanBoard';

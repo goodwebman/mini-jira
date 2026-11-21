@@ -79,7 +79,25 @@ export {
   type TaskTimerTone,
   type TaskTimerView,
 } from './model/task-timer';
-export type * from './model';
+export type {
+  MyTasksQuery,
+  TaskSearchQuery,
+  BoardTasksResponse,
+  CreateLinkBody,
+  CreateTaskBody,
+  MyTasksResponse,
+  TaskDetail,
+  TaskLinkItem,
+  TaskLinkType,
+  TaskPriority,
+  TaskRole,
+  TaskRow,
+  TaskSearchItem,
+  TaskSearchResponse,
+  TaskStatus,
+  TaskTimer,
+  UpdateTaskBody,
+} from './model/types';
 
 export { TaskBlockerMark } from './ui/TaskBlockerMark';
 export { TaskLinksCount } from './ui/TaskLinksCount';
@@ -97,3 +115,5 @@ export { TaskRoleFilter } from './ui/TaskRoleFilter';
 export { TaskSearchInput } from './ui/TaskSearchInput';
 export { TaskStatusFilter } from './ui/TaskStatusFilter';
 export { TaskStatusSelect } from './ui/TaskStatusSelect';
+export { TaskCardLayout } from './ui/TaskCardLayout';
+export { TASK_STATUS_DOT_CLASS } from './ui/task-status.styles';

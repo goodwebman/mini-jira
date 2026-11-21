@@ -4,25 +4,18 @@ import type { TaskCard as TaskCardData } from '@gwmt/contracts';
 
 import { cn } from '@/shared/lib/cn';
 import { formatSp } from '@/shared/lib/format';
-import { type IUITaskCardProps, UITaskCard } from '@/shared/ui';
 
-import { TASK_PRIORITY_LABELS } from '../model/task-meta';
 import { SP_SECONDS, getTaskSpentSec } from '../model/task-time';
 import type { TaskTimerView } from '../model/task-timer';
 import { TaskBlockerMark } from './TaskBlockerMark';
+import { TaskCardLayout, type TaskCardLayoutProps } from './TaskCardLayout';
 import { TaskLinksCount } from './TaskLinksCount';
 import { TaskLockBadge } from './TaskLockBadge';
 import { TaskTimerBadge } from './TaskTimerBadge';
 
 export interface ITaskCardProps extends Omit<
-  IUITaskCardProps,
-  | 'badges'
-  | 'meta'
-  | 'points'
-  | 'priority'
-  | 'priorityLabel'
-  | 'taskKey'
-  | 'title'
+  TaskCardLayoutProps,
+  'badges' | 'meta' | 'points' | 'priority' | 'taskKey' | 'title'
 > {
   readonly task: TaskCardData;
   readonly timer: TaskTimerView;
@@ -57,13 +50,14 @@ export function TaskCard({
   className,
   ...props
 }: ITaskCardProps) {
+  const overEstimate =
+    getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS;
   return (
-    <UITaskCard
+    <TaskCardLayout
       taskKey={task.key}
       title={task.title}
       className={cn(
-        getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS &&
-          'border-destructive/50 bg-destructive-tint/30',
+        overEstimate && 'border-destructive/50 bg-destructive-tint/30',
         'border-s-2',
         statusBorder[task.status],
         className,
@@ -71,16 +65,13 @@ export function TaskCard({
       points={
         <span
           className={
-            getTaskSpentSec(task.status, task.timer, now) > task.sp * SP_SECONDS
-              ? 'font-semibold text-destructive'
-              : undefined
+            overEstimate ? 'font-semibold text-destructive' : undefined
           }
         >
           {formatSp(task.sp)}
         </span>
       }
       priority={task.priority}
-      priorityLabel={TASK_PRIORITY_LABELS[task.priority]}
       badges={
         <>
           <TaskTimerBadge view={timer} />
