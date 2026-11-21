@@ -23,7 +23,7 @@ export const chipVariants = cva(
         variant: ['filter', 'status'],
         class: [
           'border-border-strong bg-surface enabled:hover:border-input enabled:hover:bg-muted',
-          'aria-pressed:border-primary aria-pressed:bg-primary-tint aria-pressed:font-semibold aria-pressed:text-primary-hover aria-pressed:enabled:hover:border-primary aria-pressed:enabled:hover:bg-primary-tint-strong',
+          'aria-pressed:border-primary aria-pressed:bg-primary-tint aria-pressed:text-primary-hover aria-pressed:enabled:hover:border-primary aria-pressed:enabled:hover:bg-primary-tint-strong',
         ],
       },
     ],

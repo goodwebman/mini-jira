@@ -192,10 +192,15 @@ async function checkInteractions(page, width, name) {
       'Доски задач',
       'Закрыть панель',
     );
+    const people = page.getByRole('group', { name: 'Фильтр по участникам' });
+    const all = people.getByRole('button', { name: 'Все', exact: true });
+    const member = people.getByRole('button', { name: /Дмитрий$/ });
+    await checkChipLayout(people, member);
+    await checkChipLayout(people, all);
     if (width < 640) {
-      const chip = page.getByRole('button', { name: /^Готово / });
-      await chip.click();
-      assert.equal(await chip.getAttribute('aria-pressed'), 'true');
+      const columns = page.getByRole('group', { name: 'Колонка' });
+      const chip = columns.getByRole('button', { name: /^Готово / });
+      await checkChipLayout(columns, chip);
       await page
         .getByRole('link', { name: /Открыть задачу PAY-105/ })
         .waitFor();
@@ -245,6 +250,36 @@ async function checkInteractions(page, width, name) {
     await page.getByRole('link', { name: 'К списку досок' }).click();
     await page.getByRole('heading', { name: 'Доски', exact: true }).waitFor();
   }
+}
+
+async function checkChipLayout(group, chip) {
+  await group.evaluate((row) => {
+    // У Arial ширина текста зависит от насыщенности шрифта.
+    row.style.fontFamily = 'Arial, sans-serif';
+  });
+  const measure = () =>
+    group.evaluate((row) => {
+      const groupRect = row.getBoundingClientRect();
+      return [...row.querySelectorAll('[data-name="UIChip"]')].map((button) => {
+        const { x, y, width, height } = button.getBoundingClientRect();
+        // Клик может прокрутить группу до чипа, не меняя раскладку.
+        return {
+          x: x - groupRect.x + row.scrollLeft,
+          y: y - groupRect.y + row.scrollTop,
+          width,
+          height,
+        };
+      });
+    });
+  assert.equal(await chip.getAttribute('aria-pressed'), 'false');
+  const before = await measure();
+  await chip.click();
+  assert.equal(await chip.getAttribute('aria-pressed'), 'true');
+  assert.deepEqual(
+    await measure(),
+    before,
+    'chip sizes and positions stay stable',
+  );
 }
 
 async function checkDialog(page, trigger, name, closeLabel = 'Закрыть') {
