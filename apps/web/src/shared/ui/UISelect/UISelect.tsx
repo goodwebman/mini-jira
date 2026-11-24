@@ -277,7 +277,12 @@ const UISelectBase = forwardRef<HTMLSelectElement, IUISelectProps>(
             ))}
             {children}
           </select>
-          <UIIcons.ChevronDown className='pointer-events-none absolute right-2 top-1/2 size-icon -translate-y-1/2 text-foreground' />
+          <UIIcons.ChevronDown
+            className={cn(
+              'pointer-events-none absolute right-2 top-1/2 size-icon -translate-y-1/2 text-foreground motion-safe:transition-transform',
+              open && 'rotate-180',
+            )}
+          />
           {open && (
             <Portal>
               <div
