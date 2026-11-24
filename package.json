@@ -40,6 +40,7 @@
     "db:seed": "npm run build:shared && npm run db:seed -w @gwmt/api",
     "typecheck": "npm run build:shared && npm run typecheck -w @gwmt/contracts -w @gwmt/monitoring -w @gwmt/api -w mini-jira",
     "test:lint": "node --test scripts/eslint-config.test.mjs",
+    "screenshots": "npm run build:shared && npm run screenshots -w mini-jira",
     "test": "npm run test:lint && npm run build:shared && npm run test -w @gwmt/contracts -w @gwmt/monitoring -w @gwmt/api -w mini-jira",
     "validate": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run build"
   },

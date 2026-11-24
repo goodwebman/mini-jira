@@ -19,6 +19,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:responsive": "node test/responsive.mjs",
+    "screenshots": "node test/showcase.mjs",
     "test:watch": "vitest",
     "icons:build": "node scripts/generate-icons.mjs",
     "icons:check": "node scripts/generate-icons.mjs --check",

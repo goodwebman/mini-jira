@@ -44,6 +44,10 @@ npm run dev                             # фронтенд и бэкенд од�
 
 Сид идемпотентен и отказывается работать при `NODE_ENV=production`.
 
+## Скриншоты для портфолио
+
+`npm run screenshots` снимает пять экранов на демоданных и сохраняет PNG в `apps/web/reports/portfolio`. Git игнорирует эту папку. Для запуска нужен Chromium из Playwright (`npx playwright install chromium`). API и база данных для съёмки не требуются.
+
 ## Команды
 
 | Команда                 | Что делает                                                                        |

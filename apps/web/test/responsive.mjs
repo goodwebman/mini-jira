@@ -3,7 +3,17 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 
-import { mockResponsiveApi } from './responsive-fixtures.mjs';
+import { demoTask, mockBrowserApi } from './browser-fixtures.mjs';
+
+const unbroken = 'подтверждениеплатёжнойоперации'.repeat(6);
+const stressTask = {
+  ...demoTask,
+  description: `${demoTask.description}\n${unbroken}`,
+  comments: demoTask.comments.map((comment) => ({
+    ...comment,
+    text: `${comment.text} ${unbroken}`,
+  })),
+};
 
 const viewports = [
   [320, 568],
@@ -70,7 +80,10 @@ try {
       await context.route('https://fonts.googleapis.com/**', (route) =>
         route.abort(),
       );
-      await mockResponsiveApi(context, authenticated);
+      const unmatched = await mockBrowserApi(context, {
+        authenticated,
+        task: stressTask,
+      });
       const page = await context.newPage();
       page.setDefaultTimeout(7000);
       const pageErrors = [];
@@ -122,6 +135,9 @@ try {
         }
       }
       issues.push(...pageErrors.map((error) => `${width} browser: ${error}`));
+      issues.push(
+        ...unmatched.map((call) => `${width} unexpected API: ${call}`),
+      );
       await context.close();
     }
     console.log(`${width} × ${height} checked`);
@@ -179,6 +195,31 @@ async function checkInteractions(page, width, name) {
       'Уведомления',
       'Закрыть панель',
     );
+    const favorite = page.getByRole('button', {
+      name: 'Избранная доска «Интеграции с партнёрами»',
+    });
+    assert.equal(await favorite.getAttribute('aria-pressed'), 'false');
+    const [added] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.url().endsWith('/boards/3/favorite') &&
+          response.request().method() === 'PUT',
+      ),
+      favorite.click(),
+    ]);
+    assert.equal(added.status(), 204);
+    await page.reload();
+    assert.equal(await favorite.getAttribute('aria-pressed'), 'true');
+    const [removed] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.url().endsWith('/boards/3/favorite') &&
+          response.request().method() === 'DELETE',
+      ),
+      favorite.click(),
+    ]);
+    assert.equal(removed.status(), 204);
+    assert.equal(await favorite.getAttribute('aria-pressed'), 'false');
   }
   if (name === 'board') {
     await checkDialog(
