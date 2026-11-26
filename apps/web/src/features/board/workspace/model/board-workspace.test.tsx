@@ -1,11 +1,16 @@
 /**
  * Тесткейсы: начальное состояние, колонка и фокус, повторный фокус не будит;
+ * фильтры сохраняются, пустые и пробельные — нет;
  * хук отдаёт плоский объект; провайдер создаёт стор один раз; без провайдера — ошибка.
  */
 import { act, render, renderHook, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createStoragePersistence } from '@/shared/lib/store';
+import type { TaskFilters } from '@/entities/task';
+import {
+  createMemoryPersistence,
+  createStoragePersistence,
+} from '@/shared/lib/store';
 
 import { BoardWorkspaceProvider } from '../ui/BoardWorkspaceProvider';
 import { useBoardWorkspace } from './board-workspace.di';
@@ -58,6 +63,20 @@ describe('createBoardWorkspaceStore', () => {
     });
     reloaded.updateFilters(INITIAL_WORKSPACE.filters);
     expect(localStorage.getItem(key)).toBeNull();
+  });
+
+  it('поиск из одних пробелов остаётся в поле, но не сохраняется', () => {
+    const persistence = createMemoryPersistence<TaskFilters>();
+    const store = createBoardWorkspaceStore({
+      boardId: 9,
+      filterPersistence: persistence,
+    });
+    store.updateFilters({ query: 'Экран' });
+    expect(persistence.load()?.query).toBe('Экран');
+
+    store.updateFilters({ query: '   ' });
+    expect(store.getSnapshot().filters.query).toBe('   ');
+    expect(persistence.load()).toBeNull();
   });
 
   it('отклоняет сохранённые фильтры с некорректными данными', () => {

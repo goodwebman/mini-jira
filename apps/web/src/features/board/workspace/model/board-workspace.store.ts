@@ -1,6 +1,10 @@
 import type { TaskStatus } from '@gwmt/contracts';
 
-import { EMPTY_TASK_FILTERS, type TaskFilters } from '@/entities/task';
+import {
+  EMPTY_TASK_FILTERS,
+  type TaskFilters,
+  hasActiveTaskFilters,
+} from '@/entities/task';
 import {
   type Persistence,
   type ReadableStore,
@@ -61,12 +65,8 @@ export function createBoardWorkspaceStore({
     },
     updateFilters: (patch) => {
       const filters = { ...store.getSnapshot().filters, ...patch };
-      if (
-        filters.query ||
-        filters.priority !== 'all' ||
-        filters.assigneeIds.length
-      )
-        filterPersistence?.save(filters);
+      // Поиск из одних пробелов ничего не отбирает: хранить нечего
+      if (hasActiveTaskFilters(filters)) filterPersistence?.save(filters);
       else filterPersistence?.clear();
       update({ filters });
     },

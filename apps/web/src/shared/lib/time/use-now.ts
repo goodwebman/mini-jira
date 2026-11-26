@@ -1,5 +1,4 @@
-import { useSyncExternalStore } from 'react';
-
+import { useStore } from '../store';
 import { createTicker, onDocumentVisible } from './ticker';
 
 /** Таймеры показывают минуты: обновления раз в 30 секунд достаточно. */
@@ -10,9 +9,5 @@ const clock = createTicker({
 
 /** Текущее время клиента в мс, обновляется общими часами приложения. */
 export function useNow(): number {
-  return useSyncExternalStore(
-    clock.subscribe,
-    clock.getSnapshot,
-    clock.getSnapshot,
-  );
+  return useStore(clock);
 }

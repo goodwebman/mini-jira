@@ -1,9 +1,12 @@
-import { useSyncExternalStore } from 'react';
-
-import { createStore } from '../store';
+import { type ReadableStore, createStore, useStore } from '../store';
 
 /** Расхождение меньше секунды не меняет ни одной подписи таймера: не будим подписчиков зря. */
 const NOISE_MS = 1000;
+
+/** Поправка в мс (`serverTime − Date.now()`) и единственный способ её изменить. */
+export interface ServerClock extends ReadableStore<number> {
+  readonly sync: (serverTime: string) => void;
+}
 
 /**
  * Поправка часов клиента относительно сервера. Это свойство машины пользователя,
@@ -13,11 +16,12 @@ const NOISE_MS = 1000;
  * в кэш (`setQueryData` после паузы или комментария) её не трогают, поэтому таймеры
  * не уезжают на «возраст данных».
  */
-export function createServerClock(now: () => number = Date.now) {
+export function createServerClock(now: () => number = Date.now): ServerClock {
   const offset = createStore(0);
   return {
-    offset,
-    sync: (serverTime: string) => {
+    getSnapshot: offset.getSnapshot,
+    subscribe: offset.subscribe,
+    sync: (serverTime) => {
       const server = Date.parse(serverTime);
       if (!Number.isFinite(server)) return;
       const next = server - now();
@@ -39,13 +43,9 @@ export function syncServerClock<T extends { readonly serverTime: string }>(
 
 /** Текущая поправка в мс: для расчётов вне React. */
 export function getServerClockOffset(): number {
-  return serverClock.offset.getSnapshot();
+  return serverClock.getSnapshot();
 }
 
 export function useServerClockOffset(): number {
-  return useSyncExternalStore(
-    serverClock.offset.subscribe,
-    serverClock.offset.getSnapshot,
-    serverClock.offset.getSnapshot,
-  );
+  return useStore(serverClock);
 }
